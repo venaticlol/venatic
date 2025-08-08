@@ -74,24 +74,6 @@
       50% { transform: translateY(-40px) scale(1.1);}
       100% { transform: translateY(0) scale(1);}
     }
-    .custom-cursor {
-      position: fixed;
-      z-index: 9999;
-      pointer-events: none;
-      width: 32px; height: 32px;
-      border-radius: 50%;
-      border: 2px solid var(--accent);
-      box-shadow: 0 0 16px 4px var(--accent);
-      background: transparent;
-      mix-blend-mode: lighten;
-      transition: transform 0.12s, opacity 0.2s;
-      opacity: 0.85;
-      will-change: transform;
-    }
-    .custom-cursor.active {
-      transform: scale(0.7);
-      box-shadow: 0 0 32px 8px var(--accent);
-    }
     /* Glassmorphism */
     .glass {
       background: var(--bg-glass);
@@ -1003,7 +985,6 @@
   <!-- Animated Background Particles -->
   <div class="bg-particles" aria-hidden="true"></div>
   <!-- Custom Cursor -->
-  <div class="custom-cursor"></div>
   <!-- Header -->
   <header>
     <div class="logo" tabindex="0" aria-label="venatic.gg Home">
@@ -1298,19 +1279,6 @@
     }
     createParticles();
 
-    // Custom cursor
-    const cursor = document.querySelector('.custom-cursor');
-    document.addEventListener('mousemove', e => {
-      cursor.style.left = (e.clientX - 16) + 'px';
-      cursor.style.top = (e.clientY - 16) + 'px';
-    });
-    document.addEventListener('mousedown', () => cursor.classList.add('active'));
-    document.addEventListener('mouseup', () => cursor.classList.remove('active'));
-    document.querySelectorAll('button, a, input, textarea, .feature-card, .faq-question').forEach(el => {
-      el.addEventListener('mouseenter', () => cursor.classList.add('active'));
-      el.addEventListener('mouseleave', () => cursor.classList.remove('active'));
-    });
-
     // Tab navigation
     function showTab(tab) {
       document.querySelectorAll('[data-tab-content]').forEach(sec => sec.style.display = 'none');
@@ -1529,6 +1497,7 @@
   </script>
 </body>
 </html>
+
 
 
 
