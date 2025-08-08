@@ -1,0 +1,1535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>venatic.gg – Rainbow Six Siege Utility Platform</title>
+  <meta name="description" content="venatic.gg is a tactical enhancement and game companion tool for Rainbow Six Siege, offering advanced features, live status, and more.">
+  <meta property="og:title" content="venatic.gg – Rainbow Six Siege Utility Platform">
+  <meta property="og:description" content="Tactical enhancement and game companion tool for Rainbow Six Siege.">
+  <meta property="og:image" content="https://venatic.gg/og-image.png">
+  <meta property="og:url" content="https://venatic.gg">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><circle fill='black' cx='32' cy='32' r='32'/><text x='50%' y='50%' font-size='32' fill='red' text-anchor='middle' alignment-baseline='central' font-family='monospace'>V</text></svg>">
+  <style>
+    :root {
+      --bg: #0a0a0f;
+      --bg-glass: rgba(20,20,30,0.7);
+      --bg-glass-light: rgba(255,255,255,0.08);
+      --accent: #ff2d2e;
+      --accent-glow: 0 0 12px #ff2d2e88;
+      --text: #f5f5f7;
+      --text-muted: #b0b0b8;
+      --shadow: 0 4px 32px 0 #000a, 0 1.5px 8px 0 #ff2d2e22;
+      --radius: 18px;
+      --transition: 0.35s cubic-bezier(.77,0,.18,1);
+      --glass-blur: blur(18px);
+      --header-height: 64px;
+      --status-green: #2fff7f;
+      --status-yellow: #ffe22d;
+      --status-red: #ff2d2e;
+      --font-main: 'Inter', 'Segoe UI', Arial, sans-serif;
+    }
+    @media (max-width: 600px) {
+      :root { --header-height: 54px; --radius: 12px; }
+    }
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-main);
+      font-size: 17px;
+      scroll-behavior: smooth;
+      min-height: 100%;
+      overflow-x: hidden;
+    }
+    body {
+      position: relative;
+      min-height: 100vh;
+      background: var(--bg);
+      /* Animated background gradient */
+      background: linear-gradient(120deg, #0a0a0f 0%, #181824 100%);
+      overflow-x: hidden;
+    }
+    /* Animated background particles */
+    .bg-particles {
+      position: fixed;
+      z-index: 0;
+      inset: 0;
+      pointer-events: none;
+      overflow: hidden;
+    }
+    .bg-particle {
+      position: absolute;
+      border-radius: 50%;
+      opacity: 0.12;
+      background: linear-gradient(135deg, var(--accent), #fff0 80%);
+      filter: blur(8px);
+      animation: float 12s infinite linear;
+    }
+    @keyframes float {
+      0% { transform: translateY(0) scale(1);}
+      50% { transform: translateY(-40px) scale(1.1);}
+      100% { transform: translateY(0) scale(1);}
+    }
+    /* Custom cursor */
+    body, button, a, input, textarea {
+      cursor: none !important;
+    }
+    .custom-cursor {
+      position: fixed;
+      z-index: 9999;
+      pointer-events: none;
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      border: 2px solid var(--accent);
+      box-shadow: 0 0 16px 4px var(--accent);
+      background: transparent;
+      mix-blend-mode: lighten;
+      transition: transform 0.12s, opacity 0.2s;
+      opacity: 0.85;
+      will-change: transform;
+    }
+    .custom-cursor.active {
+      transform: scale(0.7);
+      box-shadow: 0 0 32px 8px var(--accent);
+    }
+    /* Glassmorphism */
+    .glass {
+      background: var(--bg-glass);
+      box-shadow: var(--shadow);
+      border-radius: var(--radius);
+      backdrop-filter: var(--glass-blur);
+      -webkit-backdrop-filter: var(--glass-blur);
+      border: 1.5px solid var(--bg-glass-light);
+    }
+    /* Header */
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      height: var(--header-height);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 2vw;
+      background: rgba(10,10,15,0.92);
+      box-shadow: 0 2px 16px 0 #0006;
+      backdrop-filter: blur(8px);
+      transition: background var(--transition);
+    }
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 0.7em;
+      font-size: 1.7em;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      color: var(--accent);
+      user-select: none;
+      cursor: pointer;
+    }
+    .logo svg {
+      width: 2.2em; height: 2.2em;
+      display: block;
+    }
+    nav {
+      display: flex;
+      align-items: center;
+      gap: 1.2em;
+    }
+    .nav-link {
+      position: relative;
+      color: var(--text-muted);
+      text-decoration: none;
+      font-weight: 500;
+      font-size: 1em;
+      padding: 0.2em 0.7em;
+      transition: color var(--transition);
+      outline: none;
+    }
+    .nav-link.active, .nav-link:focus, .nav-link:hover {
+      color: var(--accent);
+    }
+    .nav-link .underline {
+      position: absolute;
+      left: 0; right: 0; bottom: -2px;
+      height: 2.5px;
+      background: linear-gradient(90deg, var(--accent), #fff0 80%);
+      border-radius: 2px;
+      opacity: 0;
+      transform: scaleX(0.5);
+      transition: opacity var(--transition), transform var(--transition);
+      pointer-events: none;
+    }
+    .nav-link.active .underline, .nav-link:focus .underline, .nav-link:hover .underline {
+      opacity: 1;
+      transform: scaleX(1);
+    }
+    .mode-toggle {
+      margin-left: 1.5em;
+      background: none;
+      border: none;
+      color: var(--accent);
+      font-size: 1.3em;
+      cursor: pointer;
+      transition: color var(--transition);
+      outline: none;
+      display: flex;
+      align-items: center;
+    }
+    /* Hero Section */
+    .section {
+      min-height: 100vh;
+      padding: calc(var(--header-height) + 2vw) 0 4vw 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      position: relative;
+      z-index: 1;
+      width: 100vw;
+      box-sizing: border-box;
+    }
+    .hero {
+      min-height: 80vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      gap: 2.5em;
+      position: relative;
+      z-index: 2;
+    }
+    .hero-title {
+      font-size: clamp(2.2em, 6vw, 4.2em);
+      font-weight: 800;
+      letter-spacing: 0.01em;
+      color: var(--text);
+      margin-bottom: 0.2em;
+      line-height: 1.1;
+      opacity: 0;
+      transform: translateY(40px);
+      animation: fadeInUp 1.1s 0.2s forwards;
+    }
+    .hero-tagline {
+      font-size: 1.3em;
+      color: var(--text-muted);
+      font-weight: 400;
+      opacity: 0;
+      transform: translateY(40px);
+      animation: fadeInUp 1.1s 0.5s forwards;
+    }
+    @keyframes fadeInUp {
+      to { opacity: 1; transform: none; }
+    }
+    .cta-btn {
+      margin-top: 2em;
+      padding: 0.9em 2.5em;
+      font-size: 1.2em;
+      font-weight: 700;
+      color: #fff;
+      background: linear-gradient(90deg, var(--accent), #ff5e62 80%);
+      border: none;
+      border-radius: 999px;
+      box-shadow: 0 0 24px 0 #ff2d2e44;
+      cursor: pointer;
+      transition: background var(--transition), box-shadow var(--transition), transform 0.18s;
+      outline: none;
+      position: relative;
+      overflow: hidden;
+      z-index: 1;
+      animation: fadeInUp 1.1s 0.8s forwards;
+      opacity: 0;
+      transform: translateY(40px);
+    }
+    .cta-btn::after {
+      content: '';
+      position: absolute;
+      left: 0; top: 0; right: 0; bottom: 0;
+      background: linear-gradient(90deg, #fff2, #fff0 80%);
+      opacity: 0.18;
+      pointer-events: none;
+      border-radius: 999px;
+    }
+    .cta-btn:hover, .cta-btn:focus {
+      background: linear-gradient(90deg, #ff5e62, var(--accent) 80%);
+      box-shadow: 0 0 48px 0 #ff2d2e88;
+      transform: scale(1.04);
+    }
+    /* Tabs */
+    .tabs {
+      display: flex;
+      flex-direction: row;
+      gap: 0.5em;
+      margin: 2em 0 1.5em 0;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .tab-btn {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 1.1em;
+      font-weight: 600;
+      padding: 0.5em 1.2em;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: color var(--transition), background var(--transition);
+      outline: none;
+      position: relative;
+      z-index: 1;
+    }
+    .tab-btn.active, .tab-btn:focus, .tab-btn:hover {
+      color: var(--accent);
+      background: var(--bg-glass-light);
+    }
+    /* Section Content */
+    .tab-content {
+      width: 100%;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 2em 1.2em 3em 1.2em;
+      border-radius: var(--radius);
+      background: var(--bg-glass);
+      box-shadow: var(--shadow);
+      backdrop-filter: var(--glass-blur);
+      -webkit-backdrop-filter: var(--glass-blur);
+      position: relative;
+      z-index: 2;
+      min-height: 320px;
+      animation: fadeTab 0.7s;
+    }
+    @keyframes fadeTab {
+      from { opacity: 0; transform: translateY(30px);}
+      to { opacity: 1; transform: none;}
+    }
+    /* Features */
+    .features-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 2em;
+      margin-top: 1.5em;
+    }
+    .feature-card {
+      background: var(--bg-glass);
+      border-radius: var(--radius);
+      box-shadow: 0 2px 16px 0 #0004;
+      padding: 1.5em 1.2em 1.2em 1.2em;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 1em;
+      position: relative;
+      overflow: hidden;
+      transition: box-shadow var(--transition), transform 0.18s;
+      cursor: pointer;
+      outline: none;
+    }
+    .feature-card:hover, .feature-card:focus {
+      box-shadow: 0 4px 32px 0 #ff2d2e33;
+      transform: translateY(-4px) scale(1.03);
+    }
+    .feature-icon {
+      width: 2.5em; height: 2.5em;
+      display: block;
+      margin-bottom: 0.5em;
+      opacity: 0;
+      transform: translateY(30px);
+      transition: opacity 0.7s, transform 0.7s;
+    }
+    .feature-card.visible .feature-icon {
+      opacity: 1;
+      transform: none;
+    }
+    .feature-title {
+      font-size: 1.15em;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 0.2em;
+    }
+    .feature-desc {
+      color: var(--text-muted);
+      font-size: 1em;
+      line-height: 1.5;
+    }
+    .feature-status {
+      margin-top: 0.5em;
+      display: flex;
+      align-items: center;
+      gap: 0.5em;
+    }
+    .status-indicator {
+      width: 1.2em; height: 1.2em;
+      border-radius: 50%;
+      box-shadow: 0 0 8px 2px #fff4;
+      background: var(--status-green);
+      transition: background 0.5s, box-shadow 0.5s;
+      animation: pulse 1.5s infinite;
+    }
+    .status-indicator.limited {
+      background: var(--status-yellow);
+      animation: pulseYellow 1.5s infinite;
+    }
+    .status-indicator.offline {
+      background: var(--status-red);
+      animation: pulseRed 1.5s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { box-shadow: 0 0 8px 2px #2fff7f44;}
+      50% { box-shadow: 0 0 18px 6px #2fff7f88;}
+    }
+    @keyframes pulseYellow {
+      0%, 100% { box-shadow: 0 0 8px 2px #ffe22d44;}
+      50% { box-shadow: 0 0 18px 6px #ffe22d88;}
+    }
+    @keyframes pulseRed {
+      0%, 100% { box-shadow: 0 0 8px 2px #ff2d2e44;}
+      50% { box-shadow: 0 0 18px 6px #ff2d2e88;}
+    }
+    .feature-tooltip {
+      position: absolute;
+      left: 50%; top: 100%;
+      transform: translate(-50%, 10px);
+      background: var(--bg-glass);
+      color: var(--text);
+      padding: 0.7em 1em;
+      border-radius: 10px;
+      font-size: 0.98em;
+      box-shadow: 0 2px 12px 0 #0006;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s, transform 0.25s;
+      z-index: 10;
+      min-width: 180px;
+      max-width: 260px;
+    }
+    .feature-card:focus .feature-tooltip,
+    .feature-card:hover .feature-tooltip {
+      opacity: 1;
+      transform: translate(-50%, 0);
+      pointer-events: auto;
+    }
+    /* Status Section */
+    .status-main {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1.5em;
+      margin-top: 2em;
+    }
+    .status-pulse {
+      width: 3.5em; height: 3.5em;
+      border-radius: 50%;
+      background: var(--status-green);
+      box-shadow: 0 0 32px 0 #2fff7f55;
+      animation: pulse 1.5s infinite;
+      transition: background 0.5s, box-shadow 0.5s;
+      position: relative;
+      margin-bottom: 0.7em;
+    }
+    .status-pulse.limited {
+      background: var(--status-yellow);
+      box-shadow: 0 0 32px 0 #ffe22d55;
+      animation: pulseYellow 1.5s infinite;
+    }
+    .status-pulse.offline {
+      background: var(--status-red);
+      box-shadow: 0 0 32px 0 #ff2d2e55;
+      animation: pulseRed 1.5s infinite;
+    }
+    .status-label {
+      font-size: 1.3em;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 0.2em;
+      text-align: center;
+    }
+    .status-desc {
+      color: var(--text-muted);
+      font-size: 1.05em;
+      text-align: center;
+      max-width: 420px;
+    }
+    .status-controls {
+      margin-top: 1.2em;
+      display: flex;
+      gap: 1em;
+      justify-content: center;
+    }
+    .status-btn {
+      background: none;
+      border: 1.5px solid var(--accent);
+      color: var(--accent);
+      padding: 0.5em 1.3em;
+      border-radius: 999px;
+      font-size: 1em;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background var(--transition), color var(--transition);
+      outline: none;
+    }
+    .status-btn.active, .status-btn:focus, .status-btn:hover {
+      background: var(--accent);
+      color: #fff;
+    }
+    /* Pricing */
+    .pricing-toggle {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.7em;
+      margin-bottom: 2em;
+    }
+    .toggle-switch {
+      width: 48px; height: 26px;
+      background: var(--bg-glass-light);
+      border-radius: 999px;
+      position: relative;
+      cursor: pointer;
+      transition: background var(--transition);
+      display: inline-block;
+    }
+    .toggle-switch input {
+      opacity: 0;
+      width: 0; height: 0;
+    }
+    .toggle-slider {
+      position: absolute;
+      top: 3px; left: 3px;
+      width: 20px; height: 20px;
+      background: var(--accent);
+      border-radius: 50%;
+      transition: left var(--transition), background var(--transition);
+    }
+    .toggle-switch input:checked + .toggle-slider {
+      left: 25px;
+      background: var(--status-green);
+    }
+    .pricing-table {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 2em;
+      margin-top: 1.5em;
+    }
+    .pricing-card {
+      background: var(--bg-glass);
+      border-radius: var(--radius);
+      box-shadow: 0 2px 16px 0 #0004;
+      padding: 2em 1.2em 1.5em 1.2em;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+      transition: box-shadow var(--transition), transform 0.18s;
+      cursor: pointer;
+      outline: none;
+      overflow: hidden;
+    }
+    .pricing-card:hover, .pricing-card:focus {
+      box-shadow: 0 4px 32px 0 #ff2d2e33;
+      transform: translateY(-4px) scale(1.03);
+    }
+    .pricing-badge {
+      position: absolute;
+      top: 1.2em; right: 1.2em;
+      background: linear-gradient(90deg, var(--accent), #ff5e62 80%);
+      color: #fff;
+      font-size: 0.95em;
+      font-weight: 700;
+      padding: 0.4em 1.1em;
+      border-radius: 999px;
+      box-shadow: 0 0 12px 0 #ff2d2e44;
+      animation: badgePop 1.2s;
+    }
+    @keyframes badgePop {
+      0% { transform: scale(0.7); opacity: 0;}
+      60% { transform: scale(1.15);}
+      100% { transform: scale(1); opacity: 1;}
+    }
+    .pricing-title {
+      font-size: 1.2em;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 0.5em;
+    }
+    .pricing-price {
+      font-size: 2.1em;
+      font-weight: 800;
+      color: var(--text);
+      margin-bottom: 0.2em;
+    }
+    .pricing-desc {
+      color: var(--text-muted);
+      font-size: 1em;
+      margin-bottom: 1.2em;
+      text-align: center;
+    }
+    .pricing-features {
+      list-style: none;
+      padding: 0;
+      margin: 0 0 1.2em 0;
+      color: var(--text-muted);
+      font-size: 1em;
+      text-align: left;
+      width: 100%;
+    }
+    .pricing-features li {
+      margin-bottom: 0.5em;
+      position: relative;
+      padding-left: 1.3em;
+    }
+    .pricing-features li::before {
+      content: '';
+      position: absolute;
+      left: 0.2em; top: 0.6em;
+      width: 0.7em; height: 0.7em;
+      border-radius: 50%;
+      background: var(--accent);
+      opacity: 0.7;
+    }
+    .pricing-cta {
+      margin-top: 1em;
+      padding: 0.7em 2em;
+      font-size: 1.1em;
+      font-weight: 700;
+      color: #fff;
+      background: linear-gradient(90deg, var(--accent), #ff5e62 80%);
+      border: none;
+      border-radius: 999px;
+      box-shadow: 0 0 16px 0 #ff2d2e44;
+      cursor: pointer;
+      transition: background var(--transition), box-shadow var(--transition), transform 0.18s;
+      outline: none;
+      position: relative;
+      overflow: hidden;
+      z-index: 1;
+    }
+    .pricing-cta:hover, .pricing-cta:focus {
+      background: linear-gradient(90deg, #ff5e62, var(--accent) 80%);
+      box-shadow: 0 0 32px 0 #ff2d2e88;
+      transform: scale(1.04);
+    }
+    /* FAQ */
+    .faq-list {
+      margin-top: 2em;
+      width: 100%;
+      max-width: 700px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .faq-item {
+      background: var(--bg-glass);
+      border-radius: var(--radius);
+      box-shadow: 0 2px 16px 0 #0004;
+      margin-bottom: 1.2em;
+      overflow: hidden;
+      transition: box-shadow var(--transition);
+    }
+    .faq-question {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1.2em 1.5em;
+      font-size: 1.1em;
+      font-weight: 600;
+      color: var(--accent);
+      cursor: pointer;
+      outline: none;
+      background: none;
+      border: none;
+      width: 100%;
+      text-align: left;
+      transition: background var(--transition);
+    }
+    .faq-question:focus, .faq-question:hover {
+      background: var(--bg-glass-light);
+    }
+    .faq-toggle {
+      width: 1.5em; height: 1.5em;
+      display: inline-block;
+      transition: transform var(--transition);
+    }
+    .faq-item.open .faq-toggle {
+      transform: rotate(90deg);
+    }
+    .faq-answer {
+      max-height: 0;
+      overflow: hidden;
+      background: none;
+      color: var(--text-muted);
+      font-size: 1em;
+      padding: 0 1.5em;
+      transition: max-height 0.5s cubic-bezier(.77,0,.18,1), padding 0.5s cubic-bezier(.77,0,.18,1);
+    }
+    .faq-item.open .faq-answer {
+      max-height: 300px;
+      padding: 0.7em 1.5em 1.2em 1.5em;
+    }
+    /* Testimonials */
+    .testimonials-carousel {
+      margin-top: 2em;
+      width: 100%;
+      max-width: 700px;
+      margin-left: auto;
+      margin-right: auto;
+      position: relative;
+      overflow: hidden;
+      min-height: 180px;
+    }
+    .testimonial-card {
+      background: var(--bg-glass);
+      border-radius: var(--radius);
+      box-shadow: 0 2px 16px 0 #0004;
+      padding: 1.5em 1.2em 1.2em 1.2em;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 1em;
+      position: absolute;
+      width: 100%;
+      left: 0; top: 0;
+      opacity: 0;
+      transform: translateX(40px);
+      transition: opacity 0.7s, transform 0.7s;
+      z-index: 1;
+    }
+    .testimonial-card.active {
+      opacity: 1;
+      transform: none;
+      z-index: 2;
+    }
+    .testimonial-author {
+      font-size: 1em;
+      font-weight: 700;
+      color: var(--accent);
+      margin-top: 0.5em;
+    }
+    .testimonial-text {
+      color: var(--text-muted);
+      font-size: 1.05em;
+      line-height: 1.5;
+    }
+    .testimonial-controls {
+      display: flex;
+      gap: 1em;
+      justify-content: center;
+      margin-top: 1.2em;
+    }
+    .testimonial-btn {
+      background: none;
+      border: 1.5px solid var(--accent);
+      color: var(--accent);
+      padding: 0.4em 1.1em;
+      border-radius: 999px;
+      font-size: 1em;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background var(--transition), color var(--transition);
+      outline: none;
+    }
+    .testimonial-btn.active, .testimonial-btn:focus, .testimonial-btn:hover {
+      background: var(--accent);
+      color: #fff;
+    }
+    /* Changelog */
+    .changelog-timeline {
+      margin-top: 2em;
+      position: relative;
+      padding-left: 2.5em;
+      max-width: 700px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .changelog-timeline::before {
+      content: '';
+      position: absolute;
+      left: 1.1em; top: 0; bottom: 0;
+      width: 3px;
+      background: linear-gradient(180deg, var(--accent), #fff0 80%);
+      border-radius: 2px;
+      opacity: 0.5;
+    }
+    .changelog-item {
+      position: relative;
+      margin-bottom: 2.2em;
+      opacity: 0;
+      transform: translateY(30px);
+      transition: opacity 0.7s, transform 0.7s;
+    }
+    .changelog-item.visible {
+      opacity: 1;
+      transform: none;
+    }
+    .changelog-dot {
+      position: absolute;
+      left: -1.1em; top: 0.3em;
+      width: 1.2em; height: 1.2em;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 8px 2px #ff2d2e44;
+      z-index: 2;
+    }
+    .changelog-date {
+      font-size: 0.98em;
+      color: var(--text-muted);
+      margin-bottom: 0.2em;
+    }
+    .changelog-title {
+      font-size: 1.1em;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 0.2em;
+    }
+    .changelog-desc {
+      color: var(--text-muted);
+      font-size: 1em;
+      line-height: 1.5;
+    }
+    /* Contact */
+    .contact-form {
+      margin-top: 2em;
+      width: 100%;
+      max-width: 420px;
+      margin-left: auto;
+      margin-right: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 1.2em;
+    }
+    .contact-input, .contact-textarea {
+      width: 100%;
+      padding: 0.9em 1.1em;
+      border-radius: 10px;
+      border: 1.5px solid var(--bg-glass-light);
+      background: var(--bg-glass);
+      color: var(--text);
+      font-size: 1em;
+      font-family: var(--font-main);
+      transition: border var(--transition), box-shadow var(--transition);
+      outline: none;
+      box-shadow: 0 1px 6px 0 #0002;
+      resize: none;
+    }
+    .contact-input:focus, .contact-textarea:focus {
+      border: 1.5px solid var(--accent);
+      box-shadow: 0 0 12px 0 #ff2d2e33;
+    }
+    .contact-submit {
+      margin-top: 0.5em;
+      padding: 0.8em 2em;
+      font-size: 1.1em;
+      font-weight: 700;
+      color: #fff;
+      background: linear-gradient(90deg, var(--accent), #ff5e62 80%);
+      border: none;
+      border-radius: 999px;
+      box-shadow: 0 0 16px 0 #ff2d2e44;
+      cursor: pointer;
+      transition: background var(--transition), box-shadow var(--transition), transform 0.18s;
+      outline: none;
+      position: relative;
+      overflow: hidden;
+      z-index: 1;
+    }
+    .contact-submit:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+    .contact-submit:hover, .contact-submit:focus {
+      background: linear-gradient(90deg, #ff5e62, var(--accent) 80%);
+      box-shadow: 0 0 32px 0 #ff2d2e88;
+      transform: scale(1.04);
+    }
+    .contact-feedback {
+      margin-top: 0.7em;
+      font-size: 1em;
+      color: var(--status-green);
+      text-align: center;
+      min-height: 1.2em;
+      transition: color var(--transition);
+    }
+    /* Member Area */
+    .member-area {
+      margin-top: 2em;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 320px;
+    }
+    .login-card {
+      background: var(--bg-glass);
+      border-radius: var(--radius);
+      box-shadow: 0 2px 16px 0 #0004;
+      padding: 2.2em 2em 2em 2em;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1.2em;
+      position: relative;
+      min-width: 260px;
+      max-width: 340px;
+      margin: 0 auto;
+      backdrop-filter: var(--glass-blur);
+      -webkit-backdrop-filter: var(--glass-blur);
+      overflow: hidden;
+    }
+    .login-lock {
+      width: 2.5em; height: 2.5em;
+      margin-bottom: 0.5em;
+      animation: lockBounce 1.2s infinite alternate;
+    }
+    @keyframes lockBounce {
+      0% { transform: translateY(0);}
+      100% { transform: translateY(-8px);}
+    }
+    .login-title {
+      font-size: 1.2em;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 0.2em;
+      text-align: center;
+    }
+    .login-desc {
+      color: var(--text-muted);
+      font-size: 1em;
+      text-align: center;
+      margin-bottom: 0.5em;
+    }
+    .coming-soon {
+      margin-top: 1.2em;
+      font-size: 1.1em;
+      color: var(--status-yellow);
+      font-weight: 700;
+      text-align: center;
+      letter-spacing: 0.03em;
+      animation: fadeInUp 1.1s 0.2s forwards;
+    }
+    /* Footer */
+    footer {
+      width: 100vw;
+      padding: 2em 0 1.2em 0;
+      background: rgba(10,10,15,0.92);
+      box-shadow: 0 -2px 16px 0 #0006;
+      backdrop-filter: blur(8px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1.2em;
+      z-index: 10;
+      position: relative;
+    }
+    .footer-socials {
+      display: flex;
+      gap: 1.2em;
+      margin-bottom: 0.5em;
+    }
+    .footer-social {
+      color: var(--text-muted);
+      font-size: 1.5em;
+      transition: color var(--transition), transform 0.18s;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+    }
+    .footer-social:hover, .footer-social:focus {
+      color: var(--accent);
+      transform: scale(1.15);
+    }
+    .footer-copy {
+      color: var(--text-muted);
+      font-size: 0.98em;
+      text-align: center;
+    }
+    .back-to-top {
+      position: fixed;
+      right: 2vw; bottom: 2vw;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 50%;
+      width: 2.8em; height: 2.8em;
+      box-shadow: 0 0 16px 0 #ff2d2e44;
+      font-size: 1.5em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity var(--transition), transform 0.18s;
+      z-index: 100;
+    }
+    .back-to-top.visible{
+      opacity: 1;
+      pointer-events: auto;
+      transform: scale(1.08);
+    }
+    .back-to-top:focus, .back-to-top:hover {
+      background: #fff;
+      color: var(--accent);
+      box-shadow: 0 0 32px 0 #ff2d2e88;
+      transform: scale(1.15);
+    }
+    /* Light mode */
+    body.light {
+      --bg: #f5f6fa;
+      --bg-glass: rgba(255,255,255,0.7);
+      --bg-glass-light: rgba(0,0,0,0.06);
+      --accent: #ff2d2e;
+      --accent-glow: 0 0 12px #ff2d2e88;
+      --text: #181824;
+      --text-muted: #6a6a7a;
+      --shadow: 0 4px 32px 0 #0001, 0 1.5px 8px 0 #ff2d2e11;
+      --glass-blur: blur(12px);
+    }
+    body.light header, body.light footer {
+      background: rgba(255,255,255,0.92);
+      box-shadow: 0 2px 16px 0 #0001;
+    }
+    /* Responsive */
+    @media (max-width: 900px) {
+      .tab-content { max-width: 98vw; }
+      .features-list, .pricing-table { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 600px) {
+      .section { padding: calc(var(--header-height) + 1vw) 0 2vw 0; }
+      .tab-content { padding: 1.2em 0.5em 2em 0.5em; }
+      .login-card { min-width: 0; width: 98vw; }
+    }
+  </style>
+</head>
+<body>
+  <!-- Animated Background Particles -->
+  <div class="bg-particles" aria-hidden="true"></div>
+  <!-- Custom Cursor -->
+  <div class="custom-cursor"></div>
+  <!-- Header -->
+  <header>
+    <div class="logo" tabindex="0" aria-label="venatic.gg Home">
+      <!-- Animated SVG Logo -->
+      <svg id="venaticLogo" viewBox="0 0 48 48" fill="none">
+        <g>
+          <circle cx="24" cy="24" r="22" fill="url(#g1)" opacity="0.18"/>
+          <defs>
+            <radialGradient id="g1" cx="0.5" cy="0.5" r="0.5" fx="0.5" fy="0.5">
+              <stop stop-color="#ff2d2e" />
+              <stop offset="1" stop-color="#0a0a0f" />
+            </radialGradient>
+          </defs>
+          <path id="logoV" d="M10 12 L24 38 L38 12" stroke="#ff2d2e" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" opacity="0"/>
+        </g>
+      </svg>
+      venatic.gg
+    </div>
+    <nav aria-label="Main navigation">
+      <a href="#home" class="nav-link active" data-tab="home" tabindex="0">Home<span class="underline"></span></a>
+      <a href="#features" class="nav-link" data-tab="features" tabindex="0">Features<span class="underline"></span></a>
+      <a href="#status" class="nav-link" data-tab="status" tabindex="0">Status<span class="underline"></span></a>
+      <a href="#pricing" class="nav-link" data-tab="pricing" tabindex="0">Pricing<span class="underline"></span></a>
+      <a href="#faq" class="nav-link" data-tab="faq" tabindex="0">FAQ<span class="underline"></span></a>
+      <a href="#testimonials" class="nav-link" data-tab="testimonials" tabindex="0">Testimonials<span class="underline"></span></a>
+      <a href="#contact" class="nav-link" data-tab="contact" tabindex="0">Contact<span class="underline"></span></a>
+      <a href="#member" class="nav-link" data-tab="member" tabindex="0">Member Area<span class="underline"></span></a>
+      <button class="mode-toggle" id="modeToggle" aria-label="Toggle dark/light mode" tabindex="0">
+      </button>
+    </nav>
+  </header>
+  <!-- Main Sections -->
+  <main>
+    <!-- Home -->
+    <section class="section" id="home" data-tab-content="home" style="display:block;">
+      <div class="hero">
+        <h1 class="hero-title">venatic.gg</h1>
+        <div class="hero-tagline">Tactical enhancement &amp; live companion for Rainbow Six Siege.</div>
+        <button class="cta-btn" onclick="scrollToTab('features')">Explore Features</button>
+      </div>
+    </section>
+    <!-- Features -->
+    <section class="section" id="features" data-tab-content="features" style="display:none;">
+      <div class="tab-content">
+        <h2 class="section-title">Features</h2>
+        <div class="features-list">
+          <div class="feature-card" tabindex="0">
+            <svg class="feature-icon" viewBox="0 0 32 32"><circle cx="16" cy="16" r="13" stroke="#ff2d2e" stroke-width="2" fill="none"/><path d="M16 8v8l6 4" stroke="#ff2d2e" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
+            <div class="feature-title">AI Aimbot</div>
+            <div class="feature-desc">Real time AI scanning for enemy player's to automatically lock on to along with custom key binding.</div>
+            <div class="feature-status"><span class="status-indicator"></span> <span>Operational</span></div>
+            <div class="feature-tooltip">Get up-to-the-second info on your match, including operator picks, map callouts, and round-by-round breakdowns.</div>
+          </div>
+          <div class="feature-card" tabindex="0">
+            <svg class="feature-icon" viewBox="0 0 32 32"><rect x="6" y="10" width="20" height="12" rx="4" stroke="#ff2d2e" stroke-width="2" fill="none"/><circle cx="16" cy="16" r="3" stroke="#ff2d2e" stroke-width="2" fill="none"/></svg>
+            <div class="feature-title">Visuals</div>
+            <div class="feature-desc">Cutsom FOV Circle's, Custom Crosshair's, AI enemy detection ESP (beta)</div>
+            <div class="feature-status"><span class="status-indicator limited"></span> <span>Limited</span></div>
+            <div class="feature-tooltip">Overlay key tactical data on your screen, including timers, callouts, and team status. Customizable for your playstyle.</div>
+          </div>
+          <div class="feature-card" tabindex="0">
+            <svg class="feature-icon" viewBox="0 0 32 32"><path d="M8 24V8h16v16z" stroke="#ff2d2e" stroke-width="2" fill="none"/><path d="M12 12h8v8h-8z" stroke="#ff2d2e" stroke-width="2" fill="none"/></svg>
+            <div class="feature-title">Settings</div>
+            <div class="feature-desc">Allows you to customize the UI to your liking as well as enable stream proof to hide the UI from videos, screenshares, etc.</div>
+            <div class="feature-status"><span class="status-indicator"></span> <span>Operational</span></div>
+            <div class="feature-tooltip">Browse expert guides, loadouts, and counter-strategies for every operator in Siege, updated with every patch.</div>
+          </div>
+          <div class="feature-card" tabindex="0">
+            <svg class="feature-icon" viewBox="0 0 32 32"><path d="M16 6v20M6 16h20" stroke="#ff2d2e" stroke-width="2" fill="none"/></svg>
+            <div class="feature-title">100% Satisfaction Guaranteed</div>
+            <div class="feature-status"><span class="status-indicator offline"></span> <span>Offline</span></div>
+            <div class="feature-tooltip">Build the perfect squad with synergy and counter-pick suggestions. Coming back soon!</div>
+          </div>
+        </div>
+      </div>
+    </section>
+    <!-- Status -->
+    <section class="section" id="status" data-tab-content="status" style="display:none;">
+      <div class="tab-content">
+        <h2 class="section-title">Platform Status</h2>
+        <div class="status-main">
+          <div class="status-pulse" id="mainStatusPulse"></div>
+          <div class="status-label" id="mainStatusLabel">Operational</div>
+          <div class="status-desc" id="mainStatusDesc">All systems are running smoothly. Enjoy your tactical edge!</div>
+          <div class="status-controls" aria-label="Change status (mock)">
+            <button class="status-btn active" data-status="operational">Operational</button>
+            <button class="status-btn" data-status="limited">Limited</button>
+            <button class="status-btn" data-status="offline">Offline</button>
+          </div>
+        </div>
+      </div>
+    </section>
+    <!-- Pricing -->
+    <section class="section" id="pricing" data-tab-content="pricing" style="display:none;">
+      <div class="tab-content">
+        <h2 class="section-title">Pricing</h2>
+        <div class="pricing-toggle" aria-label="Toggle pricing plan">
+          <span>Monthly</span>
+          <label class="toggle-switch">
+            <input type="checkbox" id="pricingToggle" aria-label="Toggle yearly pricing">
+            <span class="toggle-slider"></span>
+          </label>
+          <span>Yearly</span>
+        </div>
+        <div class="pricing-table">
+          <div class="pricing-card">
+            <div class="pricing-badge">Most Popular</div>
+            <div class="pricing-title">basic</div>
+            <div class="pricing-price" data-monthly="7.99" data-yearly="79.99">$7.99</div>
+            <div class="pricing-desc">Basic version of venatic.gg</div>
+            <ul class="pricing-features">
+              <li>1 Free HWID Reset</li>
+              <li>Complete access to venatic.gg and all it's features</li>
+              <li>Key that last's for one month</li>
+              <li>Slower Support Assistance through Discord</li>
+            </ul>
+            <button class="pricing-cta">Start Pro</button>
+          </div>
+          <div class="pricing-card">
+            <div class="pricing-title">elite</div>
+            <div class="pricing-price" data-monthly="14.99" data-yearly="139.99">$14.99</div>
+            <div class="pricing-desc">Elite version of venatic.gg</div>
+            <ul class="pricing-features">
+              <li>All Monthly features</li>
+              <li>Early release to updates</li>
+              <li>Reseller access</li>
+              <li>Lifetime + Faster Support</li>
+              <li>10+ Free HWID Reset's</li>
+            </ul>
+            <button class="pricing-cta">Contact Sales</button>
+          </div>
+        </div>
+      </div>
+    </section>
+    <!-- FAQ -->
+    <section class="section" id="faq" data-tab-content="faq" style="display:none;">
+      <div class="tab-content">
+        <h2 class="section-title">FAQ</h2>
+        <div class="faq-list" id="faqList">
+          <div class="faq-item">
+            <button class="faq-question" aria-expanded="false">
+              What is venatic.gg?
+              <span class="faq-toggle">
+                <svg width="20" height="20" viewBox="0 0 20 20"><polyline points="6 8 10 12 14 8" fill="none" stroke="#ff2d2e" stroke-width="2" stroke-linecap="round"/></svg>
+              </span>
+            </button>
+            <div class="faq-answer">venatic.gg is a tactical enhancement and live companion tool for Rainbow Six Siege, designed to give players a competitive edge with real-time data, overlays, and more.</div>
+          </div>
+          <div class="faq-item">
+            <button class="faq-question" aria-expanded="false">
+              Is venatic.gg allowed in ranked play?
+              <span class="faq-toggle">
+                <svg width="20" height="20" viewBox="0 0 20 20"><polyline points="6 8 10 12 14 8" fill="none" stroke="#ff2d2e" stroke-width="2" stroke-linecap="round"/></svg>
+              </span>
+            </button>
+            <div class="faq-answer">venatic.gg is designed to comply with Siege's terms of service and does not provide cheats or unfair advantages. Always check the latest Ubisoft guidelines.</div>
+          </div>
+          <div class="faq-item">
+            <button class="faq-question" aria-expanded="false">
+              How do I get started?
+              <span class="faq-toggle">
+                <svg width="20" height="20" viewBox="0 0 20 20"><polyline points="6 8 10 12 14 8" fill="none" stroke="#ff2d2e" stroke-width="2" stroke-linecap="round"/></svg>
+              </span>
+            </button>
+            <div class="faq-answer">Sign up for a free account, download the client, and follow the quickstart guide in the member area (coming soon!).</div>
+          </div>
+          <div class="faq-item">
+            <button class="faq-question" aria-expanded="false">
+              Is my data safe?
+              <span class="faq-toggle">
+                <svg width="20" height="20" viewBox="0 0 20 20"><polyline points="6 8 10 12 14 8" fill="none" stroke="#ff2d2e" stroke-width="2" stroke-linecap="round"/></svg>
+              </span>
+            </button>
+            <div class="faq-answer">We use industry-standard encryption and never share your data. See our privacy policy for details.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+    <!-- Testimonials -->
+    <section class="section" id="testimonials" data-tab-content="testimonials" style="display:none;">
+      <div class="tab-content">
+        <h2 class="section-title">Testimonials</h2>
+        <div class="testimonials-carousel" id="testimonialsCarousel">
+          <div class="testimonial-card active">
+            <div class="testimonial-text">“Really good external for it being mainly AI based reached top 340 champ in under a week havent gotten manual banned or anti cheat banned.”</div>
+            <div class="testimonial-author">— kiaz5665</div>
+          </div>
+          <div class="testimonial-card">
+            <div class="testimonial-text">“Best cheat I've ever purchased been using it for about a week and no issues everything works great.”</div>
+            <div class="testimonial-author">— realmadridc.f.9086</div>
+          </div>
+          <div class="testimonial-card">
+            <div class="testimonial-text">“Finally, a Siege external worth buying where every feature actually work's as intended. 10/10.”</div>
+            <div class="testimonial-author">— noobuus17671</div>
+          </div>
+        </div>
+        <div class="testimonial-controls">
+          <button class="testimonial-btn active" data-index="0" aria-label="Show testimonial 1"></button>
+          <button class="testimonial-btn" data-index="1" aria-label="Show testimonial 2"></button>
+          <button class="testimonial-btn" data-index="2" aria-label="Show testimonial 3"></button>
+        </div>
+      </div>
+    </section>
+    <!-- Contact -->
+    <section class="section" id="contact" data-tab-content="contact" style="display:none;">
+      <div class="tab-content">
+        <h2 class="section-title">Contact</h2>
+        <form class="contact-form" id="contactForm" autocomplete="off" novalidate>
+          <input class="contact-input" type="text" name="name" id="contactName" placeholder="Your Name" required aria-label="Your Name" />
+          <input class="contact-input" type="email" name="email" id="contactEmail" placeholder="Your Email" required aria-label="Your Email" />
+          <textarea class="contact-textarea" name="message" id="contactMessage" rows="4" placeholder="Your Message" required aria-label="Your Message"></textarea>
+          <button class="contact-submit" type="submit" id="contactSubmit">Send Message</button>
+          <div class="contact-feedback" id="contactFeedback"></div>
+        </form>
+      </div>
+    </section>
+    <!-- Member Area -->
+    <section class="section" id="member" data-tab-content="member" style="display:none;">
+      <div class="tab-content">
+        <h2 class="section-title">Member Area</h2>
+        <div class="member-area">
+          <div class="login-card glass" aria-label="Member login area (mockup)">
+            <svg class="login-lock" viewBox="0 0 32 32">
+              <rect x="8" y="14" width="16" height="10" rx="4" fill="none" stroke="#ff2d2e" stroke-width="2"/>
+              <path d="M16 20v2" stroke="#ff2d2e" stroke-width="2" stroke-linecap="round"/>
+              <path d="M12 14v-3a4 4 0 0 1 8 0v3" stroke="#ff2d2e" stroke-width="2" fill="none"/>
+            </svg>
+            <div class="login-title">Secure Login</div>
+            <div class="login-desc">Sign in to download the client and access premium features.</div>
+            <div class="coming-soon">Coming Soon</div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+  <!-- Footer -->
+  <footer>
+    <div class="footer-socials">
+      <a href="https://twitter.com/" class="footer-social" aria-label="Twitter" target="_blank" rel="noopener">
+        <svg width="24" height="24" fill="none"><path d="M22 5.92a8.38 8.38 0 0 1-2.36.65A4.13 4.13 0 0 0 21.4 4.1a8.19 8.19 0 0 1-2.6 1A4.1 4.1 0 0 0 11.5 8.1a11.65 11.65 0 0 1-8.45-4.3a4.1 4.1 0 0 0 1.27 5.47A4.07 4.07 0 0 1 2 8.15v.05a4.1 4.1 0 0 0 3.29 4.02a4.09 4.09 0 0 1-1.85.07a4.1 4.1 0 0 0 3.83 2.85A8.23 8.23 0 0 1 2 19.54a11.62 11.62 0 0 0 6.29 1.84c7.55 0 11.68-6.26 11.68-11.68c0-.18-.01-.36-.02-.54A8.18 8.18 0 0 0 22 5.92z" fill="currentColor"/></svg>
+      </a>
+      <a href="https://discord.com/" class="footer-social" aria-label="Discord" target="_blank" rel="noopener">
+        <svg width="24" height="24" fill="none"><path d="M20.317 4.369A19.791 19.791 0 0 0 16.885 3.2a.074.074 0 0 0-.078.037c-.34.607-.719 1.396-.984 2.02a18.267 18.267 0 0 0-5.646 0a12.51 12.51 0 0 0-.997-2.02a.077.077 0 0 0-.078-.037a19.736 19.736 0 0 0-3.432 1.17a.07.07 0 0 0-.032.027C2.533 8.06 1.7 11.58 2.01 15.057a.08.08 0 0 0 .028.055a19.963 19.963 0 0 0 5.995 3.04a.077.077 0 0 0 .084-.027c.462-.634.875-1.304 1.226-2.01a.076.076 0 0 0-.041-.104a13.1 13.1 0 0 1-1.872-.89a.077.077 0 0 1-.008-.127c.126-.095.252-.194.372-.295a.074.074 0 0 1 .077-.01c3.927 1.8 8.18 1.8 12.062 0a.074.074 0 0 1 .078.01c.12.101.246.2.372.295a.077.077 0 0 1-.007.127a12.6 12.6 0 0 1-1.873.89a.076.076 0 0 0-.04.104c.36.705.773 1.375 1.226 2.01a.076.076 0 0 0 .084.027a19.934 19.934 0 0 0 6.002-3.04a.077.077 0 0 0 .028-.055c.5-5.177-.838-8.662-3.65-10.661a.06.06 0 0 0-.032-.027zM8.02 14.13c-1.18 0-2.155-1.085-2.155-2.419c0-1.333.955-2.418 2.155-2.418c1.21 0 2.175 1.095 2.155 2.418c0 1.334-.955 2.419-2.155 2.419zm7.96 0c-1.18 0-2.155-1.085-2.155-2.419c0-1.333.955-2.418 2.155-2.418c1.21 0 2.175 1.095 2.155 2.418c0 1.334-.955 2.419-2.155 2.419z" fill="currentColor"/></svg>
+      </a>
+      <a href="mailto:info@venatic.gg" class="footer-social" aria-label="Email">
+        <svg width="24" height="24" fill="none"><rect x="3" y="5" width="18" height="14" rx="3" stroke="currentColor" stroke-width="2"/><path d="M3 7l9 6l9-6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      </a>
+    </div>
+    <div class="footer-copy">&copy; 2024 venatic.gg. All rights reserved.</div>
+    <button class="back-to-top" id="backToTop" aria-label="Back to top">
+      <svg width="24" height="24" fill="none"><path d="M12 18V6M6 12l6-6 6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    </button>
+  </footer>
+  <!-- Legal Disclaimer Modal -->
+  <div id="legalModal" style="display:none;position:fixed;z-index:99999;inset:0;backdrop-filter:blur(8px);background:rgba(10,10,15,0.92);align-items:center;justify-content:center;">
+    <div class="glass" style="max-width:420px;margin:auto;padding:2.2em 2em 2em 2em;display:flex;flex-direction:column;align-items:center;gap:1.2em;box-shadow:0 2px 32px 0 #000a;">
+      <svg width="48" height="48" fill="none"><rect x="12" y="20" width="24" height="16" rx="6" fill="none" stroke="#ff2d2e" stroke-width="2"/><path d="M24 28v4" stroke="#ff2d2e" stroke-width="2" stroke-linecap="round"/><path d="M16 20v-5a8 8 0 0 1 16 0v5" stroke="#ff2d2e" stroke-width="2" fill="none"/></svg>
+      <div style="font-size:1.2em;font-weight:700;color:var(--accent);margin-bottom:0.2em;text-align:center;">Legal Disclaimer</div>
+      <div style="color:var(--text-muted);font-size:1em;text-align:center;">By using venatic.gg, you agree to our Terms of Service and Privacy Policy. This platform is a companion tool and does not provide cheats or violate game rules. Always comply with Rainbow Six Siege's terms.</div>
+      <button id="acceptLegal" class="cta-btn" style="margin-top:1em;">Accept &amp; Continue</button>
+    </div>
+  </div>
+  <script>
+    // Animated SVG Logo
+    window.addEventListener('DOMContentLoaded', () => {
+      const logoV = document.getElementById('logoV');
+      logoV.style.opacity = 0;
+      setTimeout(() => {
+        logoV.animate([
+          { strokeDasharray: 0, strokeDashoffset: 0, opacity: 0 },
+          { strokeDasharray: 80, strokeDashoffset: 80, opacity: 1 },
+          { strokeDasharray: 80, strokeDashoffset: 0, opacity: 1 }
+        ], { duration: 1200, fill: 'forwards', easing: 'cubic-bezier(.77,0,.18,1)' });
+        logoV.style.opacity = 1;
+      }, 200);
+    });
+
+    // Animated background particles
+    function createParticles() {
+      const bg = document.querySelector('.bg-particles');
+      for (let i = 0; i < 18; i++) {
+        const p = document.createElement('div');
+        p.className = 'bg-particle';
+        p.style.width = `${24 + Math.random()*60}px`;
+        p.style.height = p.style.width;
+        p.style.left = `${Math.random()*100}%`;
+        p.style.top = `${Math.random()*100}%`;
+        p.style.animationDuration = `${10 + Math.random()*8}s`;
+        p.style.opacity = 0.08 + Math.random()*0.12;
+        bg.appendChild(p);
+      }
+    }
+    createParticles();
+
+    // Custom cursor
+    const cursor = document.querySelector('.custom-cursor');
+    document.addEventListener('mousemove', e => {
+      cursor.style.left = (e.clientX - 16) + 'px';
+      cursor.style.top = (e.clientY - 16) + 'px';
+    });
+    document.addEventListener('mousedown', () => cursor.classList.add('active'));
+    document.addEventListener('mouseup', () => cursor.classList.remove('active'));
+    document.querySelectorAll('button, a, input, textarea, .feature-card, .faq-question').forEach(el => {
+      el.addEventListener('mouseenter', () => cursor.classList.add('active'));
+      el.addEventListener('mouseleave', () => cursor.classList.remove('active'));
+    });
+
+    // Tab navigation
+    function showTab(tab) {
+      document.querySelectorAll('[data-tab-content]').forEach(sec => sec.style.display = 'none');
+      document.querySelector(`[data-tab-content="${tab}"]`).style.display = 'block';
+      document.querySelectorAll('.nav-link').forEach(link => link.classList.remove('active'));
+      document.querySelector(`.nav-link[data-tab="${tab}"]`).classList.add('active');
+      window.location.hash = tab;
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      // Animate features on tab switch
+      if(tab === 'features') animateFeatures();
+      if(tab === 'changelog') animateChangelog();
+    }
+    document.querySelectorAll('.nav-link').forEach(link => {
+      link.addEventListener('click', e => {
+        e.preventDefault();
+        showTab(link.dataset.tab);
+      });
+      link.addEventListener('keydown', e => {
+        if(e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          showTab(link.dataset.tab);
+        }
+      });
+    });
+    function scrollToTab(tab) {
+      showTab(tab);
+      setTimeout(() => {
+        document.getElementById(tab).scrollIntoView({ behavior: 'smooth' });
+      }, 100);
+    }
+    // On load, show tab from hash
+    if(window.location.hash) {
+      const tab = window.location.hash.replace('#','');
+      if(document.querySelector(`[data-tab-content="${tab}"]`)) showTab(tab);
+    }
+
+    // Animate features on scroll/tab
+    function animateFeatures() {
+      document.querySelectorAll('.feature-card').forEach((card, i) => {
+        setTimeout(() => card.classList.add('visible'), 200 + i*120);
+      });
+    }
+    // Animate changelog
+    function animateChangelog() {
+      document.querySelectorAll('.changelog-item').forEach((item, i) => {
+        setTimeout(() => item.classList.add('visible'), 200 + i*180);
+      });
+    }
+
+    // Status section: animated status indicator
+    const statusPulse = document.getElementById('mainStatusPulse');
+    const statusLabel = document.getElementById('mainStatusLabel');
+    const statusDesc = document.getElementById('mainStatusDesc');
+    const statusBtns = document.querySelectorAll('.status-btn');
+    const statusStates = {
+      operational: {
+        label: 'Operational',
+        desc: 'All systems are running smoothly. Enjoy your tactical edge!',
+        class: ''
+      },
+      limited: {
+        label: 'Limited',
+        desc: 'Some features may be temporarily unavailable. Check changelog for updates.',
+        class: 'limited'
+      },
+      offline: {
+        label: 'Offline',
+        desc: 'Platform is currently offline for maintenance. Please check back soon.',
+        class: 'offline'
+      }
+    };
+    statusBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        statusBtns.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        const state = btn.dataset.status;
+        statusPulse.className = 'status-pulse ' + statusStates[state].class;
+        statusLabel.textContent = statusStates[state].label;
+        statusDesc.textContent = statusStates[state].desc;
+      });
+    });
+
+    // Pricing toggle
+    const pricingToggle = document.getElementById('pricingToggle');
+    pricingToggle.addEventListener('change', () => {
+      document.querySelectorAll('.pricing-price').forEach(el => {
+        const price = pricingToggle.checked ? el.dataset.yearly : el.dataset.monthly;
+        el.textContent = price == 0 ? '$0' : `$${price}`;
+      });
+    });
+
+    // FAQ accordion
+    document.querySelectorAll('.faq-question').forEach((btn, idx) => {
+      btn.addEventListener('click', () => {
+        const item = btn.closest('.faq-item');
+        const open = item.classList.contains('open');
+        document.querySelectorAll('.faq-item').forEach(i => {
+          i.classList.remove('open');
+          i.querySelector('.faq-question').setAttribute('aria-expanded', 'false');
+        });
+        if(!open) {
+          item.classList.add('open');
+          btn.setAttribute('aria-expanded', 'true');
+        }
+      });
+      btn.addEventListener('keydown', e => {
+        if(e.key === 'Enter' || e.key === ' ') btn.click();
+      });
+    });
+
+    // Testimonials carousel
+    const testimonials = document.querySelectorAll('.testimonial-card');
+    const testimonialBtns = document.querySelectorAll('.testimonial-btn');
+    let testimonialIdx = 0;
+    function showTestimonial(idx) {
+      testimonials.forEach((t,i) => t.classList.toggle('active', i===idx));
+      testimonialBtns.forEach((b,i) => b.classList.toggle('active', i===idx));
+      testimonialIdx = idx;
+    }
+    testimonialBtns.forEach((btn, i) => {
+      btn.addEventListener('click', () => showTestimonial(i));
+      btn.addEventListener('keydown', e => {
+        if(e.key === 'Enter' || e.key === ' ') showTestimonial(i);
+      });
+    });
+    setInterval(() => showTestimonial((testimonialIdx+1)%testimonials.length), 7000);
+
+    // Back to top button
+    const backToTop = document.getElementById('backToTop');
+    window.addEventListener('scroll', () => {
+      if(window.scrollY > 200) backToTop.classList.add('visible');
+      else backToTop.classList.remove('visible');
+    });
+    backToTop.addEventListener('click', () => window.scrollTo({top:0,behavior:'smooth'}));
+
+    const contactForm = document.getElementById('contactForm');
+    const contactFeedback = document.getElementById('contactFeedback');
+    contactForm.addEventListener('submit', e => {
+      e.preventDefault();
+      const name = contactForm.name.value.trim();
+      const email = contactForm.email.value.trim();
+      const message = contactForm.message.value.trim();
+      if (!name || !email || !message || !/^[^@]+@[^@]+\.[^@]+$/.test(email)) {
+        contactFeedback.textContent = "Please fill out all fields with a valid email.";
+        contactFeedback.style.color = "var(--status-red)";
+        return;
+      }
+      contactFeedback.textContent = "Sending...";
+      contactFeedback.style.color = "var(--accent)";
+      contactForm.querySelector('.contact-submit').disabled = true;
+      setTimeout(() => {
+        contactFeedback.textContent = "Message sent! We'll get back to you soon.";
+        contactFeedback.style.color = "var(--status-green)";
+        contactForm.reset();
+        contactForm.querySelector('.contact-submit').disabled = false;
+      }, 1200);
+    });
+
+    function showLegalModalIfNeeded() {
+      const legalAccepted = localStorage.getItem('venaticLegalAccepted');
+      if (!legalAccepted) {
+        document.getElementById('legalModal').style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+      }
+    }
+    document.getElementById('acceptLegal').addEventListener('click', () => {
+      localStorage.setItem('venaticLegalAccepted', '1');
+      document.getElementById('legalModal').style.display = 'none';
+      document.body.style.overflow = '';
+    });
+    // Show modal before accessing certain sections
+    document.querySelectorAll('.nav-link').forEach(link => {
+      link.addEventListener('click', e => {
+        const tab = link.dataset.tab;
+        if (['features','status','pricing','faq','testimonials','changelog','contact','member'].includes(tab)) {
+          if (!localStorage.getItem('venaticLegalAccepted')) {
+            e.preventDefault();
+            showLegalModalIfNeeded();
+          }
+        }
+      });
+    });
+    showLegalModalIfNeeded();
+
+    // Accessibility: keyboard navigation for tabs
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Tab') {
+        document.body.classList.add('user-is-tabbing');
+      }
+    });
+
+    // Accessibility: focus visible
+    document.body.addEventListener('mousedown', () => {
+      document.body.classList.remove('user-is-tabbing');
+    });
+
+    // Animate features and changelog on first load if visible
+    if (document.querySelector('[data-tab-content="features"]').style.display === 'block') animateFeatures();
+    if (document.querySelector('[data-tab-content="changelog"]').style.display === 'block') animateChangelog();
+
+    // Ensure all tooltips are accessible
+    document.querySelectorAll('.feature-card').forEach(card => {
+      card.addEventListener('focus', () => card.classList.add('visible'));
+      card.addEventListener('blur', () => card.classList.remove('visible'));
+    });
+
+    // SEO: scroll to hash on load
+    window.addEventListener('load', () => {
+      if (window.location.hash) {
+        const tab = window.location.hash.replace('#','');
+        if (document.getElementById(tab)) {
+          document.getElementById(tab).scrollIntoView({behavior:'smooth'});
+        }
+      }
+    });
+  </script>
+</body>
+</html>
