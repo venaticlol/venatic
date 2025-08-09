@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -456,33 +455,9 @@
       color: #fff;
     }
     /* Pricing */
-    .pricing-toggle {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0.7em;
-      margin-bottom: 2em;
-    }
-    .toggle-switch {
-      width: 48px; height: 26px;
-      background: var(--bg-glass-light);
-      border-radius: 999px;
-      position: relative;
-      cursor: pointer;
-      transition: background var(--transition);
-      display: inline-block;
-    }
     .toggle-switch input {
       opacity: 0;
       width: 0; height: 0;
-    }
-    .toggle-slider {
-      position: absolute;
-      top: 3px; left: 3px;
-      width: 20px; height: 20px;
-      background: var(--accent);
-      border-radius: 50%;
-      transition: left var(--transition), background var(--transition);
     }
     .toggle-switch input:checked + .toggle-slider {
       left: 25px;
@@ -1083,39 +1058,30 @@
       <div class="tab-content">
         <h2 class="section-title">Pricing</h2>
         <div class="pricing-toggle" aria-label="Toggle pricing plan">
-          <span>Monthly</span>
+          <span></span>
           <label class="toggle-switch">
             <input type="checkbox" id="pricingToggle" aria-label="Toggle yearly pricing">
             <span class="toggle-slider"></span>
           </label>
-          <span>Yearly</span>
+          <span></span>
         </div>
         <div class="pricing-table">
           <div class="pricing-card">
             <div class="pricing-badge">Most Popular</div>
             <div class="pricing-title">basic</div>
             <div class="pricing-price" data-monthly="7.99" data-yearly="79.99">$7.99</div>
-            <div class="pricing-desc">Basic version of venatic.cc</div>
+            <div class="pricing-desc"></div>
             <ul class="pricing-features">
-              <li>1 Free HWID Reset</li>
-              <li>Complete access to venatic.cc and all it's features</li>
-              <li>Key that last's for one month</li>
-              <li>Slower Support Assistance through Discord</li>
             </ul>
-          <button class="pricing-cta" onclick="window.location.href='/purchase'">Start Basic</button>
+          <button class="pricing-cta" onclick="window.location.href='/purchase'">Purchase Redirect</button>
           </div>
           <div class="pricing-card">
             <div class="pricing-title">elite</div>
             <div class="pricing-price" data-monthly="14.99" data-yearly="139.99">$14.99</div>
-            <div class="pricing-desc">Elite version of venatic.cc</div>
+            <div class="pricing-desc"></div>
             <ul class="pricing-features">
-              <li>All Monthly features</li>
-              <li>Early release to updates</li>
-              <li>Reseller access</li>
-              <li>Lifetime + Faster Support</li>
-              <li>10+ Free HWID Reset's</li>
             </ul>
-          <button class="pricing-cta" onclick="window.location.href='/purchase?plan=elite'">Go Elite</button>
+          <button class="pricing-cta" onclick="window.location.href='/purchase?plan=elite'">Purchase Redirect</button>
           </div>
         </div>
       </div>
