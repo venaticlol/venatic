@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Venatic — Payments</title>
+  <meta name="description" content="Red/black animated payment page for Venatic with Cash App and PayPal options." />
+  <meta name="theme-color" content="#0a0a0a" />
+
+  <style>
+    :root{
+      /* Core palette — black & red cyber */
+      --bg:#0a0a0a;
+      --bg-2:#111;
+      --glass:rgba(255,255,255,0.06);
+      --border:rgba(255,255,255,0.12);
+      --text:#f3f4f6;
+      --muted:#b9bcc6;
+
+      --red:#ff2a2a;
+      --red-2:#ff3d57;
+      --red-3:#ff6b6b;
+      --crimson:#d10f36;
+
+      --accent:#ff2a2a;        /* primary neon red */
+      --accent-2:#ff3d57;      /* secondary */
+      --accent-3:#ff6b6b;      /* warm highlight */
+
+      --good:#1dd1a1;
+      --warn:#ffcc66;
+      --danger:#ff5252;
+
+      --shadow:0 12px 50px rgba(0,0,0,0.5);
+      --radius:18px;
+      --radius-lg:26px;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body{
+      margin:0;
+      background:
+        radial-gradient(1200px 700px at 75% -10%, rgba(255,42,42,0.18), transparent 60%),
+        radial-gradient(1000px 700px at 10% 90%, rgba(255,61,87,0.14), transparent 60%),
+        linear-gradient(180deg, #090909 0%, #0b0b0b 100%);
+      color:var(--text);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+      overflow-x:hidden;
+    }
+
+    /* Moving neon aura */
+    .aura {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background:
+        radial-gradient(600px 520px at var(--x,50%) var(--y,50%), rgba(255,42,42,0.18), transparent 60%),
+        radial-gradient(540px 480px at calc(100% - var(--x,50%)) calc(100% - var(--y,50%)), rgba(255,61,87,0.16), transparent 60%);
+      mix-blend-mode: screen;
+      transition: background 0.06s linear;
+      z-index: 0;
+    }
+
+    header{
+      position: relative;
+      z-index: 1;
+      padding: 28px 22px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      max-width:1200px;
+      margin:0 auto;
+    }
+    .brand{
+      display:flex;align-items:center;gap:14px;
+      text-decoration:none;color:var(--text);
+    }
+    .logo{
+      width:46px;height:46px;border-radius:12px;
+      background: conic-gradient(from 180deg at 50% 50%, #ff2a2a, #ff6b6b, #d10f36, #ff2a2a);
+      position:relative;overflow:hidden;
+      box-shadow: 0 12px 36px rgba(255,42,42,0.35);
+    }
+    .logo::after{
+      content:"";position:absolute;inset:3px;border-radius:10px;background:rgba(10,10,10,0.9);backdrop-filter: blur(6px);
+    }
+    .brand-name{
+      font-weight:900;letter-spacing:0.5px;font-size:1.15rem;
+    }
+    nav a{
+      color:var(--muted);text-decoration:none;margin:0 10px;font-weight:700;
+      padding:10px 14px;border-radius:12px;border:1px solid transparent;
+      transition: all .25s ease;
+    }
+    nav a:hover{ color:var(--text); border-color:var(--border); background:rgba(255,255,255,0.03); }
+
+    .hero{
+      position:relative;z-index:1;max-width:1200px;margin:40px auto 20px;
+      padding:20px 22px;
+      display:grid;grid-template-columns:1.2fr 1fr;gap:24px;
+    }
+    .hero-card{
+      padding:28px;border-radius:var(--radius-lg);
+      background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.03));
+      border:1px solid var(--border);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(10px);
+      position:relative;overflow:hidden;
+    }
+    .hero-card::before{
+      content:"";position:absolute;inset:-2px;border-radius:inherit;
+      padding:1px;background:linear-gradient(135deg, rgba(255,42,42,0.55), rgba(255,61,87,0.45), rgba(255,107,107,0.55));
+      /* Linter + cross-browser: mask and -webkit-mask with composites */
+      mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+      -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+      mask-composite: exclude;
+      -webkit-mask-composite: xor;
+      opacity:0.45;pointer-events:none;
+    }
+    h1{
+      font-size: clamp(2rem, 2vw + 1.5rem, 3rem);
+      line-height:1.1;margin:0 0 12px;font-weight:1000;
+      letter-spacing:0.4px;
+      text-shadow: 0 4px 22px rgba(0,0,0,0.55);
+    }
+    .accent{
+      color:transparent;
+      background: linear-gradient(135deg, var(--accent), var(--accent-3));
+      background-clip:text;
+      -webkit-background-clip:text;
+      -webkit-text-fill-color: transparent;
+    }
+    .sub{ color:var(--muted); margin:0 0 18px; max-width:62ch; }
+    .badges{ display:flex; gap:10px; flex-wrap:wrap; margin-bottom:18px; }
+    .badge{
+      border-radius:999px;border:1px solid var(--border);color:var(--text);
+      padding:8px 12px;background:rgba(255,255,255,0.04);font-weight:800;font-size:0.85rem;
+      display:inline-flex;align-items:center;gap:8px;
+    }
+    .pulse{
+      width:10px;height:10px;border-radius:50%;
+      background:var(--accent);
+      box-shadow: 0 0 0 0 rgba(255,42,42,0.7);
+      animation: pulse 2.3s infinite;
+    }
+    @keyframes pulse{
+      0%{ box-shadow: 0 0 0 0 rgba(255,42,42,0.6); }
+      70%{ box-shadow: 0 0 0 18px rgba(255,42,42,0); }
+      100%{ box-shadow: 0 0 0 0 rgba(255,42,42,0); }
+    }
+
+    .cta-row{ display:flex; gap:12px; flex-wrap:wrap; }
+    .btn{
+      display:inline-flex;align-items:center;gap:10px;
+      border:none;cursor:pointer;
+      border-radius:14px;padding:14px 18px;
+      font-weight:900;letter-spacing:0.35px;
+      transition: transform .15s ease, box-shadow .2s ease, background .2s ease, color .2s ease, filter .2s ease;
+    }
+    .btn:active{ transform: translateY(1px) scale(0.99); }
+    .btn-primary{
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      color:white; box-shadow: 0 12px 30px rgba(255,42,42,0.35);
+      text-shadow: 0 0 18px rgba(255,42,42,0.25);
+    }
+    .btn-primary:hover{ box-shadow: 0 16px 42px rgba(255,42,42,0.45); filter: brightness(1.05); }
+    .btn-ghost{
+      background: rgba(255,255,255,0.05);
+      color:var(--text); border:1px solid var(--border);
+    }
+    .btn-ghost:hover{ background: rgba(255,255,255,0.08); }
+
+    /* Billing toggle */
+    .billing-toggle{
+      position:relative;z-index:1;max-width:1200px;margin:6px auto 10px;padding:0 22px;
+      display:flex;align-items:center;gap:12px;color:var(--muted);
+    }
+    .switch{
+      position:relative;width:62px;height:32px;background:rgba(255,255,255,0.08);border:1px solid var(--border);border-radius:999px;cursor:pointer;
+      display:inline-flex;align-items:center;padding:3px;transition: background .2s ease, border .2s ease, box-shadow .2s ease;
+      box-shadow: inset 0 0 18px rgba(255,42,42,0.05);
+    }
+    .switch input{ display:none; }
+    .knob{
+      width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg, var(--accent), var(--accent-3));
+      transform: translateX(0);transition: transform .22s ease;
+      box-shadow: 0 10px 24px rgba(255,42,42,0.35);
+    }
+    .switch input:checked + .knob{ transform: translateX(28px); }
+    .billing-label{ font-weight:900; color:var(--text); }
+
+    /* Pricing grid */
+    .pricing{
+      position:relative;z-index:1;max-width:1200px;margin:8px auto 90px;padding:0 22px;
+      display:grid;grid-template-columns: repeat(2, 1fr);gap:22px;
+    }
+    .card{
+      background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.03));
+      border:1px solid var(--border);border-radius:var(--radius);
+      padding:22px;box-shadow: var(--shadow);backdrop-filter: blur(10px);
+      position:relative;overflow:hidden; transform: translateY(0); transition: transform .22s ease, box-shadow .22s ease, border-color .22s ease;
+      isolation:isolate;
+    }
+    .card:hover{ transform: translateY(-6px); box-shadow: 0 18px 50px rgba(0,0,0,0.6); border-color: rgba(255,42,42,0.35); }
+    .card .ribbon{
+      position:absolute; top:16px; right:-44px; transform: rotate(35deg);
+      background: linear-gradient(135deg, var(--accent-2), var(--accent));
+      color:white; font-weight:1000; letter-spacing:0.65px; padding:8px 62px;
+      box-shadow: 0 10px 26px rgba(255,61,87,0.35);
+      z-index:2;
+      text-transform:uppercase;
+    }
+    .card-glow{
+      position:absolute; inset:-1px; pointer-events:none; border-radius:inherit;
+      background: radial-gradient(600px 160px at 80% 0%, rgba(255,61,87,0.12), transparent 60%),
+                  radial-gradient(480px 140px at 10% 100%, rgba(255,42,42,0.12), transparent 58%);
+      mix-blend-mode: screen; opacity:0.6;
+    }
+    .card h3{ margin:0; font-weight:1000; letter-spacing:0.5px; }
+
+    .price{
+      font-size:2.1rem; font-weight:1000; margin:14px 0 4px;
+      background: linear-gradient(135deg, #fff, #ffd6d6);
+      background-clip: text;
+      -webkit-background-clip: text;
+      color: transparent;
+      -webkit-text-fill-color: transparent;
+      text-shadow: none;
+    }
+    .price-sub{ color:#ffb3b3; font-weight:800; }
+    .features{ color:var(--muted); margin:12px 0 16px; }
+    .features li{ margin:8px 0; display:flex; align-items:center; gap:10px; }
+    .dot{ width:8px; height:8px; border-radius:50%; background: var(--accent); box-shadow: 0 0 10px rgba(255,42,42,0.75); }
+
+    .pay-btn{
+      width:100%; justify-content:center; margin-top:10px;
+      padding:14px 16px; font-size:1rem;
+      background: linear-gradient(135deg, rgba(255,42,42,0.98), rgba(255,61,87,0.98));
+      color:white; border:none; border-radius:14px; font-weight:1000; cursor:pointer;
+      box-shadow: 0 12px 28px rgba(255,42,42,0.35);
+      transition: transform .15s ease, box-shadow .2s ease, filter .2s ease;
+      text-shadow: 0 0 14px rgba(255,42,42,0.25);
+    }
+    .pay-btn:hover{ transform: translateY(-2px); box-shadow: 0 18px 44px rgba(255,42,42,0.45); filter: brightness(1.05); }
+    .meta{ color:var(--muted); font-size:0.9rem; margin-top:8px; }
+
+    /* Modal */
+    .modal-backdrop{
+      position:fixed; inset:0; background: rgba(8,8,8,0.6);
+      backdrop-filter: blur(8px); opacity:0; visibility:hidden;
+      transition: opacity .22s ease, visibility .22s ease;
+      z-index: 10;
+    }
+    .modal-backdrop.active{ opacity:1; visibility:visible; }
+    .modal{
+      position: fixed; left:50%; top:52%; transform: translate(-50%, -54%) scale(0.98);
+      width:min(960px, calc(100% - 28px));
+      background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.03));
+      border:1px solid var(--border); border-radius:24px; box-shadow: 0 30px 80px rgba(0,0,0,0.6);
+      opacity:0; visibility:hidden; transition: transform .22s ease, opacity .22s ease, visibility .22s ease;
+      z-index: 11; overflow:hidden;
+    }
+    .modal.active{ opacity:1; visibility:visible; transform: translate(-50%, -54%) scale(1); }
+    .modal-header{
+      display:flex; align-items:center; justify-content:space-between; gap:10px;
+      padding:18px 18px; border-bottom:1px solid var(--border);
+      background: linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0));
+    }
+    .modal-title{ font-weight:1000; letter-spacing:0.5px; }
+    .close{ background:transparent; border:none; color:var(--muted); font-size:1.8rem; line-height:1; cursor:pointer; }
+    .modal-body{ display:grid; grid-template-columns: 290px 1fr; min-height:420px; }
+    .side{
+      border-right:1px solid var(--border); padding:16px;
+      display:flex; flex-direction:column; gap:10px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));
+    }
+    .side .section-title{ color:#ffb3b3; font-weight:1000; margin:6px 6px 0; text-transform:uppercase; font-size:.78rem; letter-spacing:1px; }
+    .option{
+      width:100%; text-align:left; border:1px solid var(--border); background: rgba(255,255,255,0.04);
+      color:var(--text); border-radius:14px; padding:12px 14px; cursor:pointer;
+      display:flex; align-items:center; gap:10px; transition: background .2s ease, border .2s ease, box-shadow .2s ease;
+    }
+    .option:hover{ background: rgba(255,255,255,0.07); }
+    .option.active{ border-color: rgba(255,42,42,0.55); box-shadow: 0 0 0 3px rgba(255,42,42,0.18) inset; }
+    .option .subtxt{ color:#ffb3b3; font-size:0.85rem; font-weight:700; }
+    .content{ padding:18px; }
+
+    .pill{
+      display:inline-flex; align-items:center; gap:10px; border:1px solid var(--border);
+      background: rgba(255,255,255,0.04); border-radius:999px; padding:10px 14px; font-weight:1000;
+    }
+    .amount{ font-size:1.15rem; }
+    .grid-2{ display:grid; grid-template-columns: 1.2fr 1fr; gap:16px; }
+    .panel{
+      border:1px solid var(--border); border-radius:16px; padding:14px;
+      background: rgba(255,255,255,0.04);
+    }
+    .panel h3{ margin:0 0 8px; font-size:1rem; }
+    .muted{ color:var(--muted); }
+    .row{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+
+    .field{
+      display:flex; align-items:center; justify-content:space-between; gap:10px;
+      background:rgba(255,255,255,0.04); border:1px solid var(--border);
+      border-radius:12px; padding:10px 12px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    }
+    .field .value{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .copy-btn{
+      border:none; background:linear-gradient(135deg, rgba(255,42,42,0.95), rgba(255,61,87,0.95));
+      color:white; border-radius:10px; padding:8px 10px; cursor:pointer; font-weight:900; box-shadow: 0 10px 22px rgba(255,42,42,0.28);
+      transition: filter .2s ease;
+    }
+    .copy-btn:hover{ filter: brightness(1.07); }
+
+    .qr{
+      display:flex; align-items:center; justify-content:center;
+      border-radius:14px; padding:10px; background:rgba(255,255,255,0.05); border:1px solid var(--border);
+    }
+    .qr img{ width:100%; max-width:220px; height:auto; border-radius:10px; }
+
+    .note{
+      border-left:3px solid var(--accent); padding:10px 12px; background:rgba(255,42,42,0.08);
+      border-radius:10px; font-size:0.95rem;
+    }
+
+    .list{
+      margin:10px 0 0 18px; color:var(--muted);
+    }
+    .list li{ margin:6px 0; }
+
+    footer{
+      position:relative; z-index:1; max-width:1200px; margin:0 auto 80px; padding:0 22px; color:var(--muted);
+      display:flex; align-items:center; justify-content:space-between; gap:10px;
+    }
+
+    @media (max-width: 980px){
+      .hero{ grid-template-columns: 1fr; }
+      .pricing{ grid-template-columns: 1fr; }
+      .modal-body{ grid-template-columns: 1fr; }
+      .side{ border-right:none; border-bottom:1px solid var(--border); }
+      .grid-2{ grid-template-columns: 1fr; }
+    }
+
+    .kbd{
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size:0.85rem; padding:2px 6px; border:1px solid var(--border); border-bottom-width:2px; border-radius:6px; background:rgba(255,255,255,0.04);
+    }
+  </style>
+</head>
+<body>
+  <div class="aura" id="aura"></div>
+
+  <header>
+    <a class="brand" href="#">
+      <div class="brand-name">Venatic</div>
+    </a>
+    <nav>
+      <a href="#pricing">Pricing</a>
+      <a href="#pay">Payments</a>
+      <a href="https://discord.gg/venatic" target="_blank" rel="noopener">Discord</a>
+    </nav>
+  </header>
+
+  <section class="hero">
+    <div class="hero-card">
+      <div class="card-glow"></div>
+      <h1>Direct Payments, <span class="accent">Fast Verification</span></h1>
+      <p class="sub">Choose a plan, pay via Cash App or PayPal, and get verified in our Discord within minutes. Red/black cyber aesthetic, smooth UX, and instant copy helpers included.</p>
+      <div class="badges">
+        <span class="badge"><span class="pulse"></span> Live processing window: <strong>10–15 min</strong></span>
+        <span class="badge">Secure • Transparent • Discord Support</span>
+      </div>
+      <div class="cta-row">
+        <a class="btn btn-primary" href="#pricing">Explore Pricing</a>
+        <a class="btn btn-ghost" href="https://discord.gg/venatic" target="_blank" rel="noopener">Join Discord</a>
+      </div>
+    </div>
+
+    <div class="hero-card">
+      <div class="card-glow"></div>
+      <h2 style="margin-top:0; margin-bottom:8px;">How it works</h2>
+      <ol class="list">
+        <li>Select a plan and click Pay.</li>
+        <li>Choose Cash App or PayPal in the modal.</li>
+        <li>Send the exact amount and keep your proof of payment.</li>
+        <li>Join discord.gg/venatic and create a ticket with your proof.</li>
+      </ol>
+      <div class="note" style="margin-top:12px;">
+        Tip: Use the copy buttons for handles and links. On desktop press <span class="kbd">Ctrl</span> + <span class="kbd">V</span> (or <span class="kbd">Cmd</span> + <span class="kbd">V</span>) to paste.
+      </div>
+    </div>
+  </section>
+
+  <div class="billing-toggle" id="pay">
+    <span class="billing-label">Month</span>
+    <label class="switch">
+      <input type="checkbox" id="yearlyToggle" />
+      <span class="knob"></span>
+    </label>
+    <span class="billing-label">Year (+$13)</span>
+  </div>
+
+  <section id="pricing" class="pricing">
+    <div class="card">
+      <div class="card-glow"></div>
+      <div class="ribbon">Popular</div>
+      <h3>Basic</h3>
+      <div class="price" data-base="7.99" id="price-basic">$7.99</div>
+      <div class="price-sub" id="price-basic-sub">month key</div>
+      <ul class="features">
+        <li><span class="dot"></span> 1 Free HWID Reset</li>
+        <li><span class="dot"></span> Complete access to venatic.gg and all it's features</li>
+        <li><span class="dot"></span> Key that last's for one month</li>
+        <li><span class="dot"></span> Slower Support Assistance through Discord</li>
+      </ul>
+      <button class="pay-btn" data-product="Basic" data-amount="7.99">Pay $7.99</button>
+      <div class="meta">Includes Discord verification guidance.</div>
+    </div>
+
+    <div class="card">
+      <div class="card-glow"></div>
+      <h3>Elite</h3>
+      <div class="price" data-base="14.99" id="price-elite">$14.99</div>
+      <div class="price-sub" id="price-elite-sub">month key</div>
+      <ul class="features">
+        <li><span class="dot"></span> All Monthly features</li>
+        <li><span class="dot"></span> Early release to updates</li>
+        <li><span class="dot"></span> Reseller access</li>
+        <li><span class="dot"></span> Lifetime + Faster Support</li>
+        <li><span class="dot"></span> 10+ Free HWID Reset's</li>
+      </ul>
+      <button class="pay-btn" data-product="Elite" data-amount="14.99">Pay $14.99</button>
+      <div class="meta">Premium experience and support.</div>
+    </div>
+  </section>
+
+  <div class="modal-backdrop" id="backdrop"></div>
+  <div class="modal" id="modal">
+    <div class="modal-header">
+      <div class="modal-title">Complete Payment</div>
+      <button class="close" id="closeBtn" aria-label="Close">×</button>
+    </div>
+
+    <div class="modal-body">
+      <aside class="side">
+        <div class="section-title">Order</div>
+        <div class="pill" id="orderPill">
+          <span id="productName">—</span>
+          <span class="amount" id="productAmount">$0</span>
+        </div>
+
+        <div class="section-title">Method</div>
+        <button class="option active" data-method="cashapp">
+          <img alt="" width="22" height="22" src="https://cdn.jsdelivr.net/gh/simple-icons/simple-icons/icons/cashapp.svg" />
+          <div>
+            <div style="font-weight:900;">Cash App</div>
+            <div class="subtxt">Fastest verification</div>
+          </div>
+        </button>
+        <button class="option" data-method="paypal">
+          <img alt="" width="22" height="22" src="https://cdn.jsdelivr.net/gh/simple-icons/simple-icons/icons/paypal.svg" />
+          <div>
+            <div style="font-weight:900;">PayPal</div>
+            <div class="subtxt">Quick link payment</div>
+          </div>
+        </button>
+      </aside>
+
+      <section class="content">
+        <div class="method" id="cashapp" style="display:block;">
+          <div class="grid-2">
+            <div class="panel">
+              <h3>Cash App handle</h3>
+              <div class="field">
+                <span class="value" id="cashTag">$bloodytomb</span>
+                <button class="copy-btn" data-copy="#cashTag">Copy</button>
+              </div>
+              <div class="note" style="margin-top:10px;">
+                Send exactly the amount for the selected plan. After sending, proceed to Discord to open a ticket with proof.
+              </div>
+              <ul class="list">
+                <li>Proof can be a screenshot of the sent payment or receipt.</li>
+                <li>Include your Discord username in the ticket for faster match.</li>
+              </ul>
+            </div>
+            <div class="panel">
+              <h3>QR Code</h3>
+              <div class="qr">
+                <img alt="Cash App QR" src="https://cdn.discordapp.com/attachments/1402819654891602000/1403510674273079317/IMG_5048.png?ex=6897d0ac&is=68967f2c&hm=1d3c611de4611bed0c848242c25fa35be5c07d63fc39919d8c78a6814cfe95af&" />
+              </div>
+              <div class="row" style="margin-top:10px;">
+                <a class="btn btn-ghost" id="openCashLink" href="https://cash.app/$bloodytomb" target="_blank" rel="noopener">Open Cash App Link</a>
+              </div>
+            </div>
+          </div>
+          <div class="panel" style="margin-top:12px;">
+            <h3>After Payment</h3>
+            <ol class="list">
+              <li>Join discord.gg/venatic</li>
+              <li>Create a ticket and attach proof (receipt or sent screen).</li>
+              <li>Include: your plan name, amount sent, and your Cash App $cashtag.</li>
+            </ol>
+          </div>
+        </div>
+
+        <div class="method" id="paypal" style="display:none;">
+          <div class="grid-2">
+            <div class="panel">
+              <h3>PayPal link</h3>
+              <div class="field">
+                <span class="value" id="paypalLink">https://paypal.me/yuzanbypass</span>
+                <button class="copy-btn" data-copy="#paypalLink">Copy</button>
+              </div>
+              <div class="row" style="margin-top:10px;">
+                <a class="btn btn-primary" href="https://paypal.me/yuzanbypass" target="_blank" rel="noopener">Open PayPal</a>
+              </div>
+              <div class="note" style="margin-top:10px;">
+                Send exactly the plan amount and add a note with your Discord username if possible.
+              </div>
+            </div>
+            <div class="panel">
+              <h3>After Payment</h3>
+              <ol class="list">
+                <li>Save your PayPal payment receipt or confirmation screen.</li>
+                <li>Include: your plan name, amount sent, your PayPal email, and the PayPal transaction ID.</li>
+                <li>Join discord.gg/venatic and create a ticket with the receipt attached.</li>
+              </ol>
+              <div class="row" style="margin-top:10px;">
+                <a class="btn btn-ghost" href="https://discord.gg/venatic" target="_blank" rel="noopener">Join Discord</a>
+                <button class="btn btn-ghost" id="copyDiscord2" type="button">Copy discord.gg/venatic</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <footer>
+    <div>© <span id="year"></span> Venatic. All rights reserved.</div>
+  </footer>
+
+  <script>
+    // Dynamic year
+    document.getElementById('year').textContent = new Date().getFullYear();
+
+    // Animated aura follows cursor
+    (function(){
+      const aura = document.getElementById('aura');
+      window.addEventListener('mousemove', (e) => {
+        const x = (e.clientX / window.innerWidth) * 100;
+        const y = (e.clientY / window.innerHeight) * 100;
+        aura.style.setProperty('--x', x + '%');
+        aura.style.setProperty('--y', y + '%');
+      }, { passive: true });
+    })();
+
+    // Billing toggle logic (+$13 when yearly)
+    const yearlyToggle = document.getElementById('yearlyToggle');
+    const priceEls = [
+      { price: document.getElementById('price-basic'), sub: document.getElementById('price-basic-sub'), btn: document.querySelector('.pay-btn[data-product="Basic"]') },
+      { price: document.getElementById('price-elite'), sub: document.getElementById('price-elite-sub'), btn: document.querySelector('.pay-btn[data-product="Elite"]') },
+    ];
+    function formatUSD(n){ return '$' + n.toFixed(2); }
+    function recalcPrices(){
+      const yearly = yearlyToggle.checked;
+      priceEls.forEach(({price, sub, btn}) => {
+        const base = parseFloat(price.getAttribute('data-base'));
+        const current = yearly ? base + 13 : base;
+        price.textContent = formatUSD(current);
+        sub.textContent = yearly ? 'year key (discount applied)' : 'month key';
+        btn.setAttribute('data-amount', current.toFixed(2));
+        btn.textContent = 'Pay ' + formatUSD(current);
+      });
+    }
+    yearlyToggle.addEventListener('change', recalcPrices);
+    recalcPrices();
+
+    // Modal logic
+    const modal = document.getElementById('modal');
+    const backdrop = document.getElementById('backdrop');
+    const closeBtn = document.getElementById('closeBtn');
+    const productNameEl = document.getElementById('productName');
+    const productAmountEl = document.getElementById('productAmount');
+
+    function openModal(product, amount){
+      productNameEl.textContent = product;
+      productAmountEl.textContent = '$' + parseFloat(amount).toFixed(2);
+      backdrop.classList.add('active');
+      modal.classList.add('active');
+    }
+    function closeModal(){
+      backdrop.classList.remove('active');
+      modal.classList.remove('active');
+    }
+
+    document.querySelectorAll('.pay-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const product = btn.getAttribute('data-product');
+        const amount = btn.getAttribute('data-amount');
+        openModal(product, amount);
+      });
+    });
+    closeBtn.addEventListener('click', closeModal);
+    backdrop.addEventListener('click', closeModal);
+    window.addEventListener('keydown', (e) => {
+      if(e.key === 'Escape') closeModal();
+    });
+
+    // Payment method switching (Cash App / PayPal)
+    const methodButtons = Array.from(document.querySelectorAll('.side .option'));
+    const methodViews = {
+      cashapp: document.getElementById('cashapp'),
+      paypal: document.getElementById('paypal')
+    };
+    methodButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        methodButtons.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        const method = btn.getAttribute('data-method');
+        for(const k in methodViews){
+          methodViews[k].style.display = (k === method) ? 'block' : 'none';
+        }
+      });
+    });
+
+    // Copy helpers
+    function copyText(text){
+      navigator.clipboard.writeText(text).catch(()=>{});
+    }
+    document.querySelectorAll('.copy-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const sel = btn.getAttribute('data-copy');
+        const el = document.querySelector(sel);
+        if(el){
+          copyText(el.textContent.trim());
+          const prev = btn.textContent;
+          btn.textContent = 'Copied';
+          setTimeout(()=> btn.textContent = prev, 1200);
+        }
+      });
+    });
+
+    // Discord copy helpers
+    ['copyDiscord','copyDiscord2'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el){
+        el.addEventListener('click', () => {
+          copyText('https://discord.gg/venatic');
+          const prev = el.textContent;
+          el.textContent = 'Copied';
+          setTimeout(()=> el.textContent = prev, 1200);
+        });
+      }
+    });
+
+    // Ensure external links are noopener for security
+    document.querySelectorAll('a[target="_blank"]').forEach(a => {
+      if(!a.rel || !a.rel.includes('noopener')) a.rel = (a.rel ? a.rel + ' ' : '') + 'noopener';
+    });
+  </script>
+</body>
+</html>
