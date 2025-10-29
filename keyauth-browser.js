@@ -67,6 +67,39 @@ class KeyAuth {
         }
     }
 
+    async validateKey(key) {
+        // Ensure initialized
+        if (!this.initialized) {
+            await this.init();
+        }
+
+        // Use license endpoint to validate, but don't store user data (just check validity)
+        const postData = {
+            type: "license",
+            name: this.name,
+            ownerid: this.ownerid,
+            sessionid: this.sessionid,
+            key: key,
+            hwid: this.get_hwid()
+        };
+
+        const response = await this.__do_request(postData);
+        
+        // Only check if the response is successful without loading/storing user data
+        // This validates the key without fully activating/using it
+        if (response["success"] === true) {
+            return {
+                success: true,
+                message: response["message"] || "Key is valid"
+            };
+        } else {
+            return {
+                success: false,
+                message: response["message"] || "Invalid license key"
+            };
+        }
+    }
+
     async resetHWID(key) {
         // Ensure initialized
         if (!this.initialized) {

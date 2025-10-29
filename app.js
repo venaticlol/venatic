@@ -121,8 +121,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         errorMessage.textContent = '';
 
         try {
-            // Verify license
-            const result = await KeyAuthApp.license(licenseKey);
+            // Validate license key (check if valid without using it)
+            const result = await KeyAuthApp.validateKey(licenseKey);
 
             if (result.success) {
                 // License is valid - store verification state securely
