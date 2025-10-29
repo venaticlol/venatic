@@ -514,6 +514,16 @@ document.addEventListener('DOMContentLoaded', async () => {
             successModal.classList.remove('show');
         }
     });
+
+    // Logout button handler
+    const logoutBtn = document.getElementById('logoutBtn');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', () => {
+            if (confirm('Are you sure you want to logout?')) {
+                logout();
+            }
+        });
+    }
 });
 
 // Add shake animation
