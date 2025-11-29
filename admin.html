@@ -593,15 +593,16 @@
 
         <!-- Tabs -->
         <div class="admin-tabs">
-            <button class="admin-tab active" data-tab="announcements">📢 Announcements</button>
-            <button class="admin-tab" data-tab="changelog">📝 Changelog</button>
-            <button class="admin-tab" data-tab="reviews">⭐ Reviews</button>
-            <button class="admin-tab" data-tab="users">👤 Users</button>
-            <button class="admin-tab" data-tab="blacklisted">🚫 Blacklisted</button>
-            <button class="admin-tab" data-tab="maintenance">🔧 Maintenance</button>
-            <button class="admin-tab" data-tab="backup">💾 Backup & Restore</button>
-            <button class="admin-tab" data-tab="surveys">📊 Surveys & Polls</button>
-            <button class="admin-tab" data-tab="webhooks">🔗 Discord Webhooks</button>
+            <button class="admin-tab active" data-tab="announcements">Announcements</button>
+            <button class="admin-tab" data-tab="changelog">Changelog</button>
+            <button class="admin-tab" data-tab="reviews">Reviews</button>
+            <button class="admin-tab" data-tab="users">Users</button>
+            <button class="admin-tab" data-tab="blacklisted">Blacklisted</button>
+            <button class="admin-tab" data-tab="maintenance">Maintenance</button>
+            <button class="admin-tab" data-tab="backup">Backup & Restore</button>
+            <button class="admin-tab" data-tab="surveys">Surveys & Polls</button>
+            <button class="admin-tab" data-tab="webhooks">Discord Webhooks</button>
+            <button class="admin-tab" data-tab="tickets">Tickets</button>
         </div>
 
         <!-- Announcements Tab -->
@@ -677,6 +678,22 @@
             <button class="admin-btn admin-btn-primary" style="margin-bottom: 20px;" onclick="createWebhook()">+ Create Webhook</button>
             <div id="webhooksContent">
                 <div class="loading">Loading webhooks...</div>
+            </div>
+        </div>
+
+        <!-- Tickets Tab -->
+        <div class="admin-content-card" id="tabTickets" style="display: none;">
+            <h2>Support Tickets</h2>
+            <div style="display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap;">
+                <select id="ticketFilterStatus" class="form-input" style="flex: 1; min-width: 150px;" onchange="loadTickets()">
+                    <option value="all">All Status</option>
+                    <option value="open">Open</option>
+                    <option value="closed">Closed</option>
+                </select>
+                <input type="text" id="ticketSearchInput" class="form-input" placeholder="Search tickets..." style="flex: 2; min-width: 200px;" oninput="loadTickets()">
+            </div>
+            <div id="ticketsContent">
+                <div class="loading">Loading tickets...</div>
             </div>
         </div>
     </div>
@@ -1949,14 +1966,14 @@
                     loadUsers();
                 } else if (tabName === 'maintenance') {
                     loadMaintenanceSettings();
-                } else                 if (tabName === 'backup') {
+                } else if (tabName === 'backup') {
                     loadBackupTools();
-                }
-                if (tabName === 'surveys') {
+                } else if (tabName === 'surveys') {
                     loadSurveys();
-                }
-                if (tabName === 'webhooks') {
+                } else if (tabName === 'webhooks') {
                     loadWebhooks();
+                } else if (tabName === 'tickets') {
+                    loadTickets();
                 }
             });
         });
@@ -3019,6 +3036,279 @@
                 }
             });
         });
+
+        // ============================================
+        // TICKETS MANAGEMENT FUNCTIONS
+        // ============================================
+        async function loadTickets() {
+            const content = document.getElementById('ticketsContent');
+            const statusFilter = document.getElementById('ticketFilterStatus')?.value || 'all';
+            const searchQuery = document.getElementById('ticketSearchInput')?.value.toLowerCase() || '';
+
+            try {
+                const snapshot = await database.ref('tickets').once('value');
+                if (!snapshot.exists()) {
+                    content.innerHTML = '<div class="empty-state"><div class="empty-state-text">No tickets found</div></div>';
+                    return;
+                }
+
+                const tickets = snapshot.val();
+                let entries = Object.entries(tickets)
+                    .map(([id, ticket]) => ({ id, ...ticket }))
+                    .sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+
+                // Filter by status
+                if (statusFilter !== 'all') {
+                    entries = entries.filter(ticket => ticket.status === statusFilter);
+                }
+
+                // Filter by search
+                if (searchQuery) {
+                    entries = entries.filter(ticket => 
+                        ticket.id.toLowerCase().includes(searchQuery) ||
+                        ticket.subject.toLowerCase().includes(searchQuery) ||
+                        (ticket.userIp && ticket.userIp.toLowerCase().includes(searchQuery))
+                    );
+                }
+
+                if (entries.length === 0) {
+                    content.innerHTML = '<div class="empty-state"><div class="empty-state-text">No tickets found</div></div>';
+                    return;
+                }
+
+                let html = `
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>Ticket ID</th>
+                                <th>Subject</th>
+                                <th>Status</th>
+                                <th>User IP</th>
+                                <th>Created</th>
+                                <th>Updated</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+
+                entries.forEach(ticket => {
+                    const createdDate = new Date(ticket.createdAt);
+                    const updatedDate = new Date(ticket.updatedAt);
+                    html += `
+                        <tr>
+                            <td style="font-family: monospace; font-size: 12px;">${escapeHtml(ticket.id)}</td>
+                            <td>${escapeHtml(ticket.subject || 'No subject')}</td>
+                            <td><span class="status-badge ${ticket.status === 'open' ? 'status-active' : 'status-inactive'}">${ticket.status || 'open'}</span></td>
+                            <td style="font-family: monospace; font-size: 12px;">${escapeHtml(ticket.userIp || 'Unknown')}</td>
+                            <td>${createdDate.toLocaleString()}</td>
+                            <td>${updatedDate.toLocaleString()}</td>
+                            <td>
+                                <div class="action-buttons">
+                                    <button class="btn-action btn-view" onclick="viewAdminTicket('${ticket.id}')">View</button>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                });
+
+                html += '</tbody></table>';
+                content.innerHTML = html;
+            } catch (error) {
+                console.error('Error loading tickets:', error);
+                content.innerHTML = '<div class="empty-state"><div class="empty-state-text">Error loading tickets</div></div>';
+            }
+        }
+
+        window.viewAdminTicket = async function(ticketId) {
+            const modal = document.getElementById('adminTicketModal');
+            const titleEl = document.getElementById('adminTicketTitle');
+            const idEl = document.getElementById('adminTicketId');
+            const messagesContainer = document.getElementById('adminTicketMessages');
+            const closeBtn = document.getElementById('closeTicketBtn');
+
+            try {
+                const ticketSnapshot = await database.ref(`tickets/${ticketId}`).once('value');
+                if (!ticketSnapshot.exists()) {
+                    alert('Ticket not found');
+                    return;
+                }
+
+                const ticket = ticketSnapshot.val();
+                titleEl.textContent = ticket.subject || 'No Subject';
+                idEl.textContent = ticket.id;
+                
+                if (ticket.status === 'closed') {
+                    closeBtn.textContent = 'Reopen Ticket';
+                } else {
+                    closeBtn.textContent = 'Close Ticket';
+                }
+
+                // Load messages
+                const messagesSnapshot = await database.ref(`ticketMessages/${ticketId}`).once('value');
+                const messages = messagesSnapshot.exists() ? messagesSnapshot.val() : {};
+                const messagesArray = Object.entries(messages)
+                    .map(([timestamp, msg]) => ({ timestamp: parseInt(timestamp), ...msg }))
+                    .sort((a, b) => a.timestamp - b.timestamp);
+
+                renderAdminTicketMessages(messagesArray, messagesContainer);
+                
+                // Set up real-time listener
+                database.ref(`ticketMessages/${ticketId}`).on('value', (snapshot) => {
+                    const msgs = snapshot.exists() ? snapshot.val() : {};
+                    const msgsArray = Object.entries(msgs)
+                        .map(([timestamp, msg]) => ({ timestamp: parseInt(timestamp), ...msg }))
+                        .sort((a, b) => a.timestamp - b.timestamp);
+                    renderAdminTicketMessages(msgsArray, messagesContainer);
+                });
+
+                window.currentAdminTicketId = ticketId;
+                modal.classList.add('active');
+            } catch (error) {
+                console.error('Error loading ticket:', error);
+                alert('Error loading ticket: ' + error.message);
+            }
+        };
+
+        function renderAdminTicketMessages(messages, container) {
+            if (!container) return;
+
+            if (messages.length === 0) {
+                container.innerHTML = '<div style="color: #888; text-align: center; padding: 40px;">No messages yet</div>';
+                return;
+            }
+
+            const html = messages.map(msg => {
+                const date = new Date(msg.timestamp);
+                const isUser = msg.sender === 'user';
+                return `
+                    <div style="margin-bottom: 16px; padding: 12px; border-radius: 4px; max-width: 80%; ${isUser ? 'background: rgba(59, 130, 246, 0.2); border: 1px solid rgba(59, 130, 246, 0.3); margin-left: auto;' : 'background: rgba(34, 197, 94, 0.2); border: 1px solid rgba(34, 197, 94, 0.3);'}">
+                        <div style="font-size: 11px; color: #888; margin-bottom: 4px; font-weight: 600;">${isUser ? 'User' : 'Admin'} • ${date.toLocaleString()}</div>
+                        <div style="color: #e5e5e5; font-size: 14px; line-height: 1.5;">${escapeHtml(msg.message)}</div>
+                    </div>
+                `;
+            }).join('');
+
+            container.innerHTML = html;
+            container.scrollTop = container.scrollHeight;
+        }
+
+        window.closeAdminTicketModal = function() {
+            const modal = document.getElementById('adminTicketModal');
+            if (window.currentAdminTicketId) {
+                database.ref(`ticketMessages/${window.currentAdminTicketId}`).off();
+            }
+            window.currentAdminTicketId = null;
+            modal.classList.remove('active');
+        };
+
+        window.sendAdminTicketMessage = async function() {
+            const input = document.getElementById('adminTicketReplyInput');
+            const message = input.value.trim();
+            const ticketId = window.currentAdminTicketId;
+
+            if (!message || !ticketId) return;
+
+            if (!database) {
+                alert('Database not initialized');
+                return;
+            }
+
+            try {
+                const messageData = {
+                    ticketId,
+                    message,
+                    sender: 'admin',
+                    timestamp: Date.now()
+                };
+
+                await database.ref(`ticketMessages/${ticketId}/${Date.now()}`).set(messageData);
+                await database.ref(`tickets/${ticketId}/updatedAt`).set(Date.now());
+
+                input.value = '';
+            } catch (error) {
+                console.error('Error sending message:', error);
+                alert('Failed to send message: ' + error.message);
+            }
+        };
+
+        window.closeAdminTicket = async function() {
+            const ticketId = window.currentAdminTicketId;
+            if (!ticketId) return;
+
+            if (!confirm('Are you sure you want to change the ticket status?')) return;
+
+            try {
+                const ticketSnapshot = await database.ref(`tickets/${ticketId}`).once('value');
+                if (!ticketSnapshot.exists()) return;
+
+                const ticket = ticketSnapshot.val();
+                const newStatus = ticket.status === 'closed' ? 'open' : 'closed';
+
+                await database.ref(`tickets/${ticketId}/status`).set(newStatus);
+                await database.ref(`tickets/${ticketId}/updatedAt`).set(Date.now());
+
+                alert(`✅ Ticket ${newStatus === 'closed' ? 'closed' : 'reopened'} successfully!`);
+                loadTickets();
+                viewAdminTicket(ticketId); // Refresh view
+            } catch (error) {
+                console.error('Error closing ticket:', error);
+                alert('Failed to update ticket: ' + error.message);
+            }
+        };
+
+        window.saveTicketTranscript = async function() {
+            const ticketId = window.currentAdminTicketId;
+            if (!ticketId) return;
+
+            try {
+                const ticketSnapshot = await database.ref(`tickets/${ticketId}`).once('value');
+                const messagesSnapshot = await database.ref(`ticketMessages/${ticketId}`).once('value');
+
+                if (!ticketSnapshot.exists()) {
+                    alert('Ticket not found');
+                    return;
+                }
+
+                const ticket = ticketSnapshot.val();
+                const messages = messagesSnapshot.exists() ? messagesSnapshot.val() : {};
+                const messagesArray = Object.entries(messages)
+                    .map(([timestamp, msg]) => ({ timestamp: parseInt(timestamp), ...msg }))
+                    .sort((a, b) => a.timestamp - b.timestamp);
+
+                let transcript = `TICKET TRANSCRIPT\n`;
+                transcript += `==================\n\n`;
+                transcript += `Ticket ID: ${ticket.id}\n`;
+                transcript += `Subject: ${ticket.subject || 'No subject'}\n`;
+                transcript += `Status: ${ticket.status}\n`;
+                transcript += `User IP: ${ticket.userIp || 'Unknown'}\n`;
+                transcript += `Created: ${new Date(ticket.createdAt).toLocaleString()}\n`;
+                transcript += `Updated: ${new Date(ticket.updatedAt).toLocaleString()}\n\n`;
+                transcript += `MESSAGES\n`;
+                transcript += `========\n\n`;
+
+                messagesArray.forEach(msg => {
+                    const date = new Date(msg.timestamp);
+                    transcript += `[${date.toLocaleString()}] ${msg.sender.toUpperCase()}: ${msg.message}\n\n`;
+                });
+
+                // Create download
+                const blob = new Blob([transcript], { type: 'text/plain' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `ticket-${ticket.id}-transcript.txt`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+
+                alert('✅ Transcript saved successfully!');
+            } catch (error) {
+                console.error('Error saving transcript:', error);
+                alert('Failed to save transcript: ' + error.message);
+            }
+        };
     </script>
 </body>
 </html>

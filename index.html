@@ -368,6 +368,54 @@
             overflow: hidden;
         }
 
+        .ticket-create-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            padding: 18px 56px;
+            font-size: 16px;
+            font-weight: 600;
+            color: #e5e5e5;
+            background: #1a1a1a;
+            border: 1px solid #4a4a4a;
+            border-radius: 2px;
+            text-decoration: none;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .ticket-create-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.08), transparent);
+            transition: left 0.6s;
+        }
+
+        .ticket-create-btn:hover::before {
+            left: 100%;
+        }
+
+        .ticket-create-btn:hover {
+            transform: translateY(-4px) scale(1.02);
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+            border-color: #6a6a6a;
+            background: #222222;
+        }
+
+        .ticket-create-btn:active {
+            transform: translateY(-2px) scale(1);
+        }
+
+        .ticket-create-btn:hover .download-icon {
+            transform: translateY(2px);
+        }
+
         .download-btn::before {
             content: '';
             position: absolute;
@@ -837,6 +885,209 @@
         }
 
         .rating-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Support Tickets Section */
+        .support-section {
+            padding: 120px 24px;
+            background: linear-gradient(to bottom, #000000 0%, #0a0a0a 100%);
+        }
+
+        .support-content {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .ticket-item {
+            background: #0a0a0a;
+            border: 1px solid #1a1a1a;
+            border-radius: 4px;
+            padding: 24px;
+            margin-bottom: 20px;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+        }
+
+        .ticket-item:hover {
+            border-color: #2a2a2a;
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        .ticket-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .ticket-id {
+            font-size: 14px;
+            font-weight: 600;
+            color: #3b82f6;
+            font-family: monospace;
+        }
+
+        .ticket-status {
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .ticket-status.open {
+            background: rgba(34, 197, 94, 0.2);
+            color: #22c55e;
+            border: 1px solid rgba(34, 197, 94, 0.3);
+        }
+
+        .ticket-status.closed {
+            background: rgba(107, 114, 128, 0.2);
+            color: #9ca3af;
+            border: 1px solid rgba(107, 114, 128, 0.3);
+        }
+
+        .ticket-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #e5e5e5;
+            margin-bottom: 8px;
+        }
+
+        .ticket-meta {
+            font-size: 12px;
+            color: #888;
+            display: flex;
+            gap: 16px;
+        }
+
+        /* Ticket Modal */
+        .ticket-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 10000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .ticket-modal.active {
+            display: flex;
+        }
+
+        .ticket-modal-content {
+            background: #0a0a0a;
+            border: 1px solid #1a1a1a;
+            border-radius: 4px;
+            width: 100%;
+            max-width: 700px;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .ticket-modal-header {
+            padding: 24px;
+            border-bottom: 1px solid #1a1a1a;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .ticket-modal-body {
+            padding: 24px;
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .ticket-messages {
+            min-height: 300px;
+            max-height: 400px;
+            overflow-y: auto;
+            margin-bottom: 20px;
+            padding: 16px;
+            background: #000;
+            border: 1px solid #1a1a1a;
+            border-radius: 4px;
+        }
+
+        .ticket-message {
+            margin-bottom: 16px;
+            padding: 12px;
+            border-radius: 4px;
+            max-width: 80%;
+        }
+
+        .ticket-message.user {
+            background: rgba(59, 130, 246, 0.2);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            margin-left: auto;
+        }
+
+        .ticket-message.admin {
+            background: rgba(34, 197, 94, 0.2);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+        }
+
+        .ticket-message-header {
+            font-size: 11px;
+            color: #888;
+            margin-bottom: 4px;
+            font-weight: 600;
+        }
+
+        .ticket-message-text {
+            color: #e5e5e5;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .ticket-input-area {
+            display: flex;
+            gap: 12px;
+        }
+
+        .ticket-input {
+            flex: 1;
+            padding: 12px;
+            background: #1a1a1a;
+            border: 1px solid #4a4a4a;
+            border-radius: 4px;
+            color: #e5e5e5;
+            font-size: 14px;
+            font-family: inherit;
+        }
+
+        .ticket-input:focus {
+            outline: none;
+            border-color: #6a6a6a;
+        }
+
+        .ticket-send-btn {
+            padding: 12px 24px;
+            background: #1a1a1a;
+            border: 1px solid #4a4a4a;
+            border-radius: 4px;
+            color: #e5e5e5;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .ticket-send-btn:hover:not(:disabled) {
+            background: #222222;
+            border-color: #6a6a6a;
+        }
+
+        .ticket-send-btn:disabled {
             opacity: 0.5;
             cursor: not-allowed;
         }
@@ -3577,6 +3828,27 @@
         </div>
     </section>
 
+    <!-- Support Tickets Section -->
+    <section class="support-section" id="support">
+        <div class="container">
+            <h2 class="section-title reveal">Support Tickets</h2>
+            <p class="section-subtitle reveal">Need help? Create a support ticket and we'll get back to you</p>
+            <div class="support-content reveal">
+                <div style="text-align: center; margin-bottom: 40px;">
+                    <button class="ticket-create-btn" onclick="openTicketModal()">
+                        <svg class="download-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 4v16m8-8H4"></path>
+                        </svg>
+                        Create Support Ticket
+                    </button>
+                </div>
+                <div id="userTicketsContent">
+                    <div class="changelog-loading">Loading your tickets...</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
     <!-- Second Download Section -->
     <section class="download-section" id="download">
         <div class="container">
@@ -4285,6 +4557,241 @@
             } catch (error) {
                 console.error('Error submitting survey response:', error);
                 alert('Failed to submit response. Please try again.');
+            }
+        }
+
+        // ============================================
+        // SUPPORT TICKETS FUNCTIONS
+        // ============================================
+        window.openTicketModal = function() {
+            document.getElementById('ticketCreationModal').classList.add('active');
+            document.getElementById('ticketSubjectInput').value = '';
+            document.getElementById('ticketMessageInput').value = '';
+            document.getElementById('ticketError').style.display = 'none';
+        }
+
+        function closeTicketModal() {
+            document.getElementById('ticketCreationModal').classList.remove('active');
+        }
+
+        async function createTicket() {
+            const subjectInput = document.getElementById('ticketSubjectInput');
+            const messageInput = document.getElementById('ticketMessageInput');
+            const errorDiv = document.getElementById('ticketError');
+
+            const subject = subjectInput.value.trim();
+            const message = messageInput.value.trim();
+
+            if (!subject) {
+                errorDiv.textContent = 'Subject is required';
+                errorDiv.style.display = 'block';
+                return;
+            }
+
+            if (!message) {
+                errorDiv.textContent = 'Message is required';
+                errorDiv.style.display = 'block';
+                return;
+            }
+
+            if (!firebaseInitialized || !database) {
+                errorDiv.textContent = 'Firebase not initialized';
+                errorDiv.style.display = 'block';
+                return;
+            }
+
+            try {
+                const ticketId = 'ticket-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+                const ip = await getClientIP();
+                
+                const ticketData = {
+                    id: ticketId,
+                    subject,
+                    status: 'open',
+                    createdAt: Date.now(),
+                    updatedAt: Date.now(),
+                    userIp: ip,
+                    userAgent: navigator.userAgent
+                };
+
+                await database.ref(`tickets/${ticketId}`).set(ticketData);
+
+                // Create initial message
+                const messageData = {
+                    ticketId,
+                    message,
+                    sender: 'user',
+                    timestamp: Date.now()
+                };
+
+                await database.ref(`ticketMessages/${ticketId}/${Date.now()}`).set(messageData);
+
+                alert('✅ Ticket created successfully! Your ticket ID is: ' + ticketId);
+                closeTicketModal();
+                loadUserTickets();
+            } catch (error) {
+                console.error('Error creating ticket:', error);
+                errorDiv.textContent = 'Failed to create ticket: ' + error.message;
+                errorDiv.style.display = 'block';
+            }
+        }
+
+        function setupUserTicketsListener() {
+            if (!firebaseInitialized || !database) return;
+
+            loadUserTickets();
+        }
+
+        window.loadUserTickets = async function() {
+            const content = document.getElementById('userTicketsContent');
+            if (!content) return;
+
+            try {
+                const ip = await getClientIP();
+                const snapshot = await database.ref('tickets').once('value');
+                
+                if (!snapshot.exists()) {
+                    content.innerHTML = '<div class="changelog-empty">No tickets created yet</div>';
+                    return;
+                }
+
+                const tickets = snapshot.val();
+                const userTickets = Object.entries(tickets)
+                    .map(([id, ticket]) => ({ id, ...ticket }))
+                    .filter(ticket => ticket.userIp === ip)
+                    .sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+
+                if (userTickets.length === 0) {
+                    content.innerHTML = '<div class="changelog-empty">No tickets created yet</div>';
+                    return;
+                }
+
+                const html = userTickets.map(ticket => {
+                    const date = new Date(ticket.createdAt);
+                    return `
+                        <div class="ticket-item" onclick="viewUserTicket('${ticket.id}')">
+                            <div class="ticket-header">
+                                <div class="ticket-id">${escapeHtml(ticket.id)}</div>
+                                <div class="ticket-status ${ticket.status}">${ticket.status}</div>
+                            </div>
+                            <div class="ticket-title">${escapeHtml(ticket.subject)}</div>
+                            <div class="ticket-meta">
+                                <span>Created: ${date.toLocaleString()}</span>
+                                <span>Updated: ${new Date(ticket.updatedAt).toLocaleString()}</span>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+                content.innerHTML = html;
+            } catch (error) {
+                console.error('Error loading tickets:', error);
+                content.innerHTML = '<div class="changelog-empty">Error loading tickets</div>';
+            }
+        }
+
+        window.viewUserTicket = async function(ticketId) {
+            const modal = document.getElementById('ticketViewModal');
+            const titleEl = document.getElementById('ticketViewTitle');
+            const idEl = document.getElementById('ticketViewId');
+            const messagesContainer = document.getElementById('ticketMessagesContainer');
+
+            try {
+                const ticketSnapshot = await database.ref(`tickets/${ticketId}`).once('value');
+                if (!ticketSnapshot.exists()) {
+                    alert('Ticket not found');
+                    return;
+                }
+
+                const ticket = ticketSnapshot.val();
+                titleEl.textContent = ticket.subject;
+                idEl.textContent = ticket.id;
+
+                // Load messages
+                const messagesSnapshot = await database.ref(`ticketMessages/${ticketId}`).once('value');
+                const messages = messagesSnapshot.exists() ? messagesSnapshot.val() : {};
+                const messagesArray = Object.entries(messages)
+                    .map(([timestamp, msg]) => ({ timestamp: parseInt(timestamp), ...msg }))
+                    .sort((a, b) => a.timestamp - b.timestamp);
+
+                renderTicketMessages(messagesArray, messagesContainer);
+                
+                // Set up real-time listener
+                database.ref(`ticketMessages/${ticketId}`).on('value', (snapshot) => {
+                    const msgs = snapshot.exists() ? snapshot.val() : {};
+                    const msgsArray = Object.entries(msgs)
+                        .map(([timestamp, msg]) => ({ timestamp: parseInt(timestamp), ...msg }))
+                        .sort((a, b) => a.timestamp - b.timestamp);
+                    renderTicketMessages(msgsArray, messagesContainer);
+                });
+
+                window.currentViewingTicketId = ticketId;
+                modal.classList.add('active');
+            } catch (error) {
+                console.error('Error loading ticket:', error);
+                alert('Error loading ticket: ' + error.message);
+            }
+        }
+
+        window.renderTicketMessages = function(messages, container) {
+            if (!container) return;
+
+            if (messages.length === 0) {
+                container.innerHTML = '<div style="color: #888; text-align: center; padding: 40px;">No messages yet</div>';
+                return;
+            }
+
+            const html = messages.map(msg => {
+                const date = new Date(msg.timestamp);
+                const isUser = msg.sender === 'user';
+                return `
+                    <div class="ticket-message ${isUser ? 'user' : 'admin'}">
+                        <div class="ticket-message-header">${isUser ? 'You' : 'Admin'} • ${date.toLocaleString()}</div>
+                        <div class="ticket-message-text">${escapeHtml(msg.message)}</div>
+                    </div>
+                `;
+            }).join('');
+
+            container.innerHTML = html;
+            container.scrollTop = container.scrollHeight;
+        }
+
+        window.closeTicketViewModal = function() {
+            const modal = document.getElementById('ticketViewModal');
+            if (window.currentViewingTicketId) {
+                database.ref(`ticketMessages/${window.currentViewingTicketId}`).off();
+            }
+            window.currentViewingTicketId = null;
+            modal.classList.remove('active');
+        }
+
+        window.sendTicketMessage = async function() {
+            const input = document.getElementById('ticketReplyInput');
+            const message = input.value.trim();
+            const ticketId = window.currentViewingTicketId;
+
+            if (!message || !ticketId) return;
+
+            if (!firebaseInitialized || !database) {
+                alert('Firebase not initialized');
+                return;
+            }
+
+            try {
+                const messageData = {
+                    ticketId,
+                    message,
+                    sender: 'user',
+                    timestamp: Date.now()
+                };
+
+                await database.ref(`ticketMessages/${ticketId}/${Date.now()}`).set(messageData);
+                await database.ref(`tickets/${ticketId}/updatedAt`).set(Date.now());
+
+                input.value = '';
+            } catch (error) {
+                console.error('Error sending message:', error);
+                alert('Failed to send message: ' + error.message);
             }
         }
 
@@ -5711,7 +6218,11 @@
 
         // Update download button state
         function updateDownloadButtonState(limitInfo) {
-            const buttons = document.querySelectorAll('.download-btn');
+            // Only target actual download buttons (by ID), not support ticket button
+            const downloadBtn1 = document.getElementById('downloadBtn1');
+            const downloadBtn2 = document.getElementById('downloadBtn2');
+            const buttons = [downloadBtn1, downloadBtn2].filter(btn => btn !== null);
+            
             buttons.forEach(btn => {
                 if (!limitInfo.allowed) {
                     btn.style.opacity = '0.5';
