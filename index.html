@@ -10,6 +10,159 @@
     <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+    <!-- KeyAuth Browser-Compatible Implementation -->
+    <script>
+        // Browser-compatible KeyAuth class
+        class KeyAuth {
+            constructor(options) {
+                this.name = options.name;
+                this.ownerid = options.ownerid;
+                this.version = options.version;
+                this.url = options.url || "https://keyauth.win/api/1.3/";
+                this.sessionid = null;
+                this.initialized = false;
+            }
+
+            async init() {
+                if (this.initialized && this.sessionid) {
+                    return;
+                }
+
+                const postData = {
+                    type: "init",
+                    name: this.name,
+                    ownerid: this.ownerid,
+                    version: this.version
+                };
+
+                try {
+                    const response = await fetch(this.url, {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/x-www-form-urlencoded"
+                        },
+                        body: new URLSearchParams(postData).toString()
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! Status: ${response.status}`);
+                    }
+
+                    const data = await response.json();
+
+                    if (data === "KeyAuth_Invalid") {
+                        throw new Error("This application does not exist");
+                    }
+
+                    if (data.message === "invalidver") {
+                        throw new Error("Your application is outdated");
+                    }
+
+                    if (data.success === false) {
+                        throw new Error(data.message || "Initialization failed");
+                    }
+
+                    this.sessionid = data.sessionid;
+                    this.initialized = true;
+                    return data;
+                } catch (error) {
+                    console.error("KeyAuth init error:", error);
+                    throw error;
+                }
+            }
+
+            async license(licenseKey, hwid = null) {
+                if (!this.initialized) {
+                    await this.init();
+                }
+
+                if (!hwid) {
+                    // Generate a simple browser HWID
+                    hwid = this.getBrowserHWID();
+                }
+
+                const postData = {
+                    type: "license",
+                    name: this.name,
+                    ownerid: this.ownerid,
+                    sessionid: this.sessionid,
+                    key: licenseKey,
+                    hwid: hwid
+                };
+
+                try {
+                    const response = await fetch(this.url, {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/x-www-form-urlencoded"
+                        },
+                        body: new URLSearchParams(postData).toString()
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! Status: ${response.status}`);
+                    }
+
+                    const data = await response.json();
+
+                    if (data.success === true) {
+                        this.user_data = data.info ? {
+                            username: data.info.username,
+                            ip: data.info.ip,
+                            hwid: data.info.hwid || "N/A",
+                            expires: data.info.subscriptions?.[0]?.expiry,
+                            createdate: data.info.createdate,
+                            lastlogin: data.info.lastlogin,
+                            subscription: data.info.subscriptions?.[0]?.subscription,
+                            subscriptions: data.info.subscriptions
+                        } : null;
+                        return data;
+                    } else {
+                        throw new Error(data.message || "Invalid license key");
+                    }
+                } catch (error) {
+                    console.error("KeyAuth license error:", error);
+                    throw error;
+                }
+            }
+
+            getBrowserHWID() {
+                // Generate a consistent browser fingerprint
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                ctx.textBaseline = 'top';
+                ctx.font = '14px "Arial"';
+                ctx.textBaseline = 'alphabetic';
+                ctx.fillStyle = '#f60';
+                ctx.fillRect(125, 1, 62, 20);
+                ctx.fillStyle = '#069';
+                ctx.fillText('KeyAuth Browser HWID', 2, 15);
+                ctx.fillStyle = 'rgba(102, 204, 0, 0.7)';
+                ctx.fillText('KeyAuth Browser HWID', 4, 17);
+
+                const fingerprint = [
+                    navigator.userAgent,
+                    navigator.language,
+                    screen.width + 'x' + screen.height,
+                    new Date().getTimezoneOffset(),
+                    canvas.toDataURL()
+                ].join('|');
+
+                // Create a simple hash
+                let hash = 0;
+                for (let i = 0; i < fingerprint.length; i++) {
+                    const char = fingerprint.charCodeAt(i);
+                    hash = ((hash << 5) - hash) + char;
+                    hash = hash & hash; // Convert to 32bit integer
+                }
+                return Math.abs(hash).toString();
+            }
+        }
+
+        // Make KeyAuth available globally
+        window.KeyAuth = KeyAuth;
+        console.log('✅ KeyAuth browser implementation loaded');
+    </script>
     <style>
         * {
             margin: 0;
@@ -532,6 +685,20 @@
             padding-left: 0;
         }
 
+        .changelog-loading {
+            text-align: center;
+            padding: 40px;
+            color: #666666;
+            font-size: 14px;
+        }
+
+        .changelog-empty {
+            text-align: center;
+            padding: 40px;
+            color: #666666;
+            font-size: 14px;
+        }
+
         .changelog-list li {
             padding: 6px 0;
             padding-left: 24px;
@@ -615,6 +782,247 @@
 
         .footer-link:hover::after {
             width: 100%;
+        }
+
+        /* Announcements Banner */
+        .announcement-banner {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 10000;
+            background: linear-gradient(135deg, #1a1a1a 0%, #0a0a0a 100%);
+            border-bottom: 1px solid rgba(74, 74, 74, 0.3);
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            animation: slideDown 0.3s ease-out;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .announcement-banner.info {
+            border-left: 4px solid #3b82f6;
+        }
+
+        .announcement-banner.success {
+            border-left: 4px solid #10b981;
+        }
+
+        .announcement-banner.warning {
+            border-left: 4px solid #f59e0b;
+        }
+
+        .announcement-banner.error {
+            border-left: 4px solid #ef4444;
+        }
+
+        @keyframes slideDown {
+            from {
+                transform: translateY(-100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .announcement-content {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex: 1;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .announcement-icon {
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+
+        .announcement-text {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            flex: 1;
+        }
+
+        .announcement-title {
+            color: #e5e5e5;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .announcement-message {
+            color: #a0a0a0;
+            font-size: 13px;
+        }
+
+        .announcement-link {
+            color: #3b82f6;
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 500;
+            white-space: nowrap;
+            transition: color 0.2s;
+        }
+
+        .announcement-link:hover {
+            color: #60a5fa;
+        }
+
+        .announcement-close {
+            background: transparent;
+            border: none;
+            color: #888888;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 0;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: color 0.2s;
+            flex-shrink: 0;
+        }
+
+        .announcement-close:hover {
+            color: #e5e5e5;
+        }
+
+        /* Admin Login Button */
+        .admin-login-btn-container {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 9999;
+        }
+
+        .admin-login-btn {
+            background: rgba(26, 26, 26, 0.9);
+            border: 1px solid rgba(74, 74, 74, 0.5);
+            border-radius: 8px;
+            padding: 8px 12px;
+            color: #e5e5e5;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .admin-login-btn:hover {
+            background: rgba(42, 42, 42, 0.9);
+            border-color: rgba(106, 106, 106, 0.7);
+        }
+
+        .admin-login-btn svg {
+            width: 18px;
+            height: 18px;
+        }
+
+        .admin-login-btn.logged-in {
+            background: rgba(16, 185, 129, 0.2);
+            border-color: rgba(16, 185, 129, 0.5);
+            color: #10b981;
+        }
+
+        /* Language Switcher */
+        .language-switcher {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+        }
+
+        .lang-btn {
+            background: rgba(26, 26, 26, 0.9);
+            border: 1px solid rgba(74, 74, 74, 0.5);
+            border-radius: 8px;
+            padding: 8px 12px;
+            color: #e5e5e5;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .lang-btn:hover {
+            background: rgba(42, 42, 42, 0.9);
+            border-color: rgba(106, 106, 106, 0.7);
+        }
+
+        .lang-btn svg {
+            width: 18px;
+            height: 18px;
+        }
+
+        .lang-dropdown {
+            position: absolute;
+            top: calc(100% + 8px);
+            right: 0;
+            background: rgba(26, 26, 26, 0.95);
+            border: 1px solid rgba(74, 74, 74, 0.5);
+            border-radius: 8px;
+            padding: 4px;
+            min-width: 150px;
+            display: none;
+            flex-direction: column;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(10px);
+        }
+
+        .lang-dropdown.show {
+            display: flex;
+            animation: fadeIn 0.2s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-8px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .lang-option {
+            background: transparent;
+            border: none;
+            color: #e5e5e5;
+            padding: 10px 12px;
+            text-align: left;
+            cursor: pointer;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .lang-option:hover {
+            background: rgba(74, 74, 74, 0.5);
+        }
+
+        .lang-option.active {
+            background: rgba(59, 130, 246, 0.2);
+            color: #60a5fa;
+        }
+
+        /* Adjust main content when announcement is visible */
+        body:has(.announcement-banner[style*="display: block"]) .main-content {
+            margin-top: 60px;
         }
 
         .footer-text {
@@ -1491,6 +1899,74 @@
             cursor: not-allowed;
         }
 
+        /* Discord Login Button */
+        .discord-login-btn {
+            width: 100%;
+            padding: 18px;
+            background: #5865F2;
+            border: 1px solid #4752C4;
+            border-radius: 8px;
+            color: #ffffff;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: inherit;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            margin-top: 8px;
+        }
+
+        .discord-login-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .discord-login-btn:hover::before {
+            left: 100%;
+        }
+
+        .discord-login-btn:hover:not(:disabled) {
+            background: #4752C4;
+            border-color: #3C45A5;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(88, 101, 242, 0.4);
+        }
+
+        .discord-login-btn:active:not(:disabled) {
+            transform: translateY(0);
+        }
+
+        .discord-login-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .discord-icon {
+            width: 24px;
+            height: 24px;
+            flex-shrink: 0;
+        }
+
+        .discord-login-btn.loading {
+            color: transparent;
+        }
+
+        .discord-login-btn.loading .discord-icon {
+            opacity: 0;
+        }
+
+
         .btn-icon {
             width: 18px;
             height: 18px;
@@ -1699,10 +2175,6 @@
             to { transform: rotate(360deg); }
         }
 
-        /* Hide main content when not authenticated */
-        body:not(.authenticated) .main-content {
-            display: none;
-        }
 
         /* Responsive */
         @media (max-width: 768px) {
@@ -1835,135 +2307,754 @@
                 padding: 16px 40px;
                 font-size: 15px;
             }
+
+            /* Responsive: Announcements */
+            .announcement-banner {
+                padding: 10px 16px;
+                flex-wrap: wrap;
+            }
+
+            .announcement-content {
+                flex: 1 1 100%;
+                margin-bottom: 8px;
+            }
+
+            .announcement-close {
+                position: absolute;
+                top: 8px;
+                right: 8px;
+            }
+
+            .announcement-title {
+                font-size: 13px;
+            }
+
+            .announcement-message {
+                font-size: 12px;
+            }
+
+            /* Responsive: Language Switcher */
+            .language-switcher {
+                top: 10px;
+                right: 10px;
+            }
+
+            .lang-btn {
+                padding: 6px 10px;
+                font-size: 12px;
+            }
+
+            .lang-btn svg {
+                width: 16px;
+                height: 16px;
+            }
+
+            .lang-dropdown {
+                min-width: 130px;
+            }
+
+            .lang-option {
+                padding: 8px 10px;
+                font-size: 13px;
+            }
+
+            /* Responsive: Admin Login */
+            .admin-login-btn-container {
+                top: 10px;
+                left: 10px;
+            }
+
+            .admin-login-btn {
+                padding: 6px 10px;
+                font-size: 12px;
+            }
+
+            .admin-login-btn svg {
+                width: 16px;
+                height: 16px;
+            }
+
+            /* Adjust main content margin when announcement is visible on mobile */
+            body:has(.announcement-banner[style*="display: flex"]) .main-content {
+                margin-top: 80px;
+            }
+        }
+
+        /* Admin Modal */
+        .admin-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 10000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(5px);
+        }
+
+        .admin-modal {
+            background: #1a1a1a;
+            border: 1px solid rgba(74, 74, 74, 0.5);
+            border-radius: 12px;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+        }
+
+        .admin-modal-header {
+            padding: 20px;
+            border-bottom: 1px solid rgba(74, 74, 74, 0.5);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .admin-modal-header h2 {
+            color: #e5e5e5;
+            font-size: 20px;
+            margin: 0;
+        }
+
+        .admin-modal-close {
+            background: transparent;
+            border: none;
+            color: #888888;
+            font-size: 28px;
+            cursor: pointer;
+            padding: 0;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: color 0.2s;
+        }
+
+        .admin-modal-close:hover {
+            color: #e5e5e5;
+        }
+
+        .admin-modal-body {
+            padding: 20px;
+        }
+
+        .admin-form-group {
+            margin-bottom: 16px;
+        }
+
+        .admin-form-group label {
+            display: block;
+            color: #e5e5e5;
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+
+        .admin-form-input {
+            width: 100%;
+            padding: 12px;
+            background: rgba(10, 10, 10, 0.5);
+            border: 1px solid rgba(74, 74, 74, 0.5);
+            border-radius: 8px;
+            color: #e5e5e5;
+            font-size: 14px;
+            transition: border-color 0.2s;
+            box-sizing: border-box;
+        }
+
+        .admin-form-input:focus {
+            outline: none;
+            border-color: #3b82f6;
+        }
+
+        .admin-error-message {
+            color: #ef4444;
+            font-size: 13px;
+            margin-bottom: 16px;
+            display: none;
+        }
+
+        .admin-error-message.show {
+            display: block;
+        }
+
+        .admin-submit-btn {
+            width: 100%;
+            padding: 12px;
+            background: #3b82f6;
+            border: none;
+            border-radius: 8px;
+            color: #ffffff;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .admin-submit-btn:hover {
+            background: #2563eb;
+        }
+
+        .admin-submit-btn:disabled {
+            background: #4a4a4a;
+            cursor: not-allowed;
+        }
+
+        /* Admin Panel */
+        .admin-panel {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 10001;
+            display: flex;
+            flex-direction: column;
+            backdrop-filter: blur(10px);
+        }
+
+        .admin-panel-header {
+            padding: 20px;
+            border-bottom: 1px solid rgba(74, 74, 74, 0.5);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #1a1a1a;
+        }
+
+        .admin-panel-header h2 {
+            color: #e5e5e5;
+            font-size: 24px;
+            margin: 0;
+        }
+
+        .admin-panel-close {
+            background: transparent;
+            border: none;
+            color: #888888;
+            font-size: 32px;
+            cursor: pointer;
+            padding: 0;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: color 0.2s;
+        }
+
+        .admin-panel-close:hover {
+            color: #e5e5e5;
+        }
+
+        .admin-panel-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        .admin-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 24px;
+            border-bottom: 1px solid rgba(74, 74, 74, 0.5);
+        }
+
+        .admin-tab {
+            background: transparent;
+            border: none;
+            color: #888888;
+            padding: 12px 20px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .admin-tab:hover {
+            color: #e5e5e5;
+        }
+
+        .admin-tab.active {
+            color: #3b82f6;
+            border-bottom-color: #3b82f6;
+        }
+
+        .admin-tab-content {
+            display: none;
+        }
+
+        .admin-tab-content.active {
+            display: block;
+        }
+
+        .admin-tab-content h3 {
+            color: #e5e5e5;
+            font-size: 20px;
+            margin-bottom: 20px;
+        }
+
+        .admin-add-btn, .admin-action-btn {
+            background: #10b981;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 20px;
+            color: #ffffff;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-bottom: 20px;
+            transition: background 0.2s;
+        }
+
+        .admin-add-btn:hover, .admin-action-btn:hover {
+            background: #059669;
+        }
+
+        .admin-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .admin-list-item {
+            background: rgba(26, 26, 26, 0.5);
+            border: 1px solid rgba(74, 74, 74, 0.5);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .admin-list-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .admin-list-item-title {
+            color: #e5e5e5;
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .admin-list-item-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .admin-btn-small {
+            background: rgba(74, 74, 74, 0.5);
+            border: 1px solid rgba(106, 106, 106, 0.5);
+            border-radius: 6px;
+            padding: 6px 12px;
+            color: #e5e5e5;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .admin-btn-small:hover {
+            background: rgba(106, 106, 106, 0.7);
+        }
+
+        .admin-btn-small.delete {
+            background: rgba(239, 68, 68, 0.2);
+            border-color: rgba(239, 68, 68, 0.5);
+            color: #ef4444;
+        }
+
+        .admin-btn-small.delete:hover {
+            background: rgba(239, 68, 68, 0.3);
+        }
+
+        .admin-status {
+            background: rgba(26, 26, 26, 0.5);
+            border: 1px solid rgba(74, 74, 74, 0.5);
+            border-radius: 8px;
+            padding: 16px;
+            color: #e5e5e5;
+            font-size: 14px;
+            margin-top: 16px;
+        }
+
+        .admin-status.success {
+            border-color: rgba(16, 185, 129, 0.5);
+            background: rgba(16, 185, 129, 0.1);
+        }
+
+        .admin-status.error {
+            border-color: rgba(239, 68, 68, 0.5);
+            background: rgba(239, 68, 68, 0.1);
+        }
+
+        /* Admin Editor Modal */
+        .admin-editor-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 10002;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(5px);
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        .admin-editor-content {
+            background: #1a1a1a;
+            border: 1px solid rgba(74, 74, 74, 0.5);
+            border-radius: 12px;
+            width: 100%;
+            max-width: 600px;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+        }
+
+        .admin-editor-header {
+            padding: 20px;
+            border-bottom: 1px solid rgba(74, 74, 74, 0.5);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .admin-editor-header h2 {
+            color: #e5e5e5;
+            font-size: 20px;
+            margin: 0;
+        }
+
+        .admin-editor-close {
+            background: transparent;
+            border: none;
+            color: #888888;
+            font-size: 28px;
+            cursor: pointer;
+            padding: 0;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: color 0.2s;
+        }
+
+        .admin-editor-close:hover {
+            color: #e5e5e5;
+        }
+
+        .admin-editor-body {
+            padding: 20px;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .admin-editor-body textarea {
+            resize: vertical;
+            min-height: 80px;
+            font-family: inherit;
+        }
+
+        .admin-editor-body select {
+            cursor: pointer;
+        }
+
+        .admin-editor-body label input[type="checkbox"] {
+            margin-right: 8px;
+            cursor: pointer;
+        }
+
+        .admin-editor-error {
+            color: #ef4444;
+            font-size: 13px;
+            margin-bottom: 16px;
+            display: none;
+        }
+
+        .admin-editor-error.show {
+            display: block;
+        }
+
+        .admin-editor-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .admin-cancel-btn {
+            flex: 1;
+            padding: 12px;
+            background: rgba(74, 74, 74, 0.5);
+            border: 1px solid rgba(106, 106, 106, 0.5);
+            border-radius: 8px;
+            color: #e5e5e5;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .admin-cancel-btn:hover {
+            background: rgba(106, 106, 106, 0.7);
+        }
+
+        .admin-submit-btn {
+            flex: 1;
+        }
+
+        /* Changelog Changes List */
+        .changelog-change-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            background: rgba(26, 26, 26, 0.5);
+            border: 1px solid rgba(74, 74, 74, 0.5);
+            border-radius: 6px;
+            margin-bottom: 8px;
+        }
+
+        .changelog-change-item-text {
+            flex: 1;
+            color: #e5e5e5;
+            font-size: 14px;
+        }
+
+        .changelog-change-item-remove {
+            background: rgba(239, 68, 68, 0.2);
+            border: 1px solid rgba(239, 68, 68, 0.5);
+            border-radius: 4px;
+            padding: 4px 8px;
+            color: #ef4444;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .changelog-change-item-remove:hover {
+            background: rgba(239, 68, 68, 0.3);
         }
     </style>
 </head>
 <body>
-    <!-- Login Modal -->
-    <div class="login-overlay" id="loginOverlay">
-        <!-- Login Landing Page -->
-        <div class="login-landing" id="loginLanding">
-            <div class="landing-hero">
-                <h1 class="landing-title">RECON-SPOOFER</h1>
-                <p class="landing-subtitle">Professional Software Solution</p>
-                
-                <div class="landing-features">
-                    <div class="landing-feature">
-                        <div class="landing-feature-icon">⚡</div>
-                        <h3 class="landing-feature-title">Lightweight</h3>
-                        <p class="landing-feature-text">Minimal footprint with fast performance</p>
-                    </div>
-                    <div class="landing-feature">
-                        <div class="landing-feature-icon">🚀</div>
-                        <h3 class="landing-feature-title">Quick Setup</h3>
-                        <p class="landing-feature-text">Get started in minutes</p>
-                    </div>
-                    <div class="landing-feature">
-                        <div class="landing-feature-icon">🔄</div>
-                        <h3 class="landing-feature-title">Auto Updates</h3>
-                        <p class="landing-feature-text">Always up to date</p>
-                    </div>
+    <!-- Announcements Banner -->
+    <div class="announcement-banner" id="announcementBanner" style="display: none;">
+        <div class="announcement-content">
+            <div class="announcement-icon" id="announcementIcon"></div>
+            <div class="announcement-text">
+                <strong class="announcement-title" id="announcementTitle"></strong>
+                <span class="announcement-message" id="announcementMessage"></span>
                 </div>
+            <a href="#" class="announcement-link" id="announcementLink" style="display: none;"></a>
+        </div>
+        <button class="announcement-close" id="announcementClose" aria-label="Close announcement">×</button>
+    </div>
 
-                <div class="landing-cta">
-                    <button class="landing-btn" id="showLoginBtn">
-                        <span>Get Started</span>
-                        <svg class="landing-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <polyline points="9 18 15 12 9 6"></polyline>
-                        </svg>
-                    </button>
+    <!-- Admin Login Button -->
+    <div class="admin-login-btn-container" id="adminLoginContainer">
+        <button class="admin-login-btn" id="adminLoginBtn" aria-label="Admin Login">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                <path d="M9 12l2 2 4-4"></path>
+            </svg>
+            <span>Admin</span>
+                </button>
+    </div>
+
+    <!-- Language Switcher -->
+    <div class="language-switcher" id="languageSwitcher">
+        <button class="lang-btn" id="langBtn" aria-label="Change language">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="2" y1="12" x2="22" y2="12"></line>
+                <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+            </svg>
+            <span id="currentLang">EN</span>
+        </button>
+        <div class="lang-dropdown" id="langDropdown">
+            <button class="lang-option" data-lang="en">English</button>
+            <button class="lang-option" data-lang="es">Español</button>
+            <button class="lang-option" data-lang="fr">Français</button>
+            <button class="lang-option" data-lang="de">Deutsch</button>
+            <button class="lang-option" data-lang="pt">Português</button>
+        </div>
+    </div>
+
+    <!-- Admin Login Modal -->
+    <div class="admin-modal-overlay" id="adminModalOverlay" style="display: none;">
+        <div class="admin-modal">
+            <div class="admin-modal-header">
+                <h2>Admin Login</h2>
+                <button class="admin-modal-close" id="adminModalClose">×</button>
+            </div>
+            <div class="admin-modal-body">
+                <div class="admin-form-group">
+                    <label for="adminLicenseKey">License Key</label>
+                    <input type="text" id="adminLicenseKey" class="admin-form-input" placeholder="Enter your license key">
                 </div>
+                <div class="admin-error-message" id="adminErrorMessage"></div>
+                <button class="admin-submit-btn" id="adminSubmitBtn">Login</button>
             </div>
         </div>
+    </div>
 
-        <!-- Login Modal -->
-        <div class="login-modal" id="loginModal" style="display: none;">
-            <div class="login-header">
-                <div class="login-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-                    </svg>
-                </div>
-                <h1 class="login-title">RECON-SPOOFER</h1>
-                <p class="login-subtitle">Secure License Verification</p>
-            </div>
-            
-            <div class="login-body">
-                <div class="login-info">
-                    <svg class="login-info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="12" cy="12" r="10"></circle>
-                        <line x1="12" y1="16" x2="12" y2="12"></line>
-                        <line x1="12" y1="8" x2="12.01" y2="8"></line>
-                    </svg>
-                    <div class="login-info-text">
-                        <strong>License Key Required</strong><br>
-                        Enter your valid license key to access the download portal. Your license key can be found in your purchase confirmation email or account dashboard.
-                    </div>
-                </div>
-
-                <div class="error-message" id="errorMessage"></div>
-                
-                <form class="login-form" id="loginForm">
-                    <div class="form-group">
-                        <label class="form-label" for="licenseKey">
-                            <svg class="form-label-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-                            </svg>
-                            License Key
-                        </label>
-                        <div class="form-input-wrapper">
-                            <input 
-                                type="text" 
-                                id="licenseKey" 
-                                class="form-input" 
-                                placeholder="XXXX-XXXX-XXXX-XXXX"
-                                required
-                                autocomplete="off"
-                                spellcheck="false"
-                            >
-                            <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                                <polyline points="7 10 12 15 17 10"></polyline>
-                                <line x1="12" y1="15" x2="12" y2="3"></line>
-                            </svg>
-                        </div>
-                    </div>
-                    <button type="submit" class="login-btn" id="loginBtn">
-                        <span class="btn-text">Verify & Continue</span>
-                        <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <polyline points="9 18 15 12 9 6"></polyline>
-                        </svg>
-                        <div class="loading-spinner"></div>
-                    </button>
-                </form>
+    <!-- Admin Panel -->
+    <div class="admin-panel" id="adminPanel" style="display: none;">
+        <div class="admin-panel-header">
+            <h2>Admin Panel</h2>
+            <button class="admin-panel-close" id="adminPanelClose">×</button>
+        </div>
+        <div class="admin-panel-content">
+            <div class="admin-tabs">
+                <button class="admin-tab active" data-tab="announcements">Announcements</button>
+                <button class="admin-tab" data-tab="changelog">Changelog</button>
+                <button class="admin-tab" data-tab="database">Database</button>
             </div>
 
-            <div class="login-reviews" id="loginReviews">
-                <div class="login-reviews-title">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
-                    </svg>
-                    What Users Are Saying
-                </div>
-                <div class="login-reviews-list" id="loginReviewsList">
-                    <div class="login-reviews-empty">Loading reviews...</div>
-                </div>
+            <!-- Announcements Tab -->
+            <div class="admin-tab-content active" id="tabAnnouncements">
+                <h3>Manage Announcements</h3>
+                <button class="admin-add-btn" id="addAnnouncementBtn">+ Add Announcement</button>
+                <div class="admin-list" id="announcementsList"></div>
             </div>
 
-            <div class="login-footer">
-                <p class="login-footer-text">Need help? Contact our support team</p>
-                <div class="login-footer-links">
-                    <a href="https://discord.gg/getrecon" target="_blank" class="login-footer-link">Support</a>
-                    <a href="#" class="login-footer-link">Purchase License</a>
-                    <a href="documentation.html" class="login-footer-link">Documentation</a>
+            <!-- Changelog Tab -->
+            <div class="admin-tab-content" id="tabChangelog">
+                <h3>Manage Changelog</h3>
+                <button class="admin-add-btn" id="addChangelogBtn">+ Add Changelog Entry</button>
+                <div class="admin-list" id="changelogList"></div>
+            </div>
+
+            <!-- Database Tab -->
+            <div class="admin-tab-content" id="tabDatabase">
+                <h3>Database Management</h3>
+                <button class="admin-action-btn" id="initPathsBtn">Initialize Database Paths</button>
+                <div class="admin-status" id="databaseStatus"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Announcement Editor Modal -->
+    <div class="admin-editor-modal" id="announcementEditorModal" style="display: none;">
+        <div class="admin-editor-content">
+            <div class="admin-editor-header">
+                <h2 id="announcementEditorTitle">Add Announcement</h2>
+                <button class="admin-editor-close" id="announcementEditorClose">×</button>
+            </div>
+            <div class="admin-editor-body">
+                <div class="admin-form-group">
+                    <label for="announcementTitleInput">Title *</label>
+                    <input type="text" id="announcementTitleInput" class="admin-form-input" placeholder="New Update Available!" maxlength="100">
+                </div>
+                <div class="admin-form-group">
+                    <label for="announcementMessageInput">Message *</label>
+                    <textarea id="announcementMessageInput" class="admin-form-input" rows="4" placeholder="Version 1.2.0 is now live with exciting new features." maxlength="500"></textarea>
+                </div>
+                <div class="admin-form-group">
+                    <label for="announcementTypeInput">Type *</label>
+                    <select id="announcementTypeInput" class="admin-form-input">
+                        <option value="info">Info (Blue)</option>
+                        <option value="success">Success (Green)</option>
+                        <option value="warning">Warning (Orange)</option>
+                        <option value="error">Error (Red)</option>
+                    </select>
+                </div>
+                <div class="admin-form-group">
+                    <label for="announcementPriorityInput">Priority *</label>
+                    <select id="announcementPriorityInput" class="admin-form-input">
+                        <option value="low">Low</option>
+                        <option value="medium" selected>Medium</option>
+                        <option value="high">High</option>
+                    </select>
+                </div>
+                <div class="admin-form-group">
+                    <label for="announcementStartDateInput">Start Date *</label>
+                    <input type="datetime-local" id="announcementStartDateInput" class="admin-form-input">
+                </div>
+                <div class="admin-form-group">
+                    <label for="announcementEndDateInput">End Date (Optional)</label>
+                    <input type="datetime-local" id="announcementEndDateInput" class="admin-form-input">
+                </div>
+                <div class="admin-form-group">
+                    <label>
+                        <input type="checkbox" id="announcementDismissibleInput" checked> Dismissible (users can close)
+                    </label>
+                </div>
+                <div class="admin-form-group">
+                    <label for="announcementLinkInput">Link URL (Optional)</label>
+                    <input type="url" id="announcementLinkInput" class="admin-form-input" placeholder="https://...">
+                </div>
+                <div class="admin-form-group">
+                    <label for="announcementLinkTextInput">Link Text (Optional)</label>
+                    <input type="text" id="announcementLinkTextInput" class="admin-form-input" placeholder="Learn More">
+                </div>
+                <div class="admin-editor-error" id="announcementEditorError"></div>
+                <div class="admin-editor-actions">
+                    <button class="admin-submit-btn" id="announcementSaveBtn">Save Announcement</button>
+                    <button class="admin-cancel-btn" id="announcementCancelBtn">Cancel</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Main Content (hidden until authenticated) -->
+    <!-- Changelog Editor Modal -->
+    <div class="admin-editor-modal" id="changelogEditorModal" style="display: none;">
+        <div class="admin-editor-content">
+            <div class="admin-editor-header">
+                <h2 id="changelogEditorTitle">Add Changelog Entry</h2>
+                <button class="admin-editor-close" id="changelogEditorClose">×</button>
+            </div>
+            <div class="admin-editor-body">
+                <div class="admin-form-group">
+                    <label for="changelogVersionInput">Version *</label>
+                    <input type="text" id="changelogVersionInput" class="admin-form-input" placeholder="1.2.0" maxlength="20">
+                </div>
+                <div class="admin-form-group">
+                    <label for="changelogDateInput">Release Date *</label>
+                    <input type="date" id="changelogDateInput" class="admin-form-input">
+                </div>
+                <div class="admin-form-group">
+                    <label for="changelogTypeInput">Type (Optional)</label>
+                    <select id="changelogTypeInput" class="admin-form-input">
+                        <option value="">None</option>
+                        <option value="major">Major</option>
+                        <option value="minor">Minor</option>
+                        <option value="patch">Patch</option>
+                    </select>
+                </div>
+                <div class="admin-form-group">
+                    <label for="changelogDownloadUrlInput">Download URL (Optional)</label>
+                    <input type="url" id="changelogDownloadUrlInput" class="admin-form-input" placeholder="https://github.com/.../releases/tag/v1.2.0">
+                </div>
+                <div class="admin-form-group">
+                    <label>Changes *</label>
+                    <div id="changelogChangesList" style="margin-bottom: 12px;"></div>
+                    <div style="display: flex; gap: 8px;">
+                        <input type="text" id="changelogChangeInput" class="admin-form-input" placeholder="Added new feature..." style="flex: 1;" maxlength="200">
+                        <button type="button" class="admin-btn-small" id="addChangeBtn" style="white-space: nowrap;">+ Add</button>
+                    </div>
+                    <div style="font-size: 12px; color: #888; margin-top: 4px;">Add each change as a separate item</div>
+                </div>
+                <div class="admin-editor-error" id="changelogEditorError"></div>
+                <div class="admin-editor-actions">
+                    <button class="admin-submit-btn" id="changelogSaveBtn">Save Changelog</button>
+                    <button class="admin-cancel-btn" id="changelogCancelBtn">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
     <div class="main-content">
         
         <!-- Animated Background Particles -->
@@ -1972,21 +3063,21 @@
         <!-- Hero Section -->
     <section class="hero">
         <div class="container">
-            <h1 class="brand-title">RECON-SPOOFER</h1>
-            <p class="tagline">Simple. Secure. Reliable.</p>
+            <h1 class="brand-title" data-i18n="hero.title">RECON-SPOOFER</h1>
+            <p class="tagline" data-i18n="hero.tagline">Simple. Secure. Reliable.</p>
             <a href="#" class="download-btn" id="downloadBtn1" onclick="handleDownload(event)">
                 <svg class="download-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                     <polyline points="7 10 12 15 17 10"></polyline>
                     <line x1="12" y1="15" x2="12" y2="3"></line>
                 </svg>
-                Download Installer
+                <span data-i18n="hero.download">Download Installer</span>
             </a>
             
             <div class="stats-bar">
                 <div class="stat-item">
                     <span class="stat-number" id="downloadCount" data-count="1">0</span>
-                    <span class="stat-label">Downloads</span>
+                    <span class="stat-label" data-i18n="hero.downloads">Downloads</span>
                 </div>
                 <div class="stat-item">
                     <span class="stat-number" data-count="99">0</span>
@@ -1994,7 +3085,7 @@
                 </div>
                 <div class="stat-item">
                     <span class="stat-number" id="ratingDisplay" data-count="0">0</span>
-                    <span class="stat-label">Rating</span>
+                    <span class="stat-label" data-i18n="hero.rating">Rating</span>
                 </div>
             </div>
         </div>
@@ -2012,8 +3103,8 @@
     <!-- Features Section -->
     <section class="features">
         <div class="container">
-            <h2 class="section-title reveal">Key Features</h2>
-            <p class="section-subtitle reveal">Everything you need in one powerful package</p>
+            <h2 class="section-title reveal" data-i18n="features.title">Key Features</h2>
+            <p class="section-subtitle reveal" data-i18n="features.subtitle">Everything you need in one powerful package</p>
             <div class="features-grid">
                 <div class="feature-card reveal">
                     <div class="feature-icon">⚡</div>
@@ -2088,21 +3179,10 @@
     <!-- Changelog Section -->
     <section class="changelog">
         <div class="container">
-            <h2 class="section-title reveal">What's New</h2>
-            <p class="section-subtitle reveal">Latest updates and improvements</p>
-            <div class="changelog-content reveal">
-                <div class="changelog-item">
-                    <div class="changelog-version">Version 1.0.0</div>
-                    <div class="changelog-date">Released on January 15, 2024</div>
-                    <ul class="changelog-list">
-                        <li>Initial public release</li>
-                        <li>Core functionality implementation</li>
-                        <li>Single-platform support (Windows)</li>
-                        <li>Automatic update system</li>
-                        <li>Enhanced security features</li>
-                        <li>Improved performance and stability</li>
-                    </ul>
-                </div>
+            <h2 class="section-title reveal" data-i18n="changelog.title">What's New</h2>
+            <p class="section-subtitle reveal" data-i18n="changelog.subtitle">Latest updates and improvements</p>
+            <div class="changelog-content reveal" id="changelogContent">
+                <div class="changelog-loading" data-i18n="changelog.loading">Loading changelog...</div>
             </div>
         </div>
     </section>
@@ -2186,388 +3266,24 @@
     </div> <!-- End main-content -->
 
     <script>
-        // Browser-compatible KeyAuth Implementation
-        class KeyAuth {
-            constructor(options) {
-                this.name = options.name;
-                this.ownerid = options.ownerid;
-                this.version = options.version;
-                this.url = options.url || "https://keyauth.win/api/1.3/";
-                this.public_key = "5586b4bc69c7a4b487e4563a4cd96afd39140f919bd31cea7d1c6a1e8439422b";
-                this.sessionid = null;
-                this.initialized = false;
-                this.user_data = null;
-            }
-
-            async init() {
-                if (this.initialized && this.sessionid) {
-                    return;
-                }
-
-                const post_data = {
-                    type: "init",
-                    name: this.name,
-                    ownerid: this.ownerid,
-                    version: this.version
-                };
-
-                try {
-                    const response = await this.__do_request(post_data);
-                    
-                    if (response === "KeyAuth_Invalid") {
-                        throw new Error("Application does not exist");
-                    }
-
-                    if (response["message"] === "invalidver") {
-                        throw new Error("Application version is outdated");
-                    }
-
-                    if (response["success"] === false) {
-                        throw new Error(response["message"] || "Initialization failed");
-                    }
-
-                    this.sessionid = response["sessionid"];
-                    this.initialized = true;
-                    return true;
-                } catch (error) {
-                    throw error;
-                }
-            }
-
-            async license(license, code) {
-                this.checkinit();
-                const hwid = this.get_hwid();
-
-                const post_data = {
-                    type: "license",
-                    name: this.name,
-                    ownerid: this.ownerid,
-                    sessionid: this.sessionid,
-                    key: license,
-                    hwid: hwid
-                };
-
-                if (code) {
-                    post_data.code = code;
-                }
-
-                const response = await this.__do_request(post_data);
-
-                if (response["success"] === true) {
-                    this.__load_user_data(response["info"]);
-                    return true;
-                } else {
-                    throw new Error(response["message"] || "License verification failed");
-                }
-            }
-
-            async check() {
-                this.checkinit();
-
-                const post_data = {
-                    type: "check",
-                    name: this.name,
-                    ownerid: this.ownerid,
-                    sessionid: this.sessionid
-                };
-
-                const response = await this.__do_request(post_data);
-                return response["success"] === true;
-            }
-
-            checkinit() {
-                if (!this.sessionid || !this.initialized) {
-                    throw new Error("Application not initialized");
-                }
-            }
-
-            get_hwid() {
-                // Browser fingerprinting for HWID
-                const canvas = document.createElement('canvas');
-                const ctx = canvas.getContext('2d');
-                ctx.textBaseline = 'top';
-                ctx.font = '14px Arial';
-                ctx.fillText('HWID', 2, 2);
-                
-                const fingerprint = [
-                    navigator.userAgent,
-                    navigator.language,
-                    screen.width + 'x' + screen.height,
-                    new Date().getTimezoneOffset(),
-                    canvas.toDataURL(),
-                    navigator.platform,
-                    navigator.hardwareConcurrency || 'unknown'
-                ].join('|');
-
-                // Simple hash function
-                let hash = 0;
-                for (let i = 0; i < fingerprint.length; i++) {
-                    const char = fingerprint.charCodeAt(i);
-                    hash = ((hash << 5) - hash) + char;
-                    hash = hash & hash;
-                }
-                return Math.abs(hash).toString(16);
-            }
-
-            __load_user_data(data) {
-                this.user_data = {
-                    username: data["username"],
-                    ip: data["ip"],
-                    hwid: data["hwid"] || "N/A",
-                    expires: data["subscriptions"][0]["expiry"],
-                    createdate: data["createdate"],
-                    lastlogin: data["lastlogin"],
-                    subscription: data["subscriptions"][0]["subscription"],
-                    subscriptions: data["subscriptions"]
-                };
-            }
-
-            async __do_request(data) {
-                try {
-                    const response = await fetch(this.url, {
-                        method: "POST",
-                        headers: {
-                            "Content-Type": "application/x-www-form-urlencoded"
-                        },
-                        body: new URLSearchParams(data).toString()
-                    });
-
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! Status: ${response.status}`);
-                    }
-
-                    const responseData = await response.json();
-                    return responseData;
-                } catch (error) {
-                    throw new Error(`Request failed: ${error.message}`);
-                }
-            }
-        }
-
-        // Initialize KeyAuth
-        const KeyAuthApp = new KeyAuth({
-            name: "Recon Spoofer",
-            ownerid: "3Fgwv9rfYE",
-            version: "1.7"
-        });
-
-        // Authentication State Management
-        const AUTH_KEY = 'recon_spoofer_auth';
-        const SESSION_KEY = 'recon_spoofer_session';
-
-        function isAuthenticated() {
-            const authData = sessionStorage.getItem(AUTH_KEY);
-            if (!authData) return false;
-            
-            try {
-                const data = JSON.parse(authData);
-                // Check if session is still valid (expires after 1 hour)
-                if (Date.now() - data.timestamp > 3600000) {
-                    sessionStorage.removeItem(AUTH_KEY);
-                    sessionStorage.removeItem(SESSION_KEY);
-                    return false;
-                }
-                return true;
-            } catch {
-                return false;
-            }
-        }
-
-        function setAuthenticated(sessionId) {
-            sessionStorage.setItem(AUTH_KEY, JSON.stringify({
-                authenticated: true,
-                timestamp: Date.now()
-            }));
-            sessionStorage.setItem(SESSION_KEY, sessionId);
-        }
-
-        function clearAuth() {
-            sessionStorage.removeItem(AUTH_KEY);
-            sessionStorage.removeItem(SESSION_KEY);
-        }
-
-        // Check authentication on page load
-        async function checkAuthOnLoad() {
-            if (isAuthenticated()) {
-                try {
-                    // Re-initialize with stored session
-                    KeyAuthApp.sessionid = sessionStorage.getItem(SESSION_KEY);
-                    KeyAuthApp.initialized = true;
-                    
-                    // Verify session is still valid
-                    const isValid = await KeyAuthApp.check();
-                    if (isValid) {
-                        showMainContent();
-                        return;
-                    } else {
-                        clearAuth();
-                    }
-                } catch (error) {
-                    console.error('Session check failed:', error);
-                    clearAuth();
-                }
-            }
-            
-            // Show login modal
-            showLoginModal();
-        }
-
-        function showLoginModal() {
-            document.body.classList.remove('authenticated');
-            const overlay = document.getElementById('loginOverlay');
-            const landing = document.getElementById('loginLanding');
-            const modal = document.getElementById('loginModal');
-            
-            overlay.classList.remove('hidden');
-            
-            // Show landing page by default, hide modal
-            if (landing) {
-                landing.classList.remove('hidden');
-            }
-            if (modal) {
-                modal.style.display = 'none';
-            }
-            overlay.classList.remove('hide-landing');
-        }
-
-        function showLoginForm() {
-            const landing = document.getElementById('loginLanding');
-            const modal = document.getElementById('loginModal');
-            const overlay = document.getElementById('loginOverlay');
-            
-            if (landing && modal) {
-                landing.classList.add('hidden');
-                modal.style.display = 'block';
-                overlay.classList.add('hide-landing');
-                loadLoginReviews();
-            }
-        }
-
-        function showMainContent() {
-            document.body.classList.add('authenticated');
-            const overlay = document.getElementById('loginOverlay');
-            overlay.classList.add('hidden');
-            
-            // Initialize page animations only after authentication
+        // Initialize page on load
+        document.addEventListener('DOMContentLoaded', () => {
+            // Initialize particles
             if (document.getElementById('particles')) {
                 createParticles();
             }
             
-            // Load review stream after authentication
+            // Load review stream
             setTimeout(() => {
                 loadReviewBubbles();
             }, 1000);
-        }
 
-        // Handle login form submission
-        document.getElementById('loginForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            const licenseKey = document.getElementById('licenseKey').value.trim();
-            const loginBtn = document.getElementById('loginBtn');
-            const errorMsg = document.getElementById('errorMessage');
-            
-            if (!licenseKey) {
-                showError('Please enter a license key');
-                return;
-            }
-
-            // Disable button and show loading
-            loginBtn.disabled = true;
-            loginBtn.classList.add('loading');
-            errorMsg.classList.remove('show');
-
-            try {
-                // Initialize KeyAuth
-                await KeyAuthApp.init();
-                
-                // Verify license
-                await KeyAuthApp.license(licenseKey);
-                
-                // Store authentication
-                setAuthenticated(KeyAuthApp.sessionid);
-                
-                // Show main content
-                showMainContent();
-                
-            } catch (error) {
-                showError(error.message || 'License verification failed. Please check your key and try again.');
-            } finally {
-                loginBtn.disabled = false;
-                loginBtn.classList.remove('loading');
-            }
-        });
-
-        function showError(message) {
-            const errorMsg = document.getElementById('errorMessage');
-            errorMsg.textContent = message;
-            errorMsg.classList.add('show');
-            
-            // Auto-hide after 5 seconds
-            setTimeout(() => {
-                errorMsg.classList.remove('show');
-            }, 5000);
-        }
-
-        // Periodic session check (every 5 minutes)
-        setInterval(async () => {
-            if (isAuthenticated() && KeyAuthApp.initialized) {
-                try {
-                    const isValid = await KeyAuthApp.check();
-                    if (!isValid) {
-                        clearAuth();
-                        showLoginModal();
-                    }
-                } catch (error) {
-                    console.error('Session check failed:', error);
-                }
-            }
-        }, 300000); // 5 minutes
-
-        // Prevent bypassing by checking on visibility change
-        document.addEventListener('visibilitychange', () => {
-            if (!document.hidden && !isAuthenticated()) {
-                showLoginModal();
-            }
-        });
-
-        // Prevent bypassing by checking on focus
-        window.addEventListener('focus', () => {
-            if (!isAuthenticated()) {
-                showLoginModal();
-            }
-        });
-
-        // Additional security: Check authentication on any storage event (prevents manual sessionStorage manipulation)
-        window.addEventListener('storage', (e) => {
-            if (e.key === AUTH_KEY && !isAuthenticated()) {
-                showLoginModal();
-            }
-        });
-
-        // Prevent right-click and F12 (basic protection)
-        document.addEventListener('contextmenu', (e) => {
-            if (!isAuthenticated()) {
-                e.preventDefault();
-            }
-        });
-
-        // Check authentication periodically (every 30 seconds)
-        setInterval(() => {
-            if (!isAuthenticated() && document.body.classList.contains('authenticated')) {
-                showLoginModal();
-            }
-        }, 30000);
-
-        // Initialize on page load
-        checkAuthOnLoad();
-
-        // Landing page button event listener
-        document.addEventListener('DOMContentLoaded', () => {
-            const showLoginBtn = document.getElementById('showLoginBtn');
-            if (showLoginBtn) {
-                showLoginBtn.addEventListener('click', showLoginForm);
-            }
+            // Initialize new features
+            initLanguageSystem(); // FEATURE #18: Multi-Language Support
+            loadAnnouncements(); // FEATURE #2: Dynamic Announcements
+            setupAnnouncementListener(); // Listen for announcement updates
+            loadChangelog(); // FEATURE #5: Dynamic Changelog
+            setupChangelogListener(); // Listen for changelog updates
         });
 
         // Original page scripts
@@ -2657,8 +3373,12 @@
 
         // Initialize database structure (creates all required paths if they don't exist)
         async function initializeDatabaseStructure() {
-            if (!firebaseInitialized || !database) return;
+            if (!firebaseInitialized || !database) {
+                console.log('⚠️ Firebase not initialized, skipping database structure initialization');
+                return;
+            }
 
+            console.log('🔄 Initializing database structure...');
             try {
                 // Initialize downloads/count
                 const downloadsRef = database.ref('downloads/count');
@@ -2677,11 +3397,63 @@
                     console.log('✅ Initialized: ratings path');
                 }
 
+                // Initialize announcements path
+                const announcementsRef = database.ref('announcements');
+                const announcementsSnapshot = await announcementsRef.once('value');
+                if (announcementsSnapshot.val() === null) {
+                    try {
+                        await announcementsRef.set({});
+                        console.log('✅ Initialized: announcements path');
+                    } catch (err) {
+                        console.error('❌ Failed to create announcements path:', err);
+                        console.log('💡 Make sure Firebase rules allow writes to announcements');
+                    }
+                } else {
+                    console.log('ℹ️ Announcements path already exists');
+                }
+
+                // Initialize changelog path
+                const changelogRef = database.ref('changelog');
+                const changelogSnapshot = await changelogRef.once('value');
+                if (changelogSnapshot.val() === null) {
+                    try {
+                        await changelogRef.set({});
+                        console.log('✅ Initialized: changelog path');
+                    } catch (err) {
+                        console.error('❌ Failed to create changelog path:', err);
+                        console.log('💡 Make sure Firebase rules allow writes to changelog');
+                    }
+                } else {
+                    console.log('ℹ️ Changelog path already exists');
+                }
+
+                // Initialize translations path
+                const translationsRef = database.ref('translations');
+                const translationsSnapshot = await translationsRef.once('value');
+                if (translationsSnapshot.val() === null) {
+                    try {
+                        await translationsRef.set({});
+                        console.log('✅ Initialized: translations path');
+                    } catch (err) {
+                        console.error('❌ Failed to create translations path:', err);
+                        console.log('💡 Make sure Firebase rules allow writes to translations');
+                    }
+                } else {
+                    console.log('ℹ️ Translations path already exists');
+                }
+
                 console.log('✅ Database structure check complete');
             } catch (error) {
                 console.error('❌ Error initializing database structure:', error);
+                console.error('Error details:', error.message, error.code);
             }
         }
+
+        // Manual initialization function (can be called from browser console)
+        window.initializeFirebasePaths = async function() {
+            console.log('🔧 Manual initialization triggered...');
+            await initializeDatabaseStructure();
+        };
 
         // Periodic check to ensure database structures exist (runs every 30 seconds)
         function setupDatabaseStructureMonitor() {
@@ -2715,6 +3487,48 @@
                 console.error('Error monitoring ratings:', error);
             });
 
+            // Real-time listener for announcements - auto-recreate if deleted
+            database.ref('announcements').on('value', async (snapshot) => {
+                if (snapshot.val() === null) {
+                    try {
+                        await database.ref('announcements').set({});
+                        console.log('🔄 Auto-recreated: announcements path');
+                    } catch (error) {
+                        console.error('Error recreating announcements:', error);
+                    }
+                }
+            }, (error) => {
+                console.error('Error monitoring announcements:', error);
+            });
+
+            // Real-time listener for changelog - auto-recreate if deleted
+            database.ref('changelog').on('value', async (snapshot) => {
+                if (snapshot.val() === null) {
+                    try {
+                        await database.ref('changelog').set({});
+                        console.log('🔄 Auto-recreated: changelog path');
+                    } catch (error) {
+                        console.error('Error recreating changelog:', error);
+                    }
+                }
+            }, (error) => {
+                console.error('Error monitoring changelog:', error);
+            });
+
+            // Real-time listener for translations - auto-recreate if deleted
+            database.ref('translations').on('value', async (snapshot) => {
+                if (snapshot.val() === null) {
+                    try {
+                        await database.ref('translations').set({});
+                        console.log('🔄 Auto-recreated: translations path');
+                    } catch (error) {
+                        console.error('Error recreating translations:', error);
+                    }
+                }
+            }, (error) => {
+                console.error('Error monitoring translations:', error);
+            });
+
             // Periodic check as backup (every 30 seconds)
             setInterval(async () => {
                 try {
@@ -2733,12 +3547,421 @@
                         await ratingsRef.set({});
                         console.log('🔄 Periodic check: Recreated ratings path');
                     }
+
+                    // Check announcements
+                    const announcementsRef = database.ref('announcements');
+                    const announcementsSnapshot = await announcementsRef.once('value');
+                    if (announcementsSnapshot.val() === null) {
+                        await announcementsRef.set({});
+                        console.log('🔄 Periodic check: Recreated announcements path');
+                    }
+
+                    // Check changelog
+                    const changelogRef = database.ref('changelog');
+                    const changelogSnapshot = await changelogRef.once('value');
+                    if (changelogSnapshot.val() === null) {
+                        await changelogRef.set({});
+                        console.log('🔄 Periodic check: Recreated changelog path');
+                    }
+
+                    // Check translations
+                    const translationsRef = database.ref('translations');
+                    const translationsSnapshot = await translationsRef.once('value');
+                    if (translationsSnapshot.val() === null) {
+                        await translationsRef.set({});
+                        console.log('🔄 Periodic check: Recreated translations path');
+                    }
                 } catch (error) {
                     console.error('Error in database structure monitor:', error);
                 }
             }, 30000); // Check every 30 seconds
         }
 
+
+        // ============================================
+        // FEATURE #2: Dynamic Announcements System
+        // ============================================
+        const ANNOUNCEMENTS_PATH = 'announcements';
+        const ANNOUNCEMENT_DISMISSED_KEY = 'recon_announcements_dismissed';
+
+        async function loadAnnouncements() {
+            if (!firebaseInitialized || !database) return;
+
+            try {
+                const snapshot = await database.ref(ANNOUNCEMENTS_PATH).once('value');
+                if (!snapshot.exists()) return;
+
+                const announcements = snapshot.val();
+                const now = Date.now();
+                const dismissed = JSON.parse(localStorage.getItem(ANNOUNCEMENT_DISMISSED_KEY) || '[]');
+
+                // Find active announcement
+                let activeAnnouncement = null;
+                for (const [id, announcement] of Object.entries(announcements)) {
+                    if (dismissed.includes(id)) continue;
+                    
+                    const startDate = announcement.startDate || 0;
+                    const endDate = announcement.endDate || Infinity;
+                    
+                    if (now >= startDate && now <= endDate) {
+                        // Check priority (higher priority first)
+                        if (!activeAnnouncement || 
+                            (announcement.priority === 'high' && activeAnnouncement.priority !== 'high')) {
+                            activeAnnouncement = { id, ...announcement };
+                        }
+                    }
+                }
+
+                if (activeAnnouncement) {
+                    showAnnouncement(activeAnnouncement);
+                }
+            } catch (error) {
+                console.error('Error loading announcements:', error);
+            }
+        }
+
+        function showAnnouncement(announcement) {
+            const banner = document.getElementById('announcementBanner');
+            const icon = document.getElementById('announcementIcon');
+            const title = document.getElementById('announcementTitle');
+            const message = document.getElementById('announcementMessage');
+            const link = document.getElementById('announcementLink');
+            const closeBtn = document.getElementById('announcementClose');
+
+            if (!banner) return;
+
+            // Set type/color
+            banner.className = `announcement-banner ${announcement.type || 'info'}`;
+            
+            // Set icon
+            const icons = {
+                info: 'ℹ️',
+                success: '✅',
+                warning: '⚠️',
+                error: '❌'
+            };
+            icon.textContent = icons[announcement.type] || icons.info;
+
+            // Set content
+            title.textContent = announcement.title || '';
+            message.textContent = announcement.message || '';
+
+            // Set link if provided
+            if (announcement.link && announcement.linkText) {
+                link.href = announcement.link;
+                link.textContent = announcement.linkText;
+                link.style.display = 'inline';
+            } else {
+                link.style.display = 'none';
+            }
+
+            // Show banner
+            banner.style.display = 'flex';
+            document.body.style.paddingTop = '60px';
+
+            // Close button handler
+            closeBtn.onclick = () => {
+                if (announcement.dismissible !== false) {
+                    dismissAnnouncement(announcement.id);
+                }
+            };
+        }
+
+        function dismissAnnouncement(id) {
+            const dismissed = JSON.parse(localStorage.getItem(ANNOUNCEMENT_DISMISSED_KEY) || '[]');
+            if (!dismissed.includes(id)) {
+                dismissed.push(id);
+                localStorage.setItem(ANNOUNCEMENT_DISMISSED_KEY, JSON.stringify(dismissed));
+            }
+            
+            const banner = document.getElementById('announcementBanner');
+            if (banner) {
+                banner.style.display = 'none';
+                document.body.style.paddingTop = '0';
+            }
+        }
+
+        // Listen for real-time announcement updates
+        function setupAnnouncementListener() {
+            if (!firebaseInitialized || !database) return;
+
+            database.ref(ANNOUNCEMENTS_PATH).on('value', () => {
+                loadAnnouncements();
+            });
+        }
+
+        // ============================================
+        // FEATURE #5: Dynamic Changelog System
+        // ============================================
+        const CHANGELOG_PATH = 'changelog';
+
+        async function loadChangelog() {
+            const content = document.getElementById('changelogContent');
+            if (!content) return;
+
+            if (!firebaseInitialized || !database) {
+                content.innerHTML = '<div class="changelog-empty" data-i18n="changelog.error">Unable to load changelog.</div>';
+                return;
+            }
+
+            try {
+                const snapshot = await database.ref(CHANGELOG_PATH).once('value');
+                if (!snapshot.exists()) {
+                    content.innerHTML = '<div class="changelog-empty" data-i18n="changelog.empty">No changelog entries yet.</div>';
+                    return;
+                }
+
+                const changelog = snapshot.val();
+                const entries = Object.entries(changelog)
+                    .map(([id, entry]) => ({ id, ...entry }))
+                    .sort((a, b) => {
+                        // Sort by date (newest first)
+                        const dateA = a.date || '';
+                        const dateB = b.date || '';
+                        return dateB.localeCompare(dateA);
+                    });
+
+                if (entries.length === 0) {
+                    content.innerHTML = '<div class="changelog-empty" data-i18n="changelog.empty">No changelog entries yet.</div>';
+                    return;
+                }
+
+                // Render changelog
+                content.innerHTML = entries.map(entry => {
+                    const changes = Array.isArray(entry.changes) ? entry.changes : [];
+                    const changesList = changes.map(change => `<li>${escapeHtml(change)}</li>`).join('');
+                    
+                    return `
+                        <div class="changelog-item">
+                            <div class="changelog-version">${escapeHtml(entry.version || 'Unknown Version')}</div>
+                            <div class="changelog-date">${entry.date ? `Released on ${escapeHtml(entry.date)}` : ''}</div>
+                            ${entry.downloadUrl ? `<a href="${escapeHtml(entry.downloadUrl)}" class="changelog-download" style="display: inline-block; margin-top: 8px; color: #3b82f6; text-decoration: none;">Download this version</a>` : ''}
+                            <ul class="changelog-list">
+                                ${changesList || '<li>No changes listed</li>'}
+                            </ul>
+                        </div>
+                    `;
+                }).join('');
+
+                // Update translations
+                updateTranslations();
+            } catch (error) {
+                console.error('Error loading changelog:', error);
+                content.innerHTML = '<div class="changelog-empty" data-i18n="changelog.error">Error loading changelog.</div>';
+            }
+        }
+
+        // Listen for real-time changelog updates
+        function setupChangelogListener() {
+            if (!firebaseInitialized || !database) return;
+
+            database.ref(CHANGELOG_PATH).on('value', () => {
+                loadChangelog();
+            });
+        }
+
+        // Utility function to escape HTML
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // ============================================
+        // FEATURE #18: Multi-Language Support
+        // ============================================
+        const TRANSLATIONS_PATH = 'translations';
+        const LANGUAGE_KEY = 'recon_language';
+        let currentLanguage = localStorage.getItem(LANGUAGE_KEY) || 'en';
+        let translations = {};
+
+        // Default translations (fallback)
+        const defaultTranslations = {
+            en: {
+                'changelog.title': 'What\'s New',
+                'changelog.subtitle': 'Latest updates and improvements',
+                'changelog.loading': 'Loading changelog...',
+                'changelog.empty': 'No changelog entries yet.',
+                'changelog.error': 'Unable to load changelog.',
+                'hero.title': 'RECON-SPOOFER',
+                'hero.tagline': 'Simple. Secure. Reliable.',
+                'hero.download': 'Download Installer',
+                'hero.downloads': 'Downloads',
+                'hero.rating': 'Rating',
+                'features.title': 'Key Features',
+                'features.subtitle': 'Everything you need in one powerful package'
+            },
+            es: {
+                'changelog.title': 'Novedades',
+                'changelog.subtitle': 'Últimas actualizaciones y mejoras',
+                'changelog.loading': 'Cargando historial...',
+                'changelog.empty': 'Aún no hay entradas en el historial.',
+                'changelog.error': 'No se pudo cargar el historial.',
+                'hero.title': 'RECON-SPOOFER',
+                'hero.tagline': 'Simple. Seguro. Confiable.',
+                'hero.download': 'Descargar Instalador',
+                'hero.downloads': 'Descargas',
+                'hero.rating': 'Calificación',
+                'features.title': 'Características Principales',
+                'features.subtitle': 'Todo lo que necesitas en un paquete poderoso'
+            },
+            fr: {
+                'changelog.title': 'Nouveautés',
+                'changelog.subtitle': 'Dernières mises à jour et améliorations',
+                'changelog.loading': 'Chargement du journal...',
+                'changelog.empty': 'Aucune entrée dans le journal pour le moment.',
+                'changelog.error': 'Impossible de charger le journal.',
+                'hero.title': 'RECON-SPOOFER',
+                'hero.tagline': 'Simple. Sécurisé. Fiable.',
+                'hero.download': 'Télécharger l\'Installateur',
+                'hero.downloads': 'Téléchargements',
+                'hero.rating': 'Note',
+                'features.title': 'Fonctionnalités Clés',
+                'features.subtitle': 'Tout ce dont vous avez besoin dans un package puissant'
+            },
+            de: {
+                'changelog.title': 'Was ist neu',
+                'changelog.subtitle': 'Neueste Updates und Verbesserungen',
+                'changelog.loading': 'Lade Änderungsprotokoll...',
+                'changelog.empty': 'Noch keine Einträge im Änderungsprotokoll.',
+                'changelog.error': 'Änderungsprotokoll konnte nicht geladen werden.',
+                'hero.title': 'RECON-SPOOFER',
+                'hero.tagline': 'Einfach. Sicher. Zuverlässig.',
+                'hero.download': 'Installer herunterladen',
+                'hero.downloads': 'Downloads',
+                'hero.rating': 'Bewertung',
+                'features.title': 'Hauptfunktionen',
+                'features.subtitle': 'Alles was Sie brauchen in einem leistungsstarken Paket'
+            },
+            pt: {
+                'changelog.title': 'Novidades',
+                'changelog.subtitle': 'Últimas atualizações e melhorias',
+                'changelog.loading': 'Carregando changelog...',
+                'changelog.empty': 'Ainda não há entradas no changelog.',
+                'changelog.error': 'Não foi possível carregar o changelog.',
+                'hero.title': 'RECON-SPOOFER',
+                'hero.tagline': 'Simples. Seguro. Confiável.',
+                'hero.download': 'Baixar Instalador',
+                'hero.downloads': 'Downloads',
+                'hero.rating': 'Avaliação',
+                'features.title': 'Recursos Principais',
+                'features.subtitle': 'Tudo que você precisa em um pacote poderoso'
+            }
+        };
+
+        async function loadTranslations(lang) {
+            if (!firebaseInitialized || !database) {
+                translations[lang] = defaultTranslations[lang] || defaultTranslations.en;
+                updateTranslations();
+                return;
+            }
+
+            try {
+                const snapshot = await database.ref(`${TRANSLATIONS_PATH}/${lang}`).once('value');
+                if (snapshot.exists()) {
+                    translations[lang] = { ...defaultTranslations[lang], ...snapshot.val() };
+                } else {
+                    translations[lang] = defaultTranslations[lang] || defaultTranslations.en;
+                }
+                updateTranslations();
+            } catch (error) {
+                console.error('Error loading translations:', error);
+                translations[lang] = defaultTranslations[lang] || defaultTranslations.en;
+                updateTranslations();
+            }
+        }
+
+        function updateTranslations() {
+            const lang = currentLanguage;
+            const langTranslations = translations[lang] || defaultTranslations[lang] || defaultTranslations.en;
+
+            console.log('📝 Updating translations for language:', lang);
+            console.log('📝 Available translations:', Object.keys(langTranslations));
+
+            // Update all elements with data-i18n attribute
+            const elements = document.querySelectorAll('[data-i18n]');
+            console.log('📝 Found', elements.length, 'elements with data-i18n attribute');
+            
+            elements.forEach(element => {
+                const key = element.getAttribute('data-i18n');
+                const translation = langTranslations[key];
+                if (translation) {
+                    if (element.tagName === 'INPUT' || element.tagName === 'TEXTAREA') {
+                        element.placeholder = translation;
+                    } else {
+                        element.textContent = translation;
+                    }
+                    console.log('✅ Updated:', key, '=', translation);
+                } else {
+                    console.warn('⚠️ No translation found for key:', key);
+                }
+            });
+
+            // Update language button
+            const langBtn = document.getElementById('currentLang');
+            if (langBtn) {
+                langBtn.textContent = lang.toUpperCase();
+            }
+
+            // Update active language option
+            document.querySelectorAll('.lang-option').forEach(option => {
+                if (option.getAttribute('data-lang') === lang) {
+                    option.classList.add('active');
+                } else {
+                    option.classList.remove('active');
+                }
+            });
+        }
+
+        function changeLanguage(lang) {
+            console.log('🔄 Changing language to:', lang);
+            currentLanguage = lang;
+            localStorage.setItem(LANGUAGE_KEY, lang);
+            loadTranslations(lang);
+        }
+
+        // Initialize language system
+        function initLanguageSystem() {
+            console.log('🌍 Initializing language system, current language:', currentLanguage);
+            
+            // Load current language translations
+            loadTranslations(currentLanguage);
+
+            // Setup language switcher
+            const langBtn = document.getElementById('langBtn');
+            const langDropdown = document.getElementById('langDropdown');
+
+            if (!langBtn || !langDropdown) {
+                console.error('❌ Language switcher elements not found!');
+                return;
+            }
+
+            console.log('✅ Language switcher elements found');
+
+            langBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                langDropdown.classList.toggle('show');
+                console.log('🔘 Language dropdown toggled');
+            });
+
+            // Close dropdown when clicking outside
+            document.addEventListener('click', (e) => {
+                if (!langBtn.contains(e.target) && !langDropdown.contains(e.target)) {
+                    langDropdown.classList.remove('show');
+                }
+            });
+
+            // Language option clicks
+            document.querySelectorAll('.lang-option').forEach(option => {
+                option.addEventListener('click', () => {
+                    const lang = option.getAttribute('data-lang');
+                    console.log('🌐 Language changed to:', lang);
+                    changeLanguage(lang);
+                    langDropdown.classList.remove('show');
+                });
+            });
+        }
 
         // Download tracking with Firebase (global counter)
         const DOWNLOAD_COUNT_PATH = 'downloads/count';
@@ -3103,7 +4326,6 @@
                 database.ref(RATINGS_PATH).on('value', () => {
                     updateRatingDisplay();
                     loadReviewBubbles();
-                    loadLoginReviews(); // Also update login page reviews
                 });
             }
 
@@ -3384,72 +4606,6 @@
             return div.innerHTML;
         }
 
-        // Load reviews for login page
-        async function loadLoginReviews() {
-            const reviewsList = document.getElementById('loginReviewsList');
-            if (!reviewsList) return;
-
-            // If Firebase isn't ready yet, wait a bit and try again
-            if (!firebaseInitialized || !database) {
-                setTimeout(() => loadLoginReviews(), 2000);
-                return;
-            }
-
-            try {
-                const snapshot = await database.ref(RATINGS_PATH).once('value');
-                if (!snapshot.exists()) {
-                    reviewsList.innerHTML = '<div class="login-reviews-empty">No reviews yet. Be the first to leave one!</div>';
-                    return;
-                }
-
-                const ratings = snapshot.val();
-                const allReviews = Object.values(ratings)
-                    .filter(r => {
-                        // Filter out reviews with inappropriate content
-                        if (!r.review || r.review.trim().length === 0) return false;
-                        const filterResult = filterText(r.review);
-                        return !filterResult.filtered; // Only include non-filtered reviews
-                    })
-                    .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0)) // Most recent first
-                    .slice(0, 5); // Show only top 5 reviews
-
-                if (allReviews.length === 0) {
-                    reviewsList.innerHTML = '<div class="login-reviews-empty">No reviews yet. Be the first to leave one!</div>';
-                    return;
-                }
-
-                // Clear existing content
-                reviewsList.innerHTML = '';
-
-                // Create review items
-                allReviews.forEach(review => {
-                    const item = document.createElement('div');
-                    item.className = 'login-review-item';
-
-                    const rating = review.rating || 5;
-                    const stars = '★'.repeat(rating);
-                    let reviewText = review.review.trim();
-                    
-                    // Truncate if too long
-                    if (reviewText.length > 120) {
-                        reviewText = reviewText.substring(0, 120) + '...';
-                    }
-
-                    item.innerHTML = `
-                        <div class="login-review-header">
-                            <span class="login-review-stars">${stars}</span>
-                        </div>
-                        <div class="login-review-text">${escapeHtml(reviewText)}</div>
-                    `;
-
-                    reviewsList.appendChild(item);
-                });
-
-            } catch (error) {
-                console.error('Error loading login reviews:', error);
-                reviewsList.innerHTML = '<div class="login-reviews-empty">Unable to load reviews</div>';
-            }
-        }
         
         // Handle download button click
         async function handleDownload(event) {
@@ -3593,6 +4749,862 @@
                 hero.style.transform = `translateY(${scrolled * 0.3}px)`;
             }
         });
+
+        // ============================================
+        // ADMIN PANEL WITH KEYAUTH
+        // ============================================
+        let KeyAuthApp = null;
+        let isAdminLoggedIn = false;
+        const ADMIN_SESSION_KEY = 'recon_admin_session';
+
+        // Initialize KeyAuth
+        async function initKeyAuth() {
+            try {
+                if (typeof KeyAuth !== 'undefined') {
+                    KeyAuthApp = new KeyAuth({
+                        name: "Recon Admin",
+                        ownerid: "3Fgwv9rfYE",
+                        version: "1.0"
+                    });
+                    
+                    // Initialize the session
+                    try {
+                        await KeyAuthApp.init();
+                        console.log('✅ KeyAuth initialized and session created');
+                    } catch (error) {
+                        console.error('❌ KeyAuth init failed:', error);
+                        console.log('💡 Will try to initialize on first login');
+                    }
+                } else {
+                    console.error('❌ KeyAuth class not found');
+                }
+            } catch (error) {
+                console.error('❌ KeyAuth initialization error:', error);
+            }
+        }
+
+        // Check if admin is logged in
+        function checkAdminSession() {
+            const session = sessionStorage.getItem(ADMIN_SESSION_KEY);
+            if (session === 'true') {
+                isAdminLoggedIn = true;
+                showAdminPanel();
+                updateAdminButton();
+            }
+        }
+
+        // Admin login
+        async function adminLogin(licenseKey) {
+            const key = licenseKey.trim();
+            if (!key) {
+                showAdminError('Please enter a license key');
+                return false;
+            }
+
+            // Initialize KeyAuth if not already done
+            if (!KeyAuthApp && typeof KeyAuth !== 'undefined') {
+                try {
+                    KeyAuthApp = new KeyAuth({
+                        name: "Recon Admin",
+                        ownerid: "3Fgwv9rfYE",
+                        version: "1.0"
+                    });
+                } catch (error) {
+                    console.error('KeyAuth creation error:', error);
+                    showAdminError('Failed to initialize KeyAuth');
+                    return false;
+                }
+            }
+
+            if (KeyAuthApp) {
+                try {
+                    // Make sure KeyAuth is initialized
+                    if (!KeyAuthApp.initialized) {
+                        await KeyAuthApp.init();
+                    }
+                    
+                    // Validate license
+                    const result = await KeyAuthApp.license(key);
+                    
+                    if (result.success) {
+                        isAdminLoggedIn = true;
+                        sessionStorage.setItem(ADMIN_SESSION_KEY, 'true');
+                        hideAdminModal();
+                        showAdminPanel();
+                        updateAdminButton();
+                        loadAdminData();
+                        console.log('✅ Admin login successful via KeyAuth');
+                        console.log('User data:', KeyAuthApp.user_data);
+                        return true;
+                    } else {
+                        showAdminError(result.message || 'Invalid license key');
+                        return false;
+                    }
+                } catch (error) {
+                    showAdminError(error.message || 'Invalid license key');
+                    console.error('KeyAuth login error:', error);
+                    return false;
+                }
+            } else {
+                showAdminError('KeyAuth not available. Please refresh the page.');
+                return false;
+            }
+        }
+
+        // Admin logout
+        function adminLogout() {
+            isAdminLoggedIn = false;
+            sessionStorage.removeItem(ADMIN_SESSION_KEY);
+            hideAdminPanel();
+            updateAdminButton();
+        }
+
+        // Show admin modal
+        function showAdminModal() {
+            const overlay = document.getElementById('adminModalOverlay');
+            if (overlay) {
+                overlay.style.display = 'flex';
+            }
+        }
+
+        // Hide admin modal
+        function hideAdminModal() {
+            const overlay = document.getElementById('adminModalOverlay');
+            if (overlay) {
+                overlay.style.display = 'none';
+            }
+            const errorMsg = document.getElementById('adminErrorMessage');
+            if (errorMsg) {
+                errorMsg.classList.remove('show');
+            }
+            const input = document.getElementById('adminLicenseKey');
+            if (input) {
+                input.value = '';
+            }
+        }
+
+        // Show admin panel
+        function showAdminPanel() {
+            const panel = document.getElementById('adminPanel');
+            if (panel) {
+                panel.style.display = 'flex';
+                loadAdminData();
+            }
+        }
+
+        // Hide admin panel
+        function hideAdminPanel() {
+            const panel = document.getElementById('adminPanel');
+            if (panel) {
+                panel.style.display = 'none';
+            }
+        }
+
+        // Update admin button
+        function updateAdminButton() {
+            const btn = document.getElementById('adminLoginBtn');
+            if (btn) {
+                if (isAdminLoggedIn) {
+                    btn.classList.add('logged-in');
+                    btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path><path d="M9 12l2 2 4-4"></path></svg><span>Admin</span>';
+                } else {
+                    btn.classList.remove('logged-in');
+                    btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg><span>Admin</span>';
+                }
+            }
+        }
+
+        // Show admin error
+        function showAdminError(message) {
+            const errorMsg = document.getElementById('adminErrorMessage');
+            if (errorMsg) {
+                errorMsg.textContent = message;
+                errorMsg.classList.add('show');
+            }
+        }
+
+        // Load admin data
+        async function loadAdminData() {
+            if (!isAdminLoggedIn) return;
+            await loadAnnouncementsList();
+            await loadChangelogList();
+        }
+
+        // Load announcements list for admin
+        async function loadAnnouncementsList() {
+            const list = document.getElementById('announcementsList');
+            if (!list || !firebaseInitialized || !database) return;
+
+            try {
+                const snapshot = await database.ref('announcements').once('value');
+                if (!snapshot.exists()) {
+                    list.innerHTML = '<div style="color: #888; padding: 20px; text-align: center;">No announcements yet</div>';
+                    return;
+                }
+
+                const announcements = snapshot.val();
+                list.innerHTML = Object.entries(announcements).map(([id, announcement]) => `
+                    <div class="admin-list-item">
+                        <div class="admin-list-item-header">
+                            <div class="admin-list-item-title">${escapeHtml(announcement.title || 'Untitled')}</div>
+                            <div class="admin-list-item-actions">
+                                <button class="admin-btn-small" onclick="editAnnouncement('${id}')">Edit</button>
+                                <button class="admin-btn-small delete" onclick="deleteAnnouncement('${id}')">Delete</button>
+                            </div>
+                        </div>
+                        <div style="color: #888; font-size: 13px; margin-top: 8px;">${escapeHtml(announcement.message || '')}</div>
+                    </div>
+                `).join('');
+            } catch (error) {
+                console.error('Error loading announcements:', error);
+                list.innerHTML = '<div style="color: #ef4444; padding: 20px;">Error loading announcements</div>';
+            }
+        }
+
+        // Load changelog list for admin
+        async function loadChangelogList() {
+            const list = document.getElementById('changelogList');
+            if (!list || !firebaseInitialized || !database) return;
+
+            try {
+                const snapshot = await database.ref('changelog').once('value');
+                if (!snapshot.exists()) {
+                    list.innerHTML = '<div style="color: #888; padding: 20px; text-align: center;">No changelog entries yet</div>';
+                    return;
+                }
+
+                const changelog = snapshot.val();
+                list.innerHTML = Object.entries(changelog).map(([id, entry]) => `
+                    <div class="admin-list-item">
+                        <div class="admin-list-item-header">
+                            <div class="admin-list-item-title">${escapeHtml(entry.version || 'Unknown Version')} - ${escapeHtml(entry.date || '')}</div>
+                            <div class="admin-list-item-actions">
+                                <button class="admin-btn-small" onclick="editChangelog('${id}')">Edit</button>
+                                <button class="admin-btn-small delete" onclick="deleteChangelog('${id}')">Delete</button>
+                            </div>
+                        </div>
+                        <div style="color: #888; font-size: 13px; margin-top: 8px;">${(entry.changes || []).length} changes</div>
+                    </div>
+                `).join('');
+            } catch (error) {
+                console.error('Error loading changelog:', error);
+                list.innerHTML = '<div style="color: #ef4444; padding: 20px;">Error loading changelog</div>';
+            }
+        }
+
+        // Initialize database paths (force creation)
+        async function forceInitPaths() {
+            if (!firebaseInitialized || !database) {
+                showDatabaseStatus('Firebase not initialized', 'error');
+                return;
+            }
+
+            showDatabaseStatus('Initializing paths...', '');
+            try {
+                // Force create announcements
+                await database.ref('announcements').set({});
+                console.log('✅ Created announcements path');
+
+                // Force create changelog
+                await database.ref('changelog').set({});
+                console.log('✅ Created changelog path');
+
+                // Force create translations
+                await database.ref('translations').set({});
+                console.log('✅ Created translations path');
+
+                showDatabaseStatus('✅ All paths created successfully!', 'success');
+            } catch (error) {
+                console.error('Error creating paths:', error);
+                showDatabaseStatus('❌ Error: ' + error.message, 'error');
+            }
+        }
+
+        function showDatabaseStatus(message, type) {
+            const status = document.getElementById('databaseStatus');
+            if (status) {
+                status.textContent = message;
+                status.className = 'admin-status ' + (type || '');
+            }
+        }
+
+        // Event listeners
+        document.addEventListener('DOMContentLoaded', () => {
+            // Initialize KeyAuth
+            initKeyAuth();
+
+            // Check admin session
+            checkAdminSession();
+
+            // Admin login button
+            const adminBtn = document.getElementById('adminLoginBtn');
+            if (adminBtn) {
+                adminBtn.addEventListener('click', () => {
+                    if (isAdminLoggedIn) {
+                        showAdminPanel();
+                    } else {
+                        showAdminModal();
+                    }
+                });
+            }
+
+            // Admin modal close
+            const modalClose = document.getElementById('adminModalClose');
+            if (modalClose) {
+                modalClose.addEventListener('click', hideAdminModal);
+            }
+
+            // Admin modal overlay click
+            const modalOverlay = document.getElementById('adminModalOverlay');
+            if (modalOverlay) {
+                modalOverlay.addEventListener('click', (e) => {
+                    if (e.target === modalOverlay) {
+                        hideAdminModal();
+                    }
+                });
+            }
+
+            // Admin submit
+            const adminSubmit = document.getElementById('adminSubmitBtn');
+            const adminKeyInput = document.getElementById('adminLicenseKey');
+            if (adminSubmit && adminKeyInput) {
+                adminSubmit.addEventListener('click', async () => {
+                    const key = adminKeyInput.value.trim();
+                    if (!key) {
+                        showAdminError('Please enter a license key');
+                        return;
+                    }
+                    adminSubmit.disabled = true;
+                    adminSubmit.textContent = 'Logging in...';
+                    await adminLogin(key);
+                    adminSubmit.disabled = false;
+                    adminSubmit.textContent = 'Login';
+                });
+
+                adminKeyInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        adminSubmit.click();
+                    }
+                });
+            }
+
+            // Admin panel close
+            const panelClose = document.getElementById('adminPanelClose');
+            if (panelClose) {
+                panelClose.addEventListener('click', adminLogout);
+            }
+
+            // Admin tabs
+            document.querySelectorAll('.admin-tab').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const tabName = tab.getAttribute('data-tab');
+                    document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
+                    document.querySelectorAll('.admin-tab-content').forEach(c => c.classList.remove('active'));
+                    tab.classList.add('active');
+                    document.getElementById('tab' + tabName.charAt(0).toUpperCase() + tabName.slice(1)).classList.add('active');
+                });
+            });
+
+            // Add announcement button
+            const addAnnouncementBtn = document.getElementById('addAnnouncementBtn');
+            if (addAnnouncementBtn) {
+                addAnnouncementBtn.addEventListener('click', () => {
+                    editAnnouncement(null);
+                });
+            }
+
+            // Announcement editor close
+            const announcementEditorClose = document.getElementById('announcementEditorClose');
+            const announcementCancelBtn = document.getElementById('announcementCancelBtn');
+            if (announcementEditorClose) {
+                announcementEditorClose.addEventListener('click', hideAnnouncementEditor);
+            }
+            if (announcementCancelBtn) {
+                announcementCancelBtn.addEventListener('click', hideAnnouncementEditor);
+            }
+
+            // Announcement editor overlay click
+            const announcementEditorModal = document.getElementById('announcementEditorModal');
+            if (announcementEditorModal) {
+                announcementEditorModal.addEventListener('click', (e) => {
+                    if (e.target === announcementEditorModal) {
+                        hideAnnouncementEditor();
+                    }
+                });
+            }
+
+            // Save announcement button
+            const announcementSaveBtn = document.getElementById('announcementSaveBtn');
+            if (announcementSaveBtn) {
+                announcementSaveBtn.addEventListener('click', saveAnnouncement);
+            }
+
+            // Add changelog button
+            const addChangelogBtn = document.getElementById('addChangelogBtn');
+            if (addChangelogBtn) {
+                addChangelogBtn.addEventListener('click', () => {
+                    editChangelog(null);
+                });
+            }
+
+            // Changelog editor close
+            const changelogEditorClose = document.getElementById('changelogEditorClose');
+            const changelogCancelBtn = document.getElementById('changelogCancelBtn');
+            if (changelogEditorClose) {
+                changelogEditorClose.addEventListener('click', hideChangelogEditor);
+            }
+            if (changelogCancelBtn) {
+                changelogCancelBtn.addEventListener('click', hideChangelogEditor);
+            }
+
+            // Changelog editor overlay click
+            const changelogEditorModal = document.getElementById('changelogEditorModal');
+            if (changelogEditorModal) {
+                changelogEditorModal.addEventListener('click', (e) => {
+                    if (e.target === changelogEditorModal) {
+                        hideChangelogEditor();
+                    }
+                });
+            }
+
+            // Save changelog button
+            const changelogSaveBtn = document.getElementById('changelogSaveBtn');
+            if (changelogSaveBtn) {
+                changelogSaveBtn.addEventListener('click', saveChangelog);
+            }
+
+            // Add change button
+            const addChangeBtn = document.getElementById('addChangeBtn');
+            const changelogChangeInput = document.getElementById('changelogChangeInput');
+            if (addChangeBtn) {
+                addChangeBtn.addEventListener('click', addChangelogChange);
+            }
+            if (changelogChangeInput) {
+                changelogChangeInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        addChangelogChange();
+                    }
+                });
+            }
+
+            // Initialize paths button
+            const initPathsBtn = document.getElementById('initPathsBtn');
+            if (initPathsBtn) {
+                initPathsBtn.addEventListener('click', forceInitPaths);
+            }
+        });
+
+        // Show announcement editor
+        window.editAnnouncement = async function(id) {
+            const modal = document.getElementById('announcementEditorModal');
+            const title = document.getElementById('announcementEditorTitle');
+            const titleInput = document.getElementById('announcementTitleInput');
+            const messageInput = document.getElementById('announcementMessageInput');
+            const typeInput = document.getElementById('announcementTypeInput');
+            const priorityInput = document.getElementById('announcementPriorityInput');
+            const startDateInput = document.getElementById('announcementStartDateInput');
+            const endDateInput = document.getElementById('announcementEndDateInput');
+            const dismissibleInput = document.getElementById('announcementDismissibleInput');
+            const linkInput = document.getElementById('announcementLinkInput');
+            const linkTextInput = document.getElementById('announcementLinkTextInput');
+            const errorDiv = document.getElementById('announcementEditorError');
+
+            if (!modal) return;
+
+            // Clear form
+            titleInput.value = '';
+            messageInput.value = '';
+            typeInput.value = 'info';
+            priorityInput.value = 'medium';
+            startDateInput.value = '';
+            endDateInput.value = '';
+            dismissibleInput.checked = true;
+            linkInput.value = '';
+            linkTextInput.value = '';
+            errorDiv.classList.remove('show');
+            errorDiv.textContent = '';
+
+            // Set title
+            if (id) {
+                title.textContent = 'Edit Announcement';
+                // Load existing announcement
+                try {
+                    const snapshot = await database.ref(`announcements/${id}`).once('value');
+                    if (snapshot.exists()) {
+                        const announcement = snapshot.val();
+                        titleInput.value = announcement.title || '';
+                        messageInput.value = announcement.message || '';
+                        typeInput.value = announcement.type || 'info';
+                        priorityInput.value = announcement.priority || 'medium';
+                        
+                        // Convert timestamps to datetime-local format
+                        if (announcement.startDate) {
+                            const startDate = new Date(announcement.startDate);
+                            startDateInput.value = startDate.toISOString().slice(0, 16);
+                        }
+                        if (announcement.endDate) {
+                            const endDate = new Date(announcement.endDate);
+                            endDateInput.value = endDate.toISOString().slice(0, 16);
+                        }
+                        
+                        dismissibleInput.checked = announcement.dismissible !== false;
+                        linkInput.value = announcement.link || '';
+                        linkTextInput.value = announcement.linkText || '';
+                    }
+                } catch (error) {
+                    console.error('Error loading announcement:', error);
+                    showAnnouncementEditorError('Failed to load announcement');
+                }
+            } else {
+                title.textContent = 'Add Announcement';
+                // Set default start date to now
+                const now = new Date();
+                startDateInput.value = now.toISOString().slice(0, 16);
+            }
+
+            // Show modal
+            modal.style.display = 'flex';
+            window.currentEditingAnnouncementId = id;
+        };
+
+        // Hide announcement editor
+        window.hideAnnouncementEditor = function() {
+            const modal = document.getElementById('announcementEditorModal');
+            if (modal) {
+                modal.style.display = 'none';
+            }
+            window.currentEditingAnnouncementId = null;
+        };
+
+        // Show announcement editor error
+        function showAnnouncementEditorError(message) {
+            const errorDiv = document.getElementById('announcementEditorError');
+            if (errorDiv) {
+                errorDiv.textContent = message;
+                errorDiv.classList.add('show');
+            }
+        }
+
+        // Save announcement
+        window.saveAnnouncement = async function() {
+            const titleInput = document.getElementById('announcementTitleInput');
+            const messageInput = document.getElementById('announcementMessageInput');
+            const typeInput = document.getElementById('announcementTypeInput');
+            const priorityInput = document.getElementById('announcementPriorityInput');
+            const startDateInput = document.getElementById('announcementStartDateInput');
+            const endDateInput = document.getElementById('announcementEndDateInput');
+            const dismissibleInput = document.getElementById('announcementDismissibleInput');
+            const linkInput = document.getElementById('announcementLinkInput');
+            const linkTextInput = document.getElementById('announcementLinkTextInput');
+            const errorDiv = document.getElementById('announcementEditorError');
+            const saveBtn = document.getElementById('announcementSaveBtn');
+
+            // Validate
+            if (!titleInput.value.trim()) {
+                showAnnouncementEditorError('Title is required');
+                return;
+            }
+            if (!messageInput.value.trim()) {
+                showAnnouncementEditorError('Message is required');
+                return;
+            }
+            if (!startDateInput.value) {
+                showAnnouncementEditorError('Start date is required');
+                return;
+            }
+
+            // Get values
+            const title = titleInput.value.trim();
+            const message = messageInput.value.trim();
+            const type = typeInput.value;
+            const priority = priorityInput.value;
+            const startDate = new Date(startDateInput.value).getTime();
+            const endDate = endDateInput.value ? new Date(endDateInput.value).getTime() : null;
+            const dismissible = dismissibleInput.checked;
+            const link = linkInput.value.trim() || null;
+            const linkText = linkTextInput.value.trim() || null;
+
+            // Validate link
+            if (link && !linkText) {
+                showAnnouncementEditorError('Link text is required when link URL is provided');
+                return;
+            }
+            if (linkText && !link) {
+                showAnnouncementEditorError('Link URL is required when link text is provided');
+                return;
+            }
+
+            if (!firebaseInitialized || !database) {
+                showAnnouncementEditorError('Firebase not initialized');
+                return;
+            }
+
+            saveBtn.disabled = true;
+            saveBtn.textContent = 'Saving...';
+
+            try {
+                const announcementData = {
+                    title: title,
+                    message: message,
+                    type: type,
+                    priority: priority,
+                    startDate: startDate,
+                    dismissible: dismissible
+                };
+
+                if (endDate) {
+                    announcementData.endDate = endDate;
+                }
+                if (link) {
+                    announcementData.link = link;
+                    announcementData.linkText = linkText;
+                }
+
+                const id = window.currentEditingAnnouncementId || 'announcement_' + Date.now();
+                await database.ref(`announcements/${id}`).set(announcementData);
+
+                console.log('✅ Announcement saved:', id);
+                hideAnnouncementEditor();
+                loadAnnouncementsList();
+                loadAnnouncements(); // Refresh public announcements
+            } catch (error) {
+                console.error('Error saving announcement:', error);
+                showAnnouncementEditorError('Failed to save announcement: ' + error.message);
+            } finally {
+                saveBtn.disabled = false;
+                saveBtn.textContent = 'Save Announcement';
+            }
+        }
+
+        // Delete announcement
+        window.deleteAnnouncement = async function(id) {
+            if (!confirm('Are you sure you want to delete this announcement?')) return;
+            if (!firebaseInitialized || !database) return;
+
+            try {
+                await database.ref(`announcements/${id}`).remove();
+                loadAnnouncementsList();
+                loadAnnouncements(); // Refresh public announcements
+            } catch (error) {
+                console.error('Error deleting announcement:', error);
+                alert('Error deleting announcement');
+            }
+        };
+
+        // Changelog changes array
+        let changelogChanges = [];
+
+        // Show changelog editor
+        window.editChangelog = async function(id) {
+            const modal = document.getElementById('changelogEditorModal');
+            const title = document.getElementById('changelogEditorTitle');
+            const versionInput = document.getElementById('changelogVersionInput');
+            const dateInput = document.getElementById('changelogDateInput');
+            const typeInput = document.getElementById('changelogTypeInput');
+            const downloadUrlInput = document.getElementById('changelogDownloadUrlInput');
+            const changesList = document.getElementById('changelogChangesList');
+            const changeInput = document.getElementById('changelogChangeInput');
+            const errorDiv = document.getElementById('changelogEditorError');
+
+            if (!modal) return;
+
+            // Clear form
+            versionInput.value = '';
+            dateInput.value = '';
+            typeInput.value = '';
+            downloadUrlInput.value = '';
+            changelogChanges = [];
+            changeInput.value = '';
+            errorDiv.classList.remove('show');
+            errorDiv.textContent = '';
+            renderChangelogChanges();
+
+            // Set title
+            if (id) {
+                title.textContent = 'Edit Changelog Entry';
+                // Load existing changelog
+                try {
+                    const snapshot = await database.ref(`changelog/${id}`).once('value');
+                    if (snapshot.exists()) {
+                        const entry = snapshot.val();
+                        versionInput.value = entry.version || '';
+                        
+                        // Convert date to input format
+                        if (entry.date) {
+                            // Try to parse the date string
+                            const dateStr = entry.date;
+                            // Handle formats like "January 20, 2024" or "2024-01-20"
+                            let dateObj;
+                            if (dateStr.includes(',')) {
+                                dateObj = new Date(dateStr);
+                            } else {
+                                dateObj = new Date(dateStr);
+                            }
+                            if (!isNaN(dateObj.getTime())) {
+                                dateInput.value = dateObj.toISOString().split('T')[0];
+                            }
+                        }
+                        
+                        typeInput.value = entry.type || '';
+                        downloadUrlInput.value = entry.downloadUrl || '';
+                        changelogChanges = Array.isArray(entry.changes) ? [...entry.changes] : [];
+                        renderChangelogChanges();
+                    }
+                } catch (error) {
+                    console.error('Error loading changelog:', error);
+                    showChangelogEditorError('Failed to load changelog entry');
+                }
+            } else {
+                title.textContent = 'Add Changelog Entry';
+                // Set default date to today
+                const today = new Date();
+                dateInput.value = today.toISOString().split('T')[0];
+            }
+
+            // Show modal
+            modal.style.display = 'flex';
+            window.currentEditingChangelogId = id;
+        };
+
+        // Render changelog changes list
+        function renderChangelogChanges() {
+            const changesList = document.getElementById('changelogChangesList');
+            if (!changesList) return;
+
+            if (changelogChanges.length === 0) {
+                changesList.innerHTML = '<div style="color: #888; font-size: 13px; padding: 8px;">No changes added yet</div>';
+                return;
+            }
+
+            changesList.innerHTML = changelogChanges.map((change, index) => `
+                <div class="changelog-change-item">
+                    <span class="changelog-change-item-text">${escapeHtml(change)}</span>
+                    <button type="button" class="changelog-change-item-remove" onclick="removeChangelogChange(${index})">Remove</button>
+                </div>
+            `).join('');
+        }
+
+        // Add changelog change
+        window.addChangelogChange = function() {
+            const changeInput = document.getElementById('changelogChangeInput');
+            if (!changeInput) return;
+
+            const change = changeInput.value.trim();
+            if (!change) return;
+
+            changelogChanges.push(change);
+            changeInput.value = '';
+            renderChangelogChanges();
+        };
+
+        // Remove changelog change
+        window.removeChangelogChange = function(index) {
+            changelogChanges.splice(index, 1);
+            renderChangelogChanges();
+        };
+
+        // Hide changelog editor
+        window.hideChangelogEditor = function() {
+            const modal = document.getElementById('changelogEditorModal');
+            if (modal) {
+                modal.style.display = 'none';
+            }
+            window.currentEditingChangelogId = null;
+            changelogChanges = [];
+        };
+
+        // Show changelog editor error
+        function showChangelogEditorError(message) {
+            const errorDiv = document.getElementById('changelogEditorError');
+            if (errorDiv) {
+                errorDiv.textContent = message;
+                errorDiv.classList.add('show');
+            }
+        }
+
+        // Save changelog
+        window.saveChangelog = async function() {
+            const versionInput = document.getElementById('changelogVersionInput');
+            const dateInput = document.getElementById('changelogDateInput');
+            const typeInput = document.getElementById('changelogTypeInput');
+            const downloadUrlInput = document.getElementById('changelogDownloadUrlInput');
+            const errorDiv = document.getElementById('changelogEditorError');
+            const saveBtn = document.getElementById('changelogSaveBtn');
+
+            // Validate
+            if (!versionInput.value.trim()) {
+                showChangelogEditorError('Version is required');
+                return;
+            }
+            if (!dateInput.value) {
+                showChangelogEditorError('Release date is required');
+                return;
+            }
+            if (changelogChanges.length === 0) {
+                showChangelogEditorError('At least one change is required');
+                return;
+            }
+
+            // Get values
+            const version = versionInput.value.trim();
+            const dateObj = new Date(dateInput.value);
+            const date = dateObj.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+            const type = typeInput.value.trim() || null;
+            const downloadUrl = downloadUrlInput.value.trim() || null;
+            const changes = changelogChanges.filter(c => c.trim().length > 0);
+
+            if (!firebaseInitialized || !database) {
+                showChangelogEditorError('Firebase not initialized');
+                return;
+            }
+
+            saveBtn.disabled = true;
+            saveBtn.textContent = 'Saving...';
+
+            try {
+                const changelogData = {
+                    version: version,
+                    date: date,
+                    changes: changes
+                };
+
+                if (type) {
+                    changelogData.type = type;
+                }
+                if (downloadUrl) {
+                    changelogData.downloadUrl = downloadUrl;
+                }
+
+                const id = window.currentEditingChangelogId || 'v' + version.replace(/\./g, '_') + '_' + Date.now();
+                await database.ref(`changelog/${id}`).set(changelogData);
+
+                console.log('✅ Changelog saved:', id);
+                hideChangelogEditor();
+                loadChangelogList();
+                loadChangelog(); // Refresh public changelog
+            } catch (error) {
+                console.error('Error saving changelog:', error);
+                showChangelogEditorError('Failed to save changelog: ' + error.message);
+            } finally {
+                saveBtn.disabled = false;
+                saveBtn.textContent = 'Save Changelog';
+            }
+        };
+
+        // Delete changelog
+        window.deleteChangelog = async function(id) {
+            if (!confirm('Are you sure you want to delete this changelog entry?')) return;
+            if (!firebaseInitialized || !database) return;
+
+            try {
+                await database.ref(`changelog/${id}`).remove();
+                loadChangelogList();
+                loadChangelog(); // Refresh public changelog
+            } catch (error) {
+                console.error('Error deleting changelog:', error);
+                alert('Error deleting changelog');
+            }
+        };
     </script>
 </body>
 </html>
