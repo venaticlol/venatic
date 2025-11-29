@@ -3521,6 +3521,109 @@
                 this.updateImagePreview();
             },
             
+            // Voice recording
+            voiceRecording: null,
+            mediaRecorder: null,
+            audioChunks: [],
+            isRecording: false,
+            
+            startRecording: async function() {
+                if (this.isRecording) return;
+                
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    this.mediaRecorder = new MediaRecorder(stream);
+                    this.audioChunks = [];
+                    this.isRecording = true;
+                    
+                    const recordBtn = document.getElementById('adminTicketVoiceBtn');
+                    if (recordBtn) {
+                        recordBtn.classList.add('recording');
+                    }
+                    
+                    this.mediaRecorder.ondataavailable = (event) => {
+                        if (event.data.size > 0) {
+                            this.audioChunks.push(event.data);
+                        }
+                    };
+                    
+                    this.mediaRecorder.onstop = async () => {
+                        const audioBlob = new Blob(this.audioChunks, { type: 'audio/webm' });
+                        const reader = new FileReader();
+                        reader.onload = (e) => {
+                            this.voiceRecording = {
+                                data: e.target.result,
+                                duration: 0
+                            };
+                            
+                            if (recordBtn) {
+                                recordBtn.classList.remove('recording');
+                            }
+                            
+                            stream.getTracks().forEach(track => track.stop());
+                        };
+                        reader.readAsDataURL(audioBlob);
+                    };
+                    
+                    this.mediaRecorder.start();
+                } catch (error) {
+                    console.error('Error starting recording:', error);
+                    alert('Could not access microphone. Please check permissions.');
+                    this.isRecording = false;
+                }
+            },
+            
+            stopRecording: function() {
+                if (!this.isRecording || !this.mediaRecorder) return;
+                
+                if (this.mediaRecorder.state === 'recording') {
+                    this.mediaRecorder.stop();
+                    this.isRecording = false;
+                }
+            },
+            
+            clearVoice: function() {
+                this.voiceRecording = null;
+            },
+            
+            playVoice: function(voiceId, audioData) {
+                const btn = document.getElementById(voiceId + '_btn');
+                const durationEl = document.getElementById(voiceId + '_duration');
+                
+                if (!btn || !audioData) return;
+                
+                const audio = new Audio(audioData);
+                
+                btn.innerHTML = `
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 16px; height: 16px;">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                `;
+                btn.disabled = true;
+                
+                audio.addEventListener('loadedmetadata', () => {
+                    if (durationEl) {
+                        const duration = Math.round(audio.duration);
+                        durationEl.textContent = `${duration}s`;
+                    }
+                });
+                
+                audio.addEventListener('ended', () => {
+                    btn.innerHTML = `
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 16px; height: 16px;">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    `;
+                    btn.disabled = false;
+                });
+                
+                audio.play().catch(err => {
+                    console.error('Error playing audio:', err);
+                    btn.disabled = false;
+                });
+            },
+            
             // Send message
             sendMessage: async function() {
                 const input = this.getElement('adminTicketReplyInput');
