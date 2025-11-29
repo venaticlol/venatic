@@ -3121,13 +3121,51 @@
         }
 
         window.viewAdminTicket = async function(ticketId) {
+            if (!ticketId) {
+                alert('Invalid ticket ID');
+                return;
+            }
+
+            // Re-query elements directly from DOM to ensure they exist
             const modal = document.getElementById('adminTicketModal');
             const titleEl = document.getElementById('adminTicketTitle');
             const idEl = document.getElementById('adminTicketId');
             const messagesContainer = document.getElementById('adminTicketMessages');
             const closeBtn = document.getElementById('closeTicketBtn');
 
+            if (!modal) {
+                console.error('Admin ticket modal not found');
+                alert('Error: Ticket modal not found. Please refresh the page.');
+                return;
+            }
+
+            if (!titleEl) {
+                console.error('adminTicketTitle element not found');
+                alert('Error: Ticket view elements not found. Please refresh the page.');
+                return;
+            }
+
+            if (!idEl) {
+                console.error('adminTicketId element not found');
+                alert('Error: Ticket view elements not found. Please refresh the page.');
+                return;
+            }
+
+            if (!messagesContainer) {
+                console.error('adminTicketMessages element not found');
+                alert('Error: Ticket view elements not found. Please refresh the page.');
+                return;
+            }
+
+            if (!firebaseInitialized || !database) {
+                alert('Firebase not initialized. Please refresh the page.');
+                return;
+            }
+
             try {
+                // Show loading state
+                messagesContainer.innerHTML = '<div style="color: #888; text-align: center; padding: 40px;">Loading ticket...</div>';
+
                 const ticketSnapshot = await database.ref(`tickets/${ticketId}`).once('value');
                 if (!ticketSnapshot.exists()) {
                     alert('Ticket not found');
@@ -3135,8 +3173,49 @@
                 }
 
                 const ticket = ticketSnapshot.val();
-                titleEl.textContent = ticket.subject || 'No Subject';
-                idEl.textContent = ticket.id;
+                if (!ticket) {
+                    alert('Invalid ticket data');
+                    return;
+                }
+
+                // Re-query elements right before setting content (defensive)
+                const titleElement = document.getElementById('adminTicketTitle');
+                const idElement = document.getElementById('adminTicketId');
+                const messagesContainerElement = document.getElementById('adminTicketMessages');
+                const closeButton = document.getElementById('closeTicketBtn');
+                
+                if (!titleElement || !idElement || !messagesContainerElement) {
+                    console.error('Elements became null before setting content');
+                    alert('Error: Could not update ticket view. Please refresh the page.');
+                    return;
+                }
+                
+                // Set ticket info (with safety checks)
+                try {
+                    titleElement.textContent = ticket.subject || 'No Subject';
+                } catch (e) {
+                    console.error('Error setting title textContent:', e);
+                    titleElement.textContent = 'No Subject';
+                }
+                
+                try {
+                    idElement.textContent = ticket.id || ticketId;
+                } catch (e) {
+                    console.error('Error setting id textContent:', e);
+                    idElement.textContent = ticketId;
+                }
+                
+                if (closeButton) {
+                    try {
+                        if (ticket.status === 'closed') {
+                            closeButton.textContent = 'Reopen Ticket';
+                        } else {
+                            closeButton.textContent = 'Close Ticket';
+                        }
+                    } catch (e) {
+                        console.error('Error setting close button textContent:', e);
+                    }
+                }
                 
                 if (ticket.status === 'closed') {
                     closeBtn.textContent = 'Reopen Ticket';
@@ -3148,21 +3227,60 @@
                 const messagesSnapshot = await database.ref(`ticketMessages/${ticketId}`).once('value');
                 const messages = messagesSnapshot.exists() ? messagesSnapshot.val() : {};
                 const messagesArray = Object.entries(messages)
-                    .map(([timestamp, msg]) => ({ timestamp: parseInt(timestamp), ...msg }))
+                    .map(([timestamp, msg]) => {
+                        try {
+                            return { 
+                                timestamp: parseInt(timestamp) || Date.now(), 
+                                message: msg.message || '',
+                                sender: msg.sender || 'user'
+                            };
+                        } catch (e) {
+                            console.warn('Invalid message format:', msg);
+                            return null;
+                        }
+                    })
+                    .filter(msg => msg !== null)
                     .sort((a, b) => a.timestamp - b.timestamp);
 
-                renderAdminTicketMessages(messagesArray, messagesContainer);
+                renderAdminTicketMessages(messagesArray, messagesContainerElement);
+                
+                // Clean up previous listener
+                if (window.currentAdminTicketId && window.currentAdminTicketListener) {
+                    try {
+                        database.ref(`ticketMessages/${window.currentAdminTicketId}`).off('value', window.currentAdminTicketListener);
+                    } catch (e) {
+                        console.warn('Error removing previous listener:', e);
+                    }
+                }
                 
                 // Set up real-time listener
-                database.ref(`ticketMessages/${ticketId}`).on('value', (snapshot) => {
+                window.currentAdminTicketId = ticketId;
+                window.currentAdminTicketListener = (snapshot) => {
                     const msgs = snapshot.exists() ? snapshot.val() : {};
                     const msgsArray = Object.entries(msgs)
-                        .map(([timestamp, msg]) => ({ timestamp: parseInt(timestamp), ...msg }))
+                        .map(([timestamp, msg]) => {
+                            try {
+                                return { 
+                                    timestamp: parseInt(timestamp) || Date.now(), 
+                                    message: msg.message || '',
+                                    sender: msg.sender || 'user'
+                                };
+                            } catch (e) {
+                                return null;
+                            }
+                        })
+                        .filter(msg => msg !== null)
                         .sort((a, b) => a.timestamp - b.timestamp);
-                    renderAdminTicketMessages(msgsArray, messagesContainer);
-                });
+                    
+                    // Re-query container in listener to ensure it exists
+                    const container = document.getElementById('adminTicketMessages');
+                    if (container) {
+                        renderAdminTicketMessages(msgsArray, container);
+                    }
+                };
+                
+                database.ref(`ticketMessages/${ticketId}`).on('value', window.currentAdminTicketListener);
 
-                window.currentAdminTicketId = ticketId;
                 modal.classList.add('active');
             } catch (error) {
                 console.error('Error loading ticket:', error);
