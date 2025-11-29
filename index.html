@@ -4807,8 +4807,34 @@
                 }
 
                 const ticket = ticketSnapshot.val();
-                if (titleEl) titleEl.textContent = ticket.subject || 'No Subject';
-                if (idEl) idEl.textContent = ticket.id || ticketId;
+                
+                // Re-query elements to ensure they still exist (defensive check)
+                const titleElement = document.getElementById('ticketViewTitle');
+                const idElement = document.getElementById('ticketViewId');
+                const messagesContainerElement = document.getElementById('ticketMessagesContainer');
+                
+                if (!titleElement || !idElement || !messagesContainerElement) {
+                    console.error('Modal elements not found when setting content', { 
+                        titleElement: !!titleElement, 
+                        idElement: !!idElement, 
+                        messagesContainerElement: !!messagesContainerElement 
+                    });
+                    alert('Error: Modal elements not available. Please refresh the page and try again.');
+                    return;
+                }
+                
+                // Safely set textContent with error handling
+                try {
+                    titleElement.textContent = (ticket && ticket.subject) ? ticket.subject : 'No Subject';
+                } catch (e) {
+                    console.error('Error setting title textContent:', e);
+                }
+                
+                try {
+                    idElement.textContent = (ticket && ticket.id) ? ticket.id : ticketId;
+                } catch (e) {
+                    console.error('Error setting id textContent:', e);
+                }
 
                 // Load messages
                 const messagesSnapshot = await database.ref(`ticketMessages/${ticketId}`).once('value');
@@ -4817,7 +4843,7 @@
                     .map(([timestamp, msg]) => ({ timestamp: parseInt(timestamp), ...msg }))
                     .sort((a, b) => a.timestamp - b.timestamp);
 
-                renderTicketMessages(messagesArray, messagesContainer);
+                renderTicketMessages(messagesArray, messagesContainerElement);
                 
                 // Set up real-time listener
                 database.ref(`ticketMessages/${ticketId}`).on('value', (snapshot) => {
@@ -4825,7 +4851,10 @@
                     const msgsArray = Object.entries(msgs)
                         .map(([timestamp, msg]) => ({ timestamp: parseInt(timestamp), ...msg }))
                         .sort((a, b) => a.timestamp - b.timestamp);
-                    renderTicketMessages(msgsArray, messagesContainer);
+                    const container = document.getElementById('ticketMessagesContainer');
+                    if (container) {
+                        renderTicketMessages(msgsArray, container);
+                    }
                 });
 
                 window.currentViewingTicketId = ticketId;
