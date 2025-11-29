@@ -1018,19 +1018,12 @@
             right: 0;
             bottom: 0;
             background: rgba(0, 0, 0, 0.95);
-            backdrop-filter: blur(10px);
             z-index: 10000;
             display: none;
             align-items: center;
             justify-content: center;
             padding: 20px;
             overflow-y: auto;
-            animation: fadeIn 0.3s ease;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
         }
 
         .ticket-modal.active {
@@ -1038,107 +1031,55 @@
         }
 
         .ticket-modal-content {
-            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 16px;
+            background: #0a0a0a;
+            border: 1px solid #1a1a1a;
+            border-radius: 4px;
             width: 100%;
             max-width: 700px;
             max-height: 90vh;
             display: flex;
             flex-direction: column;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-            animation: slideUp 0.3s ease;
-        }
-
-        @keyframes slideUp {
-            from {
-                transform: translateY(20px);
-                opacity: 0;
-            }
-            to {
-                transform: translateY(0);
-                opacity: 1;
-            }
         }
 
         .ticket-modal-header {
-            padding: 28px 32px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 24px;
+            border-bottom: 1px solid #1a1a1a;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(34, 197, 94, 0.1) 100%);
-        }
-
-        .ticket-modal-header h3 {
-            background: linear-gradient(135deg, #3b82f6 0%, #22c55e 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            font-size: 24px;
-            font-weight: 700;
-            margin: 0;
-        }
-
-        .ticket-modal-header button {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 8px;
-            color: #e5e5e5;
-            font-size: 24px;
-            cursor: pointer;
-            padding: 8px 12px;
-            width: 40px;
-            height: 40px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.3s ease;
-        }
-
-        .ticket-modal-header button:hover {
-            background: rgba(239, 68, 68, 0.2);
-            border-color: rgba(239, 68, 68, 0.4);
-            transform: rotate(90deg);
         }
 
         .ticket-modal-body {
-            padding: 32px;
+            padding: 24px;
             flex: 1;
             overflow-y: auto;
         }
 
         .ticket-form-group {
-            margin-bottom: 24px;
+            margin-bottom: 20px;
         }
 
         .ticket-form-label {
             display: block;
             color: #e5e5e5;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
             font-weight: 600;
-            font-size: 14px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
         }
 
         .ticket-input, .ticket-textarea {
             width: 100%;
-            padding: 14px 18px;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 12px;
+            padding: 12px;
+            background: #1a1a1a;
+            border: 1px solid #4a4a4a;
+            border-radius: 4px;
             color: #e5e5e5;
-            font-size: 15px;
+            font-size: 14px;
             font-family: inherit;
-            transition: all 0.3s ease;
         }
 
         .ticket-input:focus, .ticket-textarea:focus {
             outline: none;
-            border-color: #3b82f6;
-            background: rgba(59, 130, 246, 0.1);
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+            border-color: #6a6a6a;
         }
 
         .ticket-textarea {
@@ -1147,78 +1088,45 @@
         }
 
         .ticket-messages {
-            min-height: 350px;
-            max-height: 450px;
+            min-height: 300px;
+            max-height: 400px;
             overflow-y: auto;
-            margin-bottom: 24px;
-            padding: 20px;
-            background: rgba(0, 0, 0, 0.3);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 12px;
-            scrollbar-width: thin;
-            scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
-        }
-
-        .ticket-messages::-webkit-scrollbar {
-            width: 6px;
-        }
-
-        .ticket-messages::-webkit-scrollbar-track {
-            background: transparent;
-        }
-
-        .ticket-messages::-webkit-scrollbar-thumb {
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 3px;
+            margin-bottom: 20px;
+            padding: 16px;
+            background: #000;
+            border: 1px solid #1a1a1a;
+            border-radius: 4px;
         }
 
         .ticket-message {
             margin-bottom: 16px;
-            padding: 16px;
-            border-radius: 12px;
-            max-width: 75%;
-            animation: messageSlide 0.3s ease;
-            position: relative;
-        }
-
-        @keyframes messageSlide {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            padding: 12px;
+            border-radius: 4px;
+            max-width: 80%;
         }
 
         .ticket-message.user {
-            background: linear-gradient(135deg, rgba(59, 130, 246, 0.25) 0%, rgba(59, 130, 246, 0.15) 100%);
-            border: 1px solid rgba(59, 130, 246, 0.4);
+            background: rgba(59, 130, 246, 0.2);
+            border: 1px solid rgba(59, 130, 246, 0.3);
             margin-left: auto;
-            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
         }
 
         .ticket-message.admin {
-            background: linear-gradient(135deg, rgba(34, 197, 94, 0.25) 0%, rgba(34, 197, 94, 0.15) 100%);
-            border: 1px solid rgba(34, 197, 94, 0.4);
-            box-shadow: 0 4px 12px rgba(34, 197, 94, 0.2);
+            background: rgba(34, 197, 94, 0.2);
+            border: 1px solid rgba(34, 197, 94, 0.3);
         }
 
         .ticket-message-header {
-            font-size: 12px;
-            color: rgba(255, 255, 255, 0.7);
-            margin-bottom: 8px;
+            font-size: 11px;
+            color: #888;
+            margin-bottom: 4px;
             font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
         }
 
         .ticket-message-text {
             color: #e5e5e5;
-            font-size: 15px;
-            line-height: 1.6;
-            word-wrap: break-word;
+            font-size: 14px;
+            line-height: 1.5;
         }
 
         .ticket-message-image {
@@ -1244,12 +1152,6 @@
         .ticket-input-area {
             display: flex;
             gap: 12px;
-            align-items: flex-end;
-        }
-
-        .ticket-input-wrapper {
-            flex: 1;
-            position: relative;
         }
 
         .ticket-image-preview {
@@ -1297,12 +1199,12 @@
             transform: scale(1.1);
         }
 
-        .ticket-attach-btn {
-            padding: 14px 18px;
-            background: rgba(59, 130, 246, 0.2);
-            border: 1px solid rgba(59, 130, 246, 0.4);
-            border-radius: 12px;
-            color: #3b82f6;
+        .ticket-attach-btn, .ticket-voice-btn {
+            padding: 12px 16px;
+            background: #1a1a1a;
+            border: 1px solid #4a4a4a;
+            border-radius: 4px;
+            color: #e5e5e5;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s ease;
@@ -1312,64 +1214,106 @@
             white-space: nowrap;
         }
 
-        .ticket-attach-btn:hover {
-            background: rgba(59, 130, 246, 0.3);
-            border-color: rgba(59, 130, 246, 0.6);
-            transform: translateY(-2px);
+        .ticket-attach-btn:hover, .ticket-voice-btn:hover {
+            background: #222222;
+            border-color: #6a6a6a;
         }
 
-        .ticket-attach-btn svg {
+        .ticket-voice-btn.recording {
+            background: rgba(239, 68, 68, 0.2);
+            border-color: rgba(239, 68, 68, 0.4);
+            color: #ef4444;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .ticket-attach-btn svg, .ticket-voice-btn svg {
             width: 18px;
             height: 18px;
         }
 
         .ticket-send-btn {
-            padding: 14px 28px;
-            background: linear-gradient(135deg, #3b82f6 0%, #22c55e 100%);
-            border: none;
-            border-radius: 12px;
-            color: white;
-            font-weight: 700;
+            padding: 12px 24px;
+            background: #1a1a1a;
+            border: 1px solid #4a4a4a;
+            border-radius: 4px;
+            color: #e5e5e5;
+            font-weight: 600;
             cursor: pointer;
             transition: all 0.3s ease;
-            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
         }
 
         .ticket-send-btn:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
-        }
-
-        .ticket-send-btn:active:not(:disabled) {
-            transform: translateY(0);
+            background: #222222;
+            border-color: #6a6a6a;
         }
 
         .ticket-send-btn:disabled {
             opacity: 0.5;
             cursor: not-allowed;
-            transform: none;
         }
 
         .ticket-btn-secondary {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(74, 74, 74, 0.3);
+            border: 1px solid #4a4a4a;
             color: #e5e5e5;
         }
 
         .ticket-btn-secondary:hover {
-            background: rgba(255, 255, 255, 0.1);
-            border-color: rgba(255, 255, 255, 0.2);
+            background: rgba(74, 74, 74, 0.5);
         }
 
         .ticket-error {
             color: #ef4444;
             font-size: 13px;
             margin-bottom: 16px;
-            padding: 12px;
-            background: rgba(239, 68, 68, 0.1);
-            border: 1px solid rgba(239, 68, 68, 0.3);
-            border-radius: 8px;
             display: none;
+        }
+        
+        .ticket-voice-message {
+            margin-top: 12px;
+            padding: 12px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .ticket-voice-player {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .ticket-voice-play-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: rgba(59, 130, 246, 0.2);
+            border: 1px solid rgba(59, 130, 246, 0.4);
+            color: #3b82f6;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+        
+        .ticket-voice-play-btn:hover {
+            background: rgba(59, 130, 246, 0.3);
+        }
+        
+        .ticket-voice-duration {
+            font-size: 12px;
+            color: #888;
+            min-width: 50px;
         }
 
         input[type="file"] {
@@ -4168,13 +4112,21 @@
                 <div class="ticket-form-group">
                     <label class="ticket-form-label">Attachments</label>
                     <div class="ticket-image-preview" id="ticketImagePreview"></div>
-                    <input type="file" id="ticketImageInput" accept="image/*" multiple>
-                    <button class="ticket-attach-btn" onclick="document.getElementById('ticketImageInput').click()">
-                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                        </svg>
-                        Attach Images
-                    </button>
+                    <div style="display: flex; gap: 8px;">
+                        <input type="file" id="ticketImageInput" accept="image/*" multiple>
+                        <button class="ticket-attach-btn" onclick="document.getElementById('ticketImageInput').click()">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                            </svg>
+                            Images
+                        </button>
+                        <button class="ticket-voice-btn" id="ticketVoiceRecordBtn" onmousedown="TicketSystem.startRecording('creation')" onmouseup="TicketSystem.stopRecording('creation')" ontouchstart="event.preventDefault(); TicketSystem.startRecording('creation')" ontouchend="event.preventDefault(); TicketSystem.stopRecording('creation')">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path>
+                            </svg>
+                            <span id="ticketVoiceRecordText">Hold to Record</span>
+                        </button>
+                    </div>
                 </div>
                 <div id="ticketError" class="ticket-error"></div>
                 <div style="display: flex; gap: 12px; margin-top: 24px;">
@@ -4202,13 +4154,16 @@
                 <div class="ticket-form-group" style="margin-bottom: 0;">
                     <div class="ticket-image-preview" id="ticketReplyImagePreview"></div>
                     <div class="ticket-input-area">
-                        <div class="ticket-input-wrapper">
-                            <input type="text" id="ticketReplyInput" class="ticket-input" placeholder="Type your message..." maxlength="1000" onkeypress="if(event.key === 'Enter') sendTicketMessage()">
-                        </div>
-                        <input type="file" id="ticketReplyImageInput" accept="image/*" multiple>
+                        <input type="text" id="ticketReplyInput" class="ticket-input" placeholder="Type your message..." maxlength="1000" style="flex: 1;" onkeypress="if(event.key === 'Enter') sendTicketMessage()">
+                        <input type="file" id="ticketReplyImageInput" accept="image/*" multiple style="display: none;">
                         <button class="ticket-attach-btn" onclick="document.getElementById('ticketReplyImageInput').click()" title="Attach Images">
                             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                            </svg>
+                        </button>
+                        <button class="ticket-voice-btn" id="ticketReplyVoiceBtn" onmousedown="TicketSystem.startRecording('reply')" onmouseup="TicketSystem.stopRecording('reply')" ontouchstart="event.preventDefault(); TicketSystem.startRecording('reply')" ontouchend="event.preventDefault(); TicketSystem.stopRecording('reply')" title="Hold to Record">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path>
                             </svg>
                         </button>
                         <button class="ticket-send-btn" onclick="sendTicketMessage()" id="ticketSendBtn">Send</button>
@@ -5048,6 +5003,91 @@
             creation: [],
             reply: []
         };
+        
+        // Voice recording functions
+        TicketSystem.voiceRecording = {
+            creation: null,
+            reply: null,
+            mediaRecorder: null,
+            audioChunks: [],
+            isRecording: false
+        };
+        
+        TicketSystem.startRecording = async function(type) {
+            if (this.voiceRecording.isRecording) return;
+            
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                this.voiceRecording.mediaRecorder = new MediaRecorder(stream);
+                this.voiceRecording.audioChunks = [];
+                this.voiceRecording.isRecording = true;
+                
+                const recordBtn = type === 'creation' ? document.getElementById('ticketVoiceRecordBtn') : document.getElementById('ticketReplyVoiceBtn');
+                const recordText = type === 'creation' ? document.getElementById('ticketVoiceRecordText') : null;
+                
+                if (recordBtn) {
+                    recordBtn.classList.add('recording');
+                    if (recordText) recordText.textContent = 'Recording...';
+                }
+                
+                this.voiceRecording.mediaRecorder.ondataavailable = (event) => {
+                    if (event.data.size > 0) {
+                        this.voiceRecording.audioChunks.push(event.data);
+                    }
+                };
+                
+                this.voiceRecording.mediaRecorder.onstop = async () => {
+                    const audioBlob = new Blob(this.voiceRecording.audioChunks, { type: 'audio/webm' });
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        const audioData = e.target.result;
+                        if (type === 'creation') {
+                            this.voiceRecording.creation = {
+                                data: audioData,
+                                duration: 0 // Will be calculated if needed
+                            };
+                        } else {
+                            this.voiceRecording.reply = {
+                                data: audioData,
+                                duration: 0
+                            };
+                        }
+                        
+                        if (recordBtn) {
+                            recordBtn.classList.remove('recording');
+                            if (recordText) recordText.textContent = 'Hold to Record';
+                        }
+                        
+                        // Stop all tracks
+                        stream.getTracks().forEach(track => track.stop());
+                    };
+                    reader.readAsDataURL(audioBlob);
+                };
+                
+                this.voiceRecording.mediaRecorder.start();
+            } catch (error) {
+                console.error('Error starting recording:', error);
+                alert('Could not access microphone. Please check permissions.');
+                this.voiceRecording.isRecording = false;
+            }
+        };
+        
+        TicketSystem.stopRecording = function(type) {
+            if (!this.voiceRecording.isRecording || !this.voiceRecording.mediaRecorder) return;
+            
+            if (this.voiceRecording.mediaRecorder.state === 'recording') {
+                this.voiceRecording.mediaRecorder.stop();
+                this.voiceRecording.isRecording = false;
+            }
+        };
+        
+        TicketSystem.clearVoice = function(type) {
+            if (type === 'creation') {
+                this.voiceRecording.creation = null;
+            } else {
+                this.voiceRecording.reply = null;
+            }
+        };
 
         TicketSystem.handleImageUpload = function(type, files) {
             const maxSize = 5 * 1024 * 1024; // 5MB
@@ -5134,8 +5174,8 @@
                 return;
             }
 
-            if (!message && TicketSystem.attachedImages.creation.length === 0) {
-                TicketSystem.showError('Message or at least one image is required');
+            if (!message && TicketSystem.attachedImages.creation.length === 0 && !TicketSystem.voiceRecording.creation) {
+                TicketSystem.showError('Message, image, or voice recording is required');
                 return;
             }
 
@@ -5183,7 +5223,11 @@
                     images: TicketSystem.attachedImages.creation.map(img => ({
                         name: img.name,
                         data: img.data
-                    }))
+                    })),
+                    voice: TicketSystem.voiceRecording.creation ? {
+                        data: TicketSystem.voiceRecording.creation.data,
+                        duration: TicketSystem.voiceRecording.creation.duration
+                    } : null
                 };
 
                 await database.ref(`ticketMessages/${ticketId}/${Date.now()}`).set(messageData);
@@ -5195,8 +5239,9 @@
                     localStorage.setItem('user_ticket_ids', JSON.stringify(storedTickets));
                 }
 
-                // Clear images and form
+                // Clear images, voice, and form
                 TicketSystem.clearImages('creation');
+                TicketSystem.clearVoice('creation');
                 if (TicketSystem.elements.subjectInput) TicketSystem.elements.subjectInput.value = '';
                 if (TicketSystem.elements.messageInput) TicketSystem.elements.messageInput.value = '';
 
@@ -5412,13 +5457,15 @@
                             return {
                                 timestamp: parseInt(ts) || Date.now(),
                                 message: (msg && msg.message) ? String(msg.message) : '',
-                                sender: (msg && msg.sender) ? String(msg.sender) : 'user'
+                                sender: (msg && msg.sender) ? String(msg.sender) : 'user',
+                                images: Array.isArray(msg.images) ? msg.images : [],
+                                voice: msg.voice || null
                             };
                         } catch (e) {
                             return null;
                         }
                     })
-                    .filter(m => m !== null && m.message)
+                    .filter(m => m !== null && (m.message || (Array.isArray(m.images) && m.images.length > 0) || (m.voice && m.voice.data)))
                     .sort((a, b) => a.timestamp - b.timestamp);
                 
                 this.renderMessages(messagesArray, container);
@@ -5444,6 +5491,7 @@
                         const isUser = msg.sender === 'user';
                         const messageText = escapeHtml(String(msg.message || ''));
                         const images = Array.isArray(msg.images) ? msg.images : [];
+                        const voice = msg.voice || null;
                         
                         let imagesHtml = '';
                         if (images.length > 0) {
@@ -5454,11 +5502,30 @@
                             `).join('');
                         }
                         
+                        let voiceHtml = '';
+                        if (voice && voice.data) {
+                            const voiceId = `voice_${msg.timestamp}_${Math.random().toString(36).substr(2, 9)}`;
+                            voiceHtml = `
+                                <div class="ticket-voice-message">
+                                    <div class="ticket-voice-player">
+                                        <button class="ticket-voice-play-btn" onclick="TicketSystem.playVoice('${voiceId}', '${escapeHtml(voice.data)}')" id="${voiceId}_btn">
+                                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 16px; height: 16px;">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path>
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                            </svg>
+                                        </button>
+                                        <span class="ticket-voice-duration" id="${voiceId}_duration">Voice Message</span>
+                                    </div>
+                                </div>
+                            `;
+                        }
+                        
                         return `
                             <div class="ticket-message ${isUser ? 'user' : 'admin'}">
                                 <div class="ticket-message-header">${isUser ? 'You' : 'Admin'} • ${date.toLocaleString()}</div>
                                 ${messageText ? `<div class="ticket-message-text">${messageText}</div>` : ''}
                                 ${imagesHtml}
+                                ${voiceHtml}
                             </div>
                         `;
                     } catch (e) {
@@ -5484,6 +5551,48 @@
             document.body.appendChild(modal);
         };
         
+        TicketSystem.playVoice = function(voiceId, audioData) {
+            const btn = document.getElementById(voiceId + '_btn');
+            const durationEl = document.getElementById(voiceId + '_duration');
+            
+            if (!btn || !audioData) return;
+            
+            // Create audio element
+            const audio = new Audio(audioData);
+            
+            // Update button to show playing state
+            btn.innerHTML = `
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 16px; height: 16px;">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+            `;
+            btn.disabled = true;
+            
+            // Update duration while playing
+            audio.addEventListener('loadedmetadata', () => {
+                if (durationEl) {
+                    const duration = Math.round(audio.duration);
+                    durationEl.textContent = `${duration}s`;
+                }
+            });
+            
+            // Reset button when done
+            audio.addEventListener('ended', () => {
+                btn.innerHTML = `
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 16px; height: 16px;">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                `;
+                btn.disabled = false;
+            });
+            
+            audio.play().catch(err => {
+                console.error('Error playing audio:', err);
+                btn.disabled = false;
+            });
+        };
+        
         // Setup listener
         TicketSystem.setupListener = function(ticketId) {
             // Clean up previous
@@ -5507,13 +5616,15 @@
                                 return {
                                     timestamp: parseInt(ts) || Date.now(),
                                     message: (msg && msg.message) ? String(msg.message) : '',
-                                    sender: (msg && msg.sender) ? String(msg.sender) : 'user'
+                                    sender: (msg && msg.sender) ? String(msg.sender) : 'user',
+                                    images: Array.isArray(msg.images) ? msg.images : [],
+                                    voice: msg.voice || null
                                 };
                             } catch (e) {
                                 return null;
                             }
                         })
-                        .filter(m => m !== null && m.message)
+                        .filter(m => m !== null && (m.message || (Array.isArray(m.images) && m.images.length > 0) || (m.voice && m.voice.data)))
                         .sort((a, b) => a.timestamp - b.timestamp);
                     
                     this.renderMessages(msgsArray, container);
@@ -5648,7 +5759,11 @@
                     images: images.map(img => ({
                         name: img.name,
                         data: img.data
-                    }))
+                    })),
+                    voice: voice ? {
+                        data: voice.data,
+                        duration: voice.duration
+                    } : null
                 };
                 
                 await database.ref(`ticketMessages/${this.currentTicketId}/${Date.now()}`).set(messageData);
@@ -5656,6 +5771,7 @@
                 
                 input.value = '';
                 this.clearImages('reply');
+                this.clearVoice('reply');
                 await loadUserTickets();
             } catch (error) {
                 console.error('Error sending message:', error);

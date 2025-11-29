@@ -1065,28 +1065,31 @@
         <div class="modal-content" style="max-width: 900px; max-height: 90vh; display: flex; flex-direction: column;">
             <div class="modal-header">
                 <div>
-                    <h3 id="adminTicketTitle" style="background: linear-gradient(135deg, #3b82f6 0%, #22c55e 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">Ticket</h3>
-                    <div style="font-size: 12px; color: rgba(255, 255, 255, 0.6); margin-top: 4px;" id="adminTicketId"></div>
+                    <h3 id="adminTicketTitle" style="color: #e5e5e5; margin: 0;">Ticket</h3>
+                    <div style="font-size: 12px; color: #888; margin-top: 4px;" id="adminTicketId"></div>
                 </div>
                 <button class="modal-close" onclick="closeAdminTicketModal()">×</button>
             </div>
             <div class="modal-body" style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
-                <div id="adminTicketMessages" style="flex: 1; overflow-y: auto; padding: 20px; background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; margin-bottom: 16px; min-height: 350px; max-height: 500px; scrollbar-width: thin; scrollbar-color: rgba(255, 255, 255, 0.2) transparent;">
+                <div id="adminTicketMessages" style="flex: 1; overflow-y: auto; padding: 16px; background: #000; border: 1px solid #1a1a1a; border-radius: 4px; margin-bottom: 20px; min-height: 300px; max-height: 400px;">
                     <div style="color: #888; text-align: center; padding: 40px;">Loading messages...</div>
                 </div>
                 <div style="margin-bottom: 12px;">
                     <div class="ticket-image-preview" id="adminTicketImagePreview"></div>
-                    <div style="display: flex; gap: 8px; align-items: flex-end;">
-                        <div style="flex: 1; position: relative;">
-                            <input type="text" id="adminTicketReplyInput" class="form-input" placeholder="Type your message..." maxlength="1000" style="width: 100%; padding: 14px 18px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; color: #e5e5e5; font-size: 15px;" onkeypress="if(event.key === 'Enter') sendAdminTicketMessage()">
-                        </div>
+                    <div style="display: flex; gap: 12px;">
+                        <input type="text" id="adminTicketReplyInput" class="form-input" placeholder="Type your message..." maxlength="1000" style="flex: 1; padding: 12px; background: #1a1a1a; border: 1px solid #4a4a4a; border-radius: 4px; color: #e5e5e5; font-size: 14px;" onkeypress="if(event.key === 'Enter') sendAdminTicketMessage()">
                         <input type="file" id="adminTicketImageInput" accept="image/*" multiple style="display: none;">
-                        <button class="ticket-attach-btn" onclick="document.getElementById('adminTicketImageInput').click()" title="Attach Images" style="padding: 14px 18px; background: rgba(59, 130, 246, 0.2); border: 1px solid rgba(59, 130, 246, 0.4); border-radius: 12px; color: #3b82f6; font-weight: 600; cursor: pointer; transition: all 0.3s ease; display: flex; align-items: center; gap: 8px; white-space: nowrap;">
+                        <button class="ticket-attach-btn" onclick="document.getElementById('adminTicketImageInput').click()" title="Attach Images">
                             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 18px; height: 18px;">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                             </svg>
                         </button>
-                        <button class="ticket-send-btn" onclick="sendAdminTicketMessage()" id="adminTicketSendBtn" style="padding: 14px 28px; background: linear-gradient(135deg, #3b82f6 0%, #22c55e 100%); border: none; border-radius: 12px; color: white; font-weight: 700; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);">Send</button>
+                        <button class="ticket-voice-btn" id="adminTicketVoiceBtn" onmousedown="TicketSystemAdmin.startRecording()" onmouseup="TicketSystemAdmin.stopRecording()" ontouchstart="event.preventDefault(); TicketSystemAdmin.startRecording()" ontouchend="event.preventDefault(); TicketSystemAdmin.stopRecording()" title="Hold to Record">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 18px; height: 18px;">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path>
+                            </svg>
+                        </button>
+                        <button class="ticket-send-btn" onclick="sendAdminTicketMessage()" id="adminTicketSendBtn">Send</button>
                     </div>
                 </div>
                 <div style="display: flex; gap: 8px;">
@@ -3321,13 +3324,15 @@
                                 return {
                                     timestamp: parseInt(ts) || Date.now(),
                                     message: (msg && msg.message) ? String(msg.message) : '',
-                                    sender: (msg && msg.sender) ? String(msg.sender) : 'user'
+                                    sender: (msg && msg.sender) ? String(msg.sender) : 'user',
+                                    images: Array.isArray(msg.images) ? msg.images : [],
+                                    voice: msg.voice || null
                                 };
                             } catch (e) {
                                 return null;
                             }
                         })
-                        .filter(m => m !== null && m.message)
+                        .filter(m => m !== null && (m.message || (Array.isArray(m.images) && m.images.length > 0) || (m.voice && m.voice.data)))
                         .sort((a, b) => a.timestamp - b.timestamp);
                     
                     this.renderMessages(messagesArray, container);
@@ -3354,20 +3359,41 @@
                             const messageText = escapeHtml(String(msg.message || ''));
                             
                             const images = Array.isArray(msg.images) ? msg.images : [];
+                            const voice = msg.voice || null;
+                            
                             let imagesHtml = '';
                             if (images.length > 0) {
                                 imagesHtml = images.map(img => `
-                                    <div style="margin-top: 12px; border-radius: 8px; overflow: hidden; max-width: 100%; cursor: pointer; transition: transform 0.3s ease;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'" onclick="window.openImageModal('${escapeHtml(img.data)}')">
-                                        <img src="${escapeHtml(img.data)}" alt="${escapeHtml(img.name || 'Image')}" style="width: 100%; height: auto; display: block; max-width: 400px;">
+                                    <div class="ticket-message-image">
+                                        <img src="${escapeHtml(img.data)}" alt="${escapeHtml(img.name || 'Image')}" onclick="window.openImageModal('${escapeHtml(img.data)}')">
                                     </div>
                                 `).join('');
                             }
                             
+                            let voiceHtml = '';
+                            if (voice && voice.data) {
+                                const voiceId = `voice_${msg.timestamp}_${Math.random().toString(36).substr(2, 9)}`;
+                                voiceHtml = `
+                                    <div class="ticket-voice-message">
+                                        <div class="ticket-voice-player">
+                                            <button class="ticket-voice-play-btn" onclick="TicketSystemAdmin.playVoice('${voiceId}', '${escapeHtml(voice.data)}')" id="${voiceId}_btn">
+                                                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 16px; height: 16px;">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path>
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                                </svg>
+                                            </button>
+                                            <span class="ticket-voice-duration" id="${voiceId}_duration">Voice Message</span>
+                                        </div>
+                                    </div>
+                                `;
+                            }
+                            
                             return `
-                                <div style="margin-bottom: 16px; padding: 16px; border-radius: 12px; max-width: 75%; animation: messageSlide 0.3s ease; ${isUser ? 'background: linear-gradient(135deg, rgba(59, 130, 246, 0.25) 0%, rgba(59, 130, 246, 0.15) 100%); border: 1px solid rgba(59, 130, 246, 0.4); margin-left: auto; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);' : 'background: linear-gradient(135deg, rgba(34, 197, 94, 0.25) 0%, rgba(34, 197, 94, 0.15) 100%); border: 1px solid rgba(34, 197, 94, 0.4); box-shadow: 0 4px 12px rgba(34, 197, 94, 0.2);'}">
-                                    <div style="font-size: 12px; color: rgba(255, 255, 255, 0.7); margin-bottom: 8px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">${isUser ? 'User' : 'Admin'} • ${date.toLocaleString()}</div>
-                                    ${messageText ? `<div style="color: #e5e5e5; font-size: 15px; line-height: 1.6; word-wrap: break-word;">${messageText}</div>` : ''}
+                                <div class="ticket-message ${isUser ? 'user' : 'admin'}">
+                                    <div class="ticket-message-header">${isUser ? 'User' : 'Admin'} • ${date.toLocaleString()}</div>
+                                    ${messageText ? `<div class="ticket-message-text">${messageText}</div>` : ''}
                                     ${imagesHtml}
+                                    ${voiceHtml}
                                 </div>
                             `;
                         } catch (e) {
@@ -3409,13 +3435,14 @@
                                         timestamp: parseInt(ts) || Date.now(),
                                         message: (msg && msg.message) ? String(msg.message) : '',
                                         sender: (msg && msg.sender) ? String(msg.sender) : 'user',
-                                        images: Array.isArray(msg.images) ? msg.images : []
+                                        images: Array.isArray(msg.images) ? msg.images : [],
+                                        voice: msg.voice || null
                                     };
                                 } catch (e) {
                                     return null;
                                 }
                             })
-                            .filter(m => m !== null && (m.message || (Array.isArray(m.images) && m.images.length > 0)))
+                            .filter(m => m !== null && (m.message || (Array.isArray(m.images) && m.images.length > 0) || (m.voice && m.voice.data)))
                             .sort((a, b) => a.timestamp - b.timestamp);
                         
                         this.renderMessages(msgsArray, container);
@@ -3501,9 +3528,10 @@
                 
                 const message = String(input.value || '').trim();
                 const images = this.attachedImages;
+                const voice = this.voiceRecording;
                 
-                if (!message && images.length === 0) {
-                    alert('Please enter a message or attach an image');
+                if (!message && images.length === 0 && !voice) {
+                    alert('Please enter a message, attach an image, or record a voice message');
                     return;
                 }
                 
@@ -3532,7 +3560,11 @@
                         images: images.map(img => ({
                             name: img.name,
                             data: img.data
-                        }))
+                        })),
+                        voice: voice ? {
+                            data: voice.data,
+                            duration: voice.duration
+                        } : null
                     };
                     
                     await window.database.ref(`ticketMessages/${this.currentTicketId}/${Date.now()}`).set(messageData);
@@ -3540,6 +3572,7 @@
                     
                     input.value = '';
                     this.clearImages();
+                    this.clearVoice();
                     await loadTickets(); // Refresh list
                 } catch (error) {
                     console.error('Error sending message:', error);
