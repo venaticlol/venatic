@@ -567,6 +567,37 @@
             }
         }
         
+        /* Ticket Modal Styles - Match User UI Exactly */
+        .ticket-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 10000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            overflow-y: auto;
+        }
+
+        .ticket-modal.active {
+            display: flex;
+        }
+
+        .ticket-modal-content {
+            background: #0a0a0a;
+            border: 1px solid #1a1a1a;
+            border-radius: 4px;
+            width: 100%;
+            max-width: 700px;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
         /* Ticket Message Styles - Match User UI */
         .ticket-messages {
             min-height: 300px;
@@ -1236,12 +1267,12 @@
     </div>
 
     <!-- Admin Ticket View Modal -->
-    <div class="modal" id="adminTicketModal">
-        <div class="modal-content" style="max-width: 900px; max-height: 90vh; display: flex; flex-direction: column;">
+    <div class="ticket-modal" id="adminTicketModal">
+        <div class="ticket-modal-content" style="max-width: 800px;">
             <div class="ticket-modal-header">
                 <div>
-                    <h3 id="adminTicketTitle" style="color: #e5e5e5; margin: 0;">Ticket</h3>
-                    <div style="font-size: 12px; color: #888; margin-top: 4px;" id="adminTicketId"></div>
+                    <h3 id="adminTicketTitle" style="margin: 0 0 4px 0;">Ticket</h3>
+                    <div style="font-size: 12px; color: rgba(255, 255, 255, 0.6); margin-top: 4px;" id="adminTicketId"></div>
                 </div>
                 <button onclick="closeAdminTicketModal()">×</button>
             </div>
@@ -1252,7 +1283,7 @@
                 <div class="ticket-form-group" style="margin-bottom: 0;">
                     <div class="ticket-image-preview" id="adminTicketImagePreview"></div>
                     <div class="ticket-input-area">
-                        <input type="text" id="adminTicketReplyInput" class="ticket-input" placeholder="Type your message..." maxlength="1000" onkeypress="if(event.key === 'Enter') sendAdminTicketMessage()">
+                        <input type="text" id="adminTicketReplyInput" class="ticket-input" placeholder="Type your message..." maxlength="1000" style="flex: 1;" onkeypress="if(event.key === 'Enter') sendAdminTicketMessage()">
                         <input type="file" id="adminTicketImageInput" accept="image/*" multiple style="display: none;">
                         <button class="ticket-attach-btn" onclick="document.getElementById('adminTicketImageInput').click()" title="Attach Images">
                             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
