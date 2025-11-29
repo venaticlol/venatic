@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Access Denied - Recon Spoofer</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #0a0a0a 100%);
+            color: #e5e5e5;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            overflow: hidden;
+        }
+
+        .blocked-container {
+            text-align: center;
+            max-width: 600px;
+            background: linear-gradient(135deg, rgba(26, 26, 26, 0.95) 0%, rgba(37, 37, 37, 0.95) 100%);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            border-radius: 20px;
+            padding: 60px 40px;
+            box-shadow: 0 25px 80px rgba(0, 0, 0, 0.8);
+        }
+
+        .blocked-icon {
+            font-size: 80px;
+            margin-bottom: 30px;
+            animation: shake 0.5s ease infinite;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+
+        .blocked-title {
+            font-size: 32px;
+            font-weight: 800;
+            margin-bottom: 20px;
+            color: #ef4444;
+        }
+
+        .blocked-message {
+            font-size: 18px;
+            color: #888;
+            line-height: 1.6;
+            margin-bottom: 30px;
+        }
+
+        .blocked-reason {
+            font-size: 14px;
+            color: #666;
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(239, 68, 68, 0.1);
+            border-radius: 8px;
+        }
+
+        .blocked-ip {
+            font-size: 12px;
+            color: #555;
+            margin-top: 20px;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="blocked-container">
+        <div class="blocked-icon">🚫</div>
+        <h1 class="blocked-title">Access Denied</h1>
+        <p class="blocked-message">Your access to this website has been restricted.</p>
+        <div id="blacklistInfo">
+            <div class="blocked-reason">
+                <strong>Reason:</strong> <span id="blacklistReason">Loading...</span>
+            </div>
+            <div id="blacklistNotes" style="display: none; margin-top: 10px; padding: 15px; background: rgba(239, 68, 68, 0.1); border-radius: 8px; font-size: 14px; color: #666;">
+                <strong>Details:</strong> <span id="blacklistNotesText"></span>
+            </div>
+        </div>
+        <div class="blocked-ip" id="userIp">IP: Loading...</div>
+    </div>
+
+    <script>
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyC6CrMVEbsr-AADq-w-TOkzO0AAOZtUqmU",
+            authDomain: "recon-265bc.firebaseapp.com",
+            databaseURL: "https://recon-265bc-default-rtdb.firebaseio.com",
+            projectId: "recon-265bc",
+            storageBucket: "recon-265bc.firebasestorage.app",
+            messagingSenderId: "99005456592",
+            appId: "1:99005456592:web:9ca83e210d9e85ca8a3ed5"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
+        // Flag to track if user is unblacklisted (global scope)
+        let allowNavigation = false;
+
+        // Prevent all navigation
+        (function() {
+            // Prevent back button
+            history.pushState(null, null, location.href);
+            window.onpopstate = function() {
+                history.pushState(null, null, location.href);
+            };
+
+            // Prevent beforeunload
+            window.addEventListener('beforeunload', function(e) {
+                if (!allowNavigation) {
+                    e.preventDefault();
+                    e.returnValue = '';
+                    return '';
+                }
+            });
+
+            // Prevent all link clicks
+            document.addEventListener('click', function(e) {
+                if (!allowNavigation && (e.target.tagName === 'A' || e.target.closest('a'))) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                }
+            }, true);
+
+            // Store original location methods
+            const originalLocationReplace = window.location.replace;
+            const originalLocationAssign = window.location.assign;
+            
+            // Override window.location.replace
+            window.location.replace = function(url) {
+                if (allowNavigation) {
+                    originalLocationReplace.call(this, url);
+                } else {
+                    console.log('Navigation blocked: User is blacklisted');
+                }
+            };
+            
+            // Override window.location.assign
+            window.location.assign = function(url) {
+                if (allowNavigation) {
+                    originalLocationAssign.call(this, url);
+                } else {
+                    console.log('Navigation blocked: User is blacklisted');
+                }
+            };
+
+            // Prevent form submissions
+            document.addEventListener('submit', function(e) {
+                if (!allowNavigation) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                }
+            }, true);
+        })();
+
+        // Get client IP
+        async function getClientIP() {
+            try {
+                const response = await fetch('https://api.ipify.org?format=json');
+                const data = await response.json();
+                return data.ip;
+            } catch (error) {
+                return 'unknown_' + Math.random().toString(36).substr(2, 9);
+            }
+        }
+
+        // Check if unblacklisted
+        async function checkIfUnblacklisted() {
+            try {
+                const ip = await getClientIP();
+                const ipKey = ip.replace(/\./g, '_');
+                const snapshot = await database.ref(`blacklist/${ipKey}`).once('value');
+                return !snapshot.exists();
+            } catch (error) {
+                console.error('Error checking blacklist:', error);
+                return false;
+            }
+        }
+
+        // Check blacklist status
+        async function checkBlacklistStatus() {
+            try {
+                const ip = await getClientIP();
+                document.getElementById('userIp').textContent = 'IP: ' + ip;
+                
+                const ipKey = ip.replace(/\./g, '_');
+                const snapshot = await database.ref(`blacklist/${ipKey}`).once('value');
+                
+                if (snapshot.exists()) {
+                    const entry = snapshot.val();
+                    document.getElementById('blacklistReason').textContent = entry.reason || 'Unknown';
+                    
+                    if (entry.notes) {
+                        document.getElementById('blacklistNotesText').textContent = entry.notes;
+                        document.getElementById('blacklistNotes').style.display = 'block';
+                    }
+                    
+                    // User is still blacklisted - keep navigation blocked
+                    allowNavigation = false;
+                } else {
+                    // Not blacklisted anymore - allow redirect
+                    allowNavigation = true;
+                    setTimeout(() => {
+                        window.location.replace('index.html');
+                    }, 100);
+                }
+            } catch (error) {
+                console.error('Error checking blacklist:', error);
+                allowNavigation = false; // Keep blocked on error
+            }
+        }
+
+        // Check periodically if still blacklisted
+        setInterval(checkBlacklistStatus, 3000); // Check every 3 seconds
+
+        // Initial check
+        checkBlacklistStatus();
+    </script>
+</body>
+</html>
+

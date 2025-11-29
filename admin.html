@@ -750,6 +750,72 @@
         </div>
     </div>
 
+    <!-- Blacklist Editor Modal -->
+    <div class="modal" id="blacklistEditorModal">
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header">
+                <h3 id="blacklistEditorTitle">Blacklist User</h3>
+                <button class="modal-close" onclick="closeBlacklistModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>IP Address *</label>
+                    <input type="text" id="blacklistIpInput" class="form-input" placeholder="192.168.1.1" readonly>
+                </div>
+                <div class="form-group">
+                    <label>Reason *</label>
+                    <select id="blacklistReasonInput" class="form-input">
+                        <option value="Spam">Spam</option>
+                        <option value="Abuse">Abuse</option>
+                        <option value="Suspicious Activity">Suspicious Activity</option>
+                        <option value="Terms Violation">Terms Violation</option>
+                        <option value="Other" selected>Other</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Notes (Optional)</label>
+                    <textarea id="blacklistNotesInput" class="form-input" rows="4" placeholder="Additional details about why this user was blacklisted..."></textarea>
+                </div>
+                <div id="blacklistError" style="color: #ef4444; font-size: 13px; margin-bottom: 16px; display: none;"></div>
+                <div style="display: flex; gap: 12px; margin-top: 20px;">
+                    <button class="admin-btn admin-btn-danger" onclick="saveBlacklist()" style="flex: 1;">Blacklist User</button>
+                    <button class="admin-btn" onclick="closeBlacklistModal()" style="flex: 1; background: rgba(74, 74, 74, 0.3);">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Maintenance Mode Modal -->
+    <div class="modal" id="maintenanceModal">
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header">
+                <h3>Configure Maintenance Mode</h3>
+                <button class="modal-close" onclick="closeMaintenanceModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                        <input type="checkbox" id="maintenanceEnabled" style="width: 20px; height: 20px; cursor: pointer;"> 
+                        <span>Enable Maintenance Mode</span>
+                    </label>
+                </div>
+                <div class="form-group">
+                    <label>Maintenance Message *</label>
+                    <textarea id="maintenanceMessage" class="form-input" rows="4" placeholder="We're currently performing scheduled maintenance. We'll be back shortly!">We're currently performing scheduled maintenance. We'll be back shortly!</textarea>
+                </div>
+                <div class="form-group">
+                    <label>Estimated Return Time (Optional)</label>
+                    <input type="datetime-local" id="maintenanceReturnTime" class="form-input">
+                </div>
+                <div id="maintenanceError" style="color: #ef4444; font-size: 13px; margin-bottom: 16px; display: none;"></div>
+                <div style="display: flex; gap: 12px; margin-top: 20px;">
+                    <button class="admin-btn admin-btn-primary" onclick="saveMaintenanceSettings()" style="flex: 1;">Save Settings</button>
+                    <button class="admin-btn" onclick="closeMaintenanceModal()" style="flex: 1; background: rgba(74, 74, 74, 0.3);">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
         // Firebase Configuration (same as index.html)
         const firebaseConfig = {
@@ -1036,17 +1102,29 @@
         };
 
         // Close blacklist modal
-        function closeBlacklistModal() {
-            document.getElementById('blacklistEditorModal').classList.remove('active');
+        window.closeBlacklistModal = function() {
+            const modal = document.getElementById('blacklistEditorModal');
+            if (modal) {
+                modal.classList.remove('active');
+            }
             window.currentBlacklistingIp = null;
-        }
+        };
 
         // Save blacklist
-        async function saveBlacklist() {
-            const ip = document.getElementById('blacklistIpInput').value.trim();
-            const reason = document.getElementById('blacklistReasonInput').value;
-            const notes = document.getElementById('blacklistNotesInput').value.trim();
+        window.saveBlacklist = async function() {
+            const ipInput = document.getElementById('blacklistIpInput');
+            const reasonInput = document.getElementById('blacklistReasonInput');
+            const notesInput = document.getElementById('blacklistNotesInput');
             const errorDiv = document.getElementById('blacklistError');
+
+            if (!ipInput || !reasonInput || !notesInput || !errorDiv) {
+                alert('Error: Blacklist form elements not found. Please refresh the page.');
+                return;
+            }
+
+            const ip = ipInput.value.trim();
+            const reason = reasonInput.value;
+            const notes = notesInput.value.trim();
 
             if (!ip) {
                 errorDiv.textContent = 'IP address is required';
@@ -1073,7 +1151,7 @@
 
                 await database.ref(`blacklist/${ipKey}`).set(blacklistData);
                 alert('✅ User blacklisted successfully!');
-                closeBlacklistModal();
+                window.closeBlacklistModal();
                 loadUsers();
                 if (document.getElementById('tabBlacklisted').style.display !== 'none') {
                     loadBlacklistedUsers();
@@ -1722,34 +1800,59 @@
             }
         }
 
-        function openMaintenanceModal() {
+        window.openMaintenanceModal = function() {
             database.ref('maintenance').once('value').then(snapshot => {
                 const maintenance = snapshot.exists() ? snapshot.val() : { enabled: false, message: '', returnTime: null };
-                document.getElementById('maintenanceEnabled').checked = maintenance.enabled || false;
-                document.getElementById('maintenanceMessage').value = maintenance.message || 'We\'re currently performing scheduled maintenance. We\'ll be back shortly!';
+                const enabledCheckbox = document.getElementById('maintenanceEnabled');
+                const messageInput = document.getElementById('maintenanceMessage');
+                const returnTimeInput = document.getElementById('maintenanceReturnTime');
+                const modal = document.getElementById('maintenanceModal');
+                
+                if (!enabledCheckbox || !messageInput || !returnTimeInput || !modal) {
+                    console.error('Maintenance modal elements not found');
+                    alert('Error: Maintenance modal not found. Please refresh the page.');
+                    return;
+                }
+                
+                enabledCheckbox.checked = maintenance.enabled || false;
+                messageInput.value = maintenance.message || 'We\'re currently performing scheduled maintenance. We\'ll be back shortly!';
                 if (maintenance.returnTime) {
                     const returnDate = new Date(maintenance.returnTime);
-                    document.getElementById('maintenanceReturnTime').value = returnDate.toISOString().slice(0, 16);
+                    returnTimeInput.value = returnDate.toISOString().slice(0, 16);
                 } else {
-                    document.getElementById('maintenanceReturnTime').value = '';
+                    returnTimeInput.value = '';
                 }
-                document.getElementById('maintenanceModal').classList.add('active');
+                modal.classList.add('active');
+            }).catch(error => {
+                console.error('Error loading maintenance settings:', error);
+                alert('Error loading maintenance settings: ' + error.message);
             });
         }
 
-        function closeMaintenanceModal() {
-            document.getElementById('maintenanceModal').classList.remove('active');
+        window.closeMaintenanceModal = function() {
+            const modal = document.getElementById('maintenanceModal');
+            if (modal) {
+                modal.classList.remove('active');
+            }
         }
 
         function toggleMaintenancePreview() {
             // Could add preview functionality here
         }
 
-        async function saveMaintenanceSettings() {
-            const enabled = document.getElementById('maintenanceEnabled').checked;
-            const message = document.getElementById('maintenanceMessage').value.trim();
-            const returnTimeInput = document.getElementById('maintenanceReturnTime').value;
+        window.saveMaintenanceSettings = async function() {
+            const enabledCheckbox = document.getElementById('maintenanceEnabled');
+            const messageInput = document.getElementById('maintenanceMessage');
+            const returnTimeInput = document.getElementById('maintenanceReturnTime');
             const errorDiv = document.getElementById('maintenanceError');
+
+            if (!enabledCheckbox || !messageInput || !returnTimeInput || !errorDiv) {
+                alert('Error: Maintenance form elements not found. Please refresh the page.');
+                return;
+            }
+
+            const enabled = enabledCheckbox.checked;
+            const message = messageInput.value.trim();
 
             if (enabled && !message) {
                 errorDiv.textContent = 'Message is required when maintenance mode is enabled';
@@ -1765,8 +1868,8 @@
                     updatedBy: 'admin'
                 };
 
-                if (returnTimeInput) {
-                    maintenanceData.returnTime = new Date(returnTimeInput).getTime();
+                if (returnTimeInput.value) {
+                    maintenanceData.returnTime = new Date(returnTimeInput.value).getTime();
                 } else {
                     maintenanceData.returnTime = null;
                 }
@@ -2018,6 +2121,18 @@
             document.getElementById('changelogEditorModal').addEventListener('click', (e) => {
                 if (e.target.id === 'changelogEditorModal') {
                     hideChangelogEditor();
+                }
+            });
+            
+            document.getElementById('maintenanceModal')?.addEventListener('click', (e) => {
+                if (e.target.id === 'maintenanceModal') {
+                    closeMaintenanceModal();
+                }
+            });
+            
+            document.getElementById('blacklistEditorModal')?.addEventListener('click', (e) => {
+                if (e.target.id === 'blacklistEditorModal') {
+                    closeBlacklistModal();
                 }
             });
             

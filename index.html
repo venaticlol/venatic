@@ -3601,8 +3601,16 @@
                 firebaseInitialized = true;
                 console.log('Firebase initialized successfully');
                 
-                // Check maintenance mode first
-                checkMaintenanceMode();
+                // Check blacklist first (before anything else) - this will redirect if blacklisted
+                checkBlacklist().then(isBlacklisted => {
+                    if (isBlacklisted) {
+                        // User is being redirected, don't continue loading
+                        return;
+                    }
+                    
+                    // Check maintenance mode only if not blacklisted
+                    checkMaintenanceMode();
+                });
                 
                 // Initialize database structure if it doesn't exist
                 initializeDatabaseStructure();
@@ -4069,6 +4077,39 @@
             }
         }
 
+        // Check if user is blacklisted
+        async function checkBlacklist() {
+            if (!firebaseInitialized || !database) return;
+            
+            try {
+                // Check if user is admin first (admins can always access)
+                const isAdmin = sessionStorage.getItem('recon_admin_session') === 'true';
+                if (isAdmin) return; // Admins bypass blacklist
+                
+                // Don't redirect if already on blacklist page
+                if (window.location.pathname.includes('blacklist.html')) {
+                    return;
+                }
+                
+                const ip = await getClientIP();
+                const blacklistSnapshot = await database.ref('blacklist').once('value');
+                if (blacklistSnapshot.exists()) {
+                    const blacklist = blacklistSnapshot.val();
+                    const ipKey = ip.replace(/\./g, '_');
+                    
+                    if (blacklist[ipKey]) {
+                        // User is blacklisted - redirect to blacklist.html
+                        window.location.href = 'blacklist.html';
+                        return true; // Block access
+                    }
+                }
+                return false; // Not blacklisted
+            } catch (error) {
+                console.error('Error checking blacklist:', error);
+                return false;
+            }
+        }
+
         // Check maintenance mode
         async function checkMaintenanceMode() {
             if (!firebaseInitialized || !database) return;
@@ -4143,14 +4184,253 @@
                         color: #666;
                         margin-top: 20px;
                     }
+                    .admin-login-link {
+                        display: inline-block;
+                        margin-top: 30px;
+                        padding: 12px 24px;
+                        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+                        color: white;
+                        text-decoration: none;
+                        border-radius: 8px;
+                        font-weight: 600;
+                        transition: all 0.3s;
+                        border: 1px solid rgba(59, 130, 246, 0.3);
+                    }
+                    .admin-login-link:hover {
+                        transform: translateY(-2px);
+                        box-shadow: 0 6px 20px rgba(59, 130, 246, 0.5);
+                    }
+                    .admin-modal-overlay {
+                        display: none;
+                        position: fixed;
+                        top: 0;
+                        left: 0;
+                        width: 100%;
+                        height: 100%;
+                        background: rgba(0, 0, 0, 0.9);
+                        z-index: 10000;
+                        align-items: center;
+                        justify-content: center;
+                        backdrop-filter: blur(10px);
+                    }
+                    .admin-modal-overlay.active {
+                        display: flex;
+                    }
+                    .admin-modal {
+                        background: linear-gradient(135deg, rgba(26, 26, 26, 0.98) 0%, rgba(37, 37, 37, 0.98) 100%);
+                        border: 1px solid rgba(59, 130, 246, 0.3);
+                        border-radius: 20px;
+                        padding: 30px;
+                        max-width: 400px;
+                        width: 90%;
+                        box-shadow: 0 25px 80px rgba(0, 0, 0, 0.8);
+                    }
+                    .admin-modal-header {
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                        margin-bottom: 20px;
+                    }
+                    .admin-modal-header h2 {
+                        color: #e5e5e5;
+                        font-size: 24px;
+                        margin: 0;
+                    }
+                    .admin-modal-close {
+                        background: rgba(239, 68, 68, 0.1);
+                        border: 1px solid rgba(239, 68, 68, 0.3);
+                        border-radius: 8px;
+                        width: 36px;
+                        height: 36px;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        cursor: pointer;
+                        color: #ef4444;
+                        font-size: 24px;
+                        transition: all 0.2s;
+                    }
+                    .admin-modal-close:hover {
+                        background: rgba(239, 68, 68, 0.2);
+                    }
+                    .admin-form-group {
+                        margin-bottom: 20px;
+                    }
+                    .admin-form-group label {
+                        display: block;
+                        color: #e5e5e5;
+                        font-size: 14px;
+                        margin-bottom: 8px;
+                        font-weight: 600;
+                    }
+                    .admin-form-input {
+                        width: 100%;
+                        padding: 12px 16px;
+                        background: rgba(0, 0, 0, 0.4);
+                        border: 1px solid rgba(74, 74, 74, 0.6);
+                        border-radius: 8px;
+                        color: #e5e5e5;
+                        font-size: 14px;
+                        transition: all 0.3s;
+                    }
+                    .admin-form-input:focus {
+                        outline: none;
+                        border-color: #3b82f6;
+                        background: rgba(0, 0, 0, 0.6);
+                        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+                    }
+                    .admin-submit-btn {
+                        width: 100%;
+                        padding: 14px;
+                        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+                        border: 1px solid rgba(59, 130, 246, 0.3);
+                        border-radius: 10px;
+                        color: white;
+                        font-size: 15px;
+                        font-weight: 700;
+                        cursor: pointer;
+                        transition: all 0.3s;
+                        margin-top: 10px;
+                    }
+                    .admin-submit-btn:hover {
+                        transform: translateY(-2px);
+                        box-shadow: 0 6px 20px rgba(59, 130, 246, 0.5);
+                    }
+                    .admin-error-message {
+                        color: #ef4444;
+                        font-size: 13px;
+                        margin-bottom: 16px;
+                        display: none;
+                    }
+                    .admin-error-message.show {
+                        display: block;
+                    }
                 </style>
                 <div class="maintenance-container">
                     <div class="maintenance-icon">🔧</div>
                     <h1 class="maintenance-title">Under Maintenance</h1>
                     <p class="maintenance-message">${escapeHtml(maintenance.message || 'We\'re currently performing scheduled maintenance. We\'ll be back shortly!')}</p>
-                    ${maintenance.returnTime ? `<p class="maintenance-time">Estimated return: ${new Date(maintenance.returnTime).toLocaleString()}</p>` : ''}
+                    ${maintenance.returnTime ? '<p class="maintenance-time">Estimated return: ' + new Date(maintenance.returnTime).toLocaleString() + '</p>' : ''}
+                    <a href="#" class="admin-login-link" onclick="event.preventDefault(); window.showMaintenanceAdminLogin();">Admin Login</a>
+                </div>
+                
+                <!-- Admin Login Modal -->
+                <div class="admin-modal-overlay" id="maintenanceAdminModal">
+                    <div class="admin-modal">
+                        <div class="admin-modal-header">
+                            <h2>Admin Login</h2>
+                            <button class="admin-modal-close" onclick="window.hideMaintenanceAdminLogin()">×</button>
+                        </div>
+                        <div class="admin-modal-body">
+                            <div class="admin-form-group">
+                                <label for="maintenanceAdminKey">License Key</label>
+                                <input type="text" id="maintenanceAdminKey" class="admin-form-input" placeholder="Enter your license key">
+                            </div>
+                            <div class="admin-error-message" id="maintenanceAdminError"></div>
+                            <button class="admin-submit-btn" onclick="window.handleMaintenanceAdminLogin()">Login</button>
+                        </div>
+                    </div>
                 </div>
             `;
+            
+            // Initialize maintenance admin login functions
+            (function() {
+                let maintenanceKeyAuthApp = null;
+                
+                async function initMaintenanceKeyAuth() {
+                    try {
+                        if (typeof KeyAuth !== 'undefined') {
+                            maintenanceKeyAuthApp = new KeyAuth({
+                                name: "Recon Admin",
+                                ownerid: "3Fgwv9rfYE",
+                                version: "1.0"
+                            });
+                            await maintenanceKeyAuthApp.init();
+                            console.log('✅ KeyAuth initialized for maintenance page');
+                        }
+                    } catch (error) {
+                        console.error('KeyAuth init error:', error);
+                    }
+                }
+                
+                window.showMaintenanceAdminLogin = function() {
+                    const modal = document.getElementById('maintenanceAdminModal');
+                    if (modal) {
+                        modal.classList.add('active');
+                        initMaintenanceKeyAuth();
+                    }
+                };
+                
+                window.hideMaintenanceAdminLogin = function() {
+                    const modal = document.getElementById('maintenanceAdminModal');
+                    const keyInput = document.getElementById('maintenanceAdminKey');
+                    const errorDiv = document.getElementById('maintenanceAdminError');
+                    if (modal) modal.classList.remove('active');
+                    if (keyInput) keyInput.value = '';
+                    if (errorDiv) errorDiv.classList.remove('show');
+                };
+                
+                window.handleMaintenanceAdminLogin = async function() {
+                    const keyInput = document.getElementById('maintenanceAdminKey');
+                    const errorDiv = document.getElementById('maintenanceAdminError');
+                    
+                    if (!keyInput || !errorDiv) return;
+                    
+                    const key = keyInput.value.trim();
+                    
+                    if (!key) {
+                        errorDiv.textContent = 'Please enter a license key';
+                        errorDiv.classList.add('show');
+                        return;
+                    }
+                    
+                    try {
+                        if (!maintenanceKeyAuthApp && typeof KeyAuth !== 'undefined') {
+                            maintenanceKeyAuthApp = new KeyAuth({
+                                name: "Recon Admin",
+                                ownerid: "3Fgwv9rfYE",
+                                version: "1.0"
+                            });
+                        }
+                        
+                        if (maintenanceKeyAuthApp) {
+                            if (!maintenanceKeyAuthApp.initialized) {
+                                await maintenanceKeyAuthApp.init();
+                            }
+                            
+                            const result = await maintenanceKeyAuthApp.license(key);
+                            
+                            if (result.success) {
+                                sessionStorage.setItem('recon_admin_session', 'true');
+                                window.hideMaintenanceAdminLogin();
+                                window.location.reload();
+                            } else {
+                                errorDiv.textContent = result.message || 'Invalid license key';
+                                errorDiv.classList.add('show');
+                            }
+                        } else {
+                            errorDiv.textContent = 'KeyAuth not available. Please refresh the page.';
+                            errorDiv.classList.add('show');
+                        }
+                    } catch (error) {
+                        console.error('Login error:', error);
+                        errorDiv.textContent = error.message || 'Login failed';
+                        errorDiv.classList.add('show');
+                    }
+                };
+                
+                // Enter key to submit
+                setTimeout(function() {
+                    const keyInput = document.getElementById('maintenanceAdminKey');
+                    if (keyInput) {
+                        keyInput.addEventListener('keypress', function(e) {
+                            if (e.key === 'Enter') {
+                                window.handleMaintenanceAdminLogin();
+                            }
+                        });
+                    }
+                }, 100);
+            })();
         }
 
         // ============================================
