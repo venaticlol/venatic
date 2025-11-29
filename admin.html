@@ -566,6 +566,7 @@
             <button class="admin-tab" data-tab="changelog">📝 Changelog</button>
             <button class="admin-tab" data-tab="reviews">⭐ Reviews</button>
             <button class="admin-tab" data-tab="users">👤 Users</button>
+            <button class="admin-tab" data-tab="blacklisted">🚫 Blacklisted</button>
             <button class="admin-tab" data-tab="maintenance">🔧 Maintenance</button>
             <button class="admin-tab" data-tab="backup">💾 Backup & Restore</button>
         </div>
@@ -601,6 +602,14 @@
             <h2>User Management</h2>
             <div id="usersContent">
                 <div class="loading">Loading users...</div>
+            </div>
+        </div>
+
+        <!-- Blacklisted Users Tab -->
+        <div class="admin-content-card" id="tabBlacklisted" style="display: none;">
+            <h2>Blacklisted Users</h2>
+            <div id="blacklistedContent">
+                <div class="loading">Loading blacklisted users...</div>
             </div>
         </div>
 
@@ -928,7 +937,8 @@
                 `;
 
                 users.forEach(user => {
-                    const isBlacklisted = blacklist[user.ip] !== undefined;
+                    const ipKey = user.ip.replace(/\./g, '_');
+                    const isBlacklisted = blacklist[ipKey] !== undefined;
                     const firstDate = new Date(user.firstVisit).toLocaleString();
                     const lastDate = new Date(user.lastVisit).toLocaleString();
                     
@@ -948,7 +958,7 @@
                                     <button class="btn-action btn-view" onclick="viewUser('${escapeHtml(user.ip)}')">View</button>
                                     ${isBlacklisted 
                                         ? `<button class="btn-action btn-unblacklist" onclick="unblacklistUser('${escapeHtml(user.ip)}')">Unblacklist</button>`
-                                        : `<button class="btn-action btn-blacklist" onclick="blacklistUser('${escapeHtml(user.ip)}')">Blacklist</button>`
+                                        : `<button class="btn-action btn-blacklist" onclick="openBlacklistModal('${escapeHtml(user.ip)}')">Blacklist</button>`
                                     }
                                 </div>
                             </td>
@@ -972,7 +982,8 @@
                 const userVisits = Object.values(visits).filter(v => v.ip === ip);
                 const blacklistSnapshot = await database.ref('blacklist').once('value');
                 const blacklist = blacklistSnapshot.exists() ? blacklistSnapshot.val() : {};
-                const isBlacklisted = blacklist[ip] !== undefined;
+                const ipKey = ip.replace(/\./g, '_');
+                const isBlacklisted = blacklist[ipKey] !== undefined;
 
                 let html = `
                     <div class="info-row">
@@ -1013,38 +1024,200 @@
             }
         }
 
-        // Blacklist user
-        async function blacklistUser(ip) {
-            if (!confirm(`Are you sure you want to blacklist IP: ${ip}?`)) return;
+        // Open blacklist modal
+        window.openBlacklistModal = function(ip) {
+            document.getElementById('blacklistIpInput').value = ip;
+            document.getElementById('blacklistReasonInput').value = 'Other';
+            document.getElementById('blacklistNotesInput').value = '';
+            document.getElementById('blacklistError').style.display = 'none';
+            document.getElementById('blacklistEditorTitle').textContent = 'Blacklist User';
+            document.getElementById('blacklistEditorModal').classList.add('active');
+            window.currentBlacklistingIp = ip;
+        };
+
+        // Close blacklist modal
+        function closeBlacklistModal() {
+            document.getElementById('blacklistEditorModal').classList.remove('active');
+            window.currentBlacklistingIp = null;
+        }
+
+        // Save blacklist
+        async function saveBlacklist() {
+            const ip = document.getElementById('blacklistIpInput').value.trim();
+            const reason = document.getElementById('blacklistReasonInput').value;
+            const notes = document.getElementById('blacklistNotesInput').value.trim();
+            const errorDiv = document.getElementById('blacklistError');
+
+            if (!ip) {
+                errorDiv.textContent = 'IP address is required';
+                errorDiv.style.display = 'block';
+                return;
+            }
+
+            if (!reason) {
+                errorDiv.textContent = 'Reason is required';
+                errorDiv.style.display = 'block';
+                return;
+            }
 
             try {
+                const ipKey = ip.replace(/\./g, '_');
                 const blacklistData = {
                     ip: ip,
                     timestamp: Date.now(),
                     date: new Date().toISOString(),
-                    reason: 'Admin action'
+                    reason: reason,
+                    notes: notes || null,
+                    blacklistedBy: 'admin'
                 };
 
-                await database.ref(`blacklist/${ip.replace(/\./g, '_')}`).set(blacklistData);
+                await database.ref(`blacklist/${ipKey}`).set(blacklistData);
                 alert('✅ User blacklisted successfully!');
+                closeBlacklistModal();
                 loadUsers();
+                if (document.getElementById('tabBlacklisted').style.display !== 'none') {
+                    loadBlacklistedUsers();
+                }
             } catch (error) {
                 console.error('Error blacklisting user:', error);
-                alert('❌ Failed to blacklist user: ' + error.message);
+                errorDiv.textContent = 'Failed to blacklist: ' + error.message;
+                errorDiv.style.display = 'block';
             }
         }
 
         // Unblacklist user
-        async function unblacklistUser(ip) {
+        window.unblacklistUser = async function(ip) {
             if (!confirm(`Are you sure you want to unblacklist IP: ${ip}?`)) return;
 
             try {
-                await database.ref(`blacklist/${ip.replace(/\./g, '_')}`).remove();
+                const ipKey = ip.replace(/\./g, '_');
+                await database.ref(`blacklist/${ipKey}`).remove();
                 alert('✅ User unblacklisted successfully!');
                 loadUsers();
+                if (document.getElementById('tabBlacklisted').style.display !== 'none') {
+                    loadBlacklistedUsers();
+                }
             } catch (error) {
                 console.error('Error unblacklisting user:', error);
                 alert('❌ Failed to unblacklist user: ' + error.message);
+            }
+        }
+
+        // Load blacklisted users
+        async function loadBlacklistedUsers() {
+            const content = document.getElementById('blacklistedContent');
+            try {
+                const snapshot = await database.ref('blacklist').once('value');
+                if (!snapshot.exists()) {
+                    content.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🚫</div><div class="empty-state-text">No blacklisted users</div></div>';
+                    return;
+                }
+
+                const blacklist = snapshot.val();
+                const entries = Object.entries(blacklist);
+
+                if (entries.length === 0) {
+                    content.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🚫</div><div class="empty-state-text">No blacklisted users</div></div>';
+                    return;
+                }
+
+                let html = `
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>IP Address</th>
+                                <th>Reason</th>
+                                <th>Blacklisted Date</th>
+                                <th>Notes</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+
+                entries.forEach(([id, entry]) => {
+                    const date = new Date(entry.timestamp || 0).toLocaleString();
+                    html += `
+                        <tr>
+                            <td>${escapeHtml(entry.ip || id.replace(/_/g, '.'))}</td>
+                            <td><span class="status-badge status-blacklisted">${escapeHtml(entry.reason || 'Unknown')}</span></td>
+                            <td>${date}</td>
+                            <td>${escapeHtml(entry.notes || 'No notes')}</td>
+                            <td>
+                                <div class="action-buttons">
+                                    <button class="btn-action btn-view" onclick="viewBlacklistedUser('${escapeHtml(entry.ip || id.replace(/_/g, '.'))}')">View</button>
+                                    <button class="btn-action btn-unblacklist" onclick="unblacklistUser('${escapeHtml(entry.ip || id.replace(/_/g, '.'))}')">Unblacklist</button>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                });
+
+                html += '</tbody></table>';
+                content.innerHTML = html;
+            } catch (error) {
+                console.error('Error loading blacklisted users:', error);
+                content.innerHTML = '<div class="empty-state"><div class="empty-state-text">Error loading blacklisted users</div></div>';
+            }
+        }
+
+        // View blacklisted user details
+        async function viewBlacklistedUser(ip) {
+            try {
+                const ipKey = ip.replace(/\./g, '_');
+                const snapshot = await database.ref(`blacklist/${ipKey}`).once('value');
+                if (!snapshot.exists()) {
+                    alert('Blacklist entry not found');
+                    return;
+                }
+
+                const entry = snapshot.val();
+                const visitsSnapshot = await database.ref('visits').once('value');
+                const visits = visitsSnapshot.exists() ? visitsSnapshot.val() : {};
+                const userVisits = Object.values(visits).filter(v => v.ip === ip);
+
+                let html = `
+                    <div class="info-row">
+                        <span class="info-label">IP Address:</span>
+                        <span class="info-value">${escapeHtml(ip)}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Status:</span>
+                        <span class="info-value">
+                            <span class="status-badge status-blacklisted">Blacklisted</span>
+                        </span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Reason:</span>
+                        <span class="info-value">${escapeHtml(entry.reason || 'Unknown')}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Blacklisted Date:</span>
+                        <span class="info-value">${new Date(entry.timestamp || 0).toLocaleString()}</span>
+                    </div>
+                    ${entry.notes ? `
+                    <div class="info-row">
+                        <span class="info-label">Notes:</span>
+                        <span class="info-value">${escapeHtml(entry.notes)}</span>
+                    </div>
+                    ` : ''}
+                    <div class="info-row">
+                        <span class="info-label">Total Visits Before Blacklist:</span>
+                        <span class="info-value">${userVisits.length}</span>
+                    </div>
+                    ${userVisits.length > 0 ? `
+                    <div class="info-row">
+                        <span class="info-label">Last Visit:</span>
+                        <span class="info-value">${new Date(userVisits[userVisits.length - 1]?.timestamp || 0).toLocaleString()}</span>
+                    </div>
+                    ` : ''}
+                `;
+
+                document.getElementById('userInfoContent').innerHTML = html;
+                document.getElementById('userInfoModal').classList.add('active');
+            } catch (error) {
+                console.error('Error viewing blacklisted user:', error);
+                alert('Error loading user information');
             }
         }
 
