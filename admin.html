@@ -1,0 +1,1868 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - Recon Spoofer</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #0a0a0a 100%);
+            color: #e5e5e5;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Animated Background */
+        .bg-animation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            background: 
+                radial-gradient(circle at 20% 50%, rgba(59, 130, 246, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(139, 92, 246, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 40% 20%, rgba(236, 72, 153, 0.1) 0%, transparent 50%);
+            animation: bgShift 20s ease infinite;
+        }
+
+        @keyframes bgShift {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            50% { transform: translate(-20px, -20px) scale(1.1); }
+        }
+
+        /* Grid Pattern */
+        .grid-pattern {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            background-image: 
+                linear-gradient(rgba(59, 130, 246, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(59, 130, 246, 0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+            pointer-events: none;
+        }
+
+        /* Container */
+        .admin-container {
+            position: relative;
+            z-index: 2;
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 30px;
+        }
+
+        /* Header */
+        .admin-header {
+            background: linear-gradient(135deg, rgba(26, 26, 26, 0.95) 0%, rgba(37, 37, 37, 0.95) 100%);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            border-radius: 20px;
+            padding: 25px 35px;
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+        }
+
+        .admin-header-left {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .admin-logo {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: 800;
+        }
+
+        .admin-header-title {
+            font-size: 28px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #ffffff 0%, #a0a0a0 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .admin-header-right {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .admin-btn {
+            padding: 12px 24px;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .admin-btn-primary {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+        }
+
+        .admin-btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(59, 130, 246, 0.5);
+        }
+
+        .admin-btn-danger {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+        }
+
+        .admin-btn-danger:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4);
+        }
+
+        /* Tabs */
+        .admin-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            background: rgba(26, 26, 26, 0.5);
+            padding: 8px;
+            border-radius: 12px;
+            border: 1px solid rgba(74, 74, 74, 0.3);
+        }
+
+        .admin-tab {
+            flex: 1;
+            padding: 14px 24px;
+            background: transparent;
+            border: none;
+            border-radius: 8px;
+            color: #888;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s;
+            position: relative;
+        }
+
+        .admin-tab.active {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.2) 0%, rgba(59, 130, 246, 0.1) 100%);
+            color: #3b82f6;
+            border: 1px solid rgba(59, 130, 246, 0.3);
+        }
+
+        .admin-tab:hover:not(.active) {
+            color: #e5e5e5;
+            background: rgba(74, 74, 74, 0.2);
+        }
+
+        /* Content Cards */
+        .admin-content-card {
+            background: linear-gradient(135deg, rgba(26, 26, 26, 0.95) 0%, rgba(37, 37, 37, 0.95) 100%);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+        }
+
+        .admin-content-card h2 {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            color: #e5e5e5;
+        }
+
+        /* Table */
+        .admin-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .admin-table thead {
+            background: rgba(59, 130, 246, 0.1);
+        }
+
+        .admin-table th {
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #888;
+            border-bottom: 2px solid rgba(59, 130, 246, 0.2);
+        }
+
+        .admin-table td {
+            padding: 18px 15px;
+            border-bottom: 1px solid rgba(74, 74, 74, 0.3);
+            color: #e5e5e5;
+            font-size: 14px;
+        }
+
+        .admin-table tbody tr {
+            transition: all 0.2s;
+        }
+
+        .admin-table tbody tr:hover {
+            background: rgba(59, 130, 246, 0.05);
+        }
+
+        .admin-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        /* Action Buttons */
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-action {
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+        }
+
+        .btn-view {
+            background: rgba(59, 130, 246, 0.2);
+            color: #3b82f6;
+            border: 1px solid rgba(59, 130, 246, 0.3);
+        }
+
+        .btn-view:hover {
+            background: rgba(59, 130, 246, 0.3);
+            transform: translateY(-1px);
+        }
+
+        .btn-blacklist {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        .btn-blacklist:hover {
+            background: rgba(239, 68, 68, 0.3);
+            transform: translateY(-1px);
+        }
+
+        .btn-unblacklist {
+            background: rgba(34, 197, 94, 0.2);
+            color: #22c55e;
+            border: 1px solid rgba(34, 197, 94, 0.3);
+        }
+
+        .btn-unblacklist:hover {
+            background: rgba(34, 197, 94, 0.3);
+            transform: translateY(-1px);
+        }
+
+        .btn-delete {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        .btn-delete:hover {
+            background: rgba(239, 68, 68, 0.3);
+            transform: translateY(-1px);
+        }
+
+        /* Status Badge */
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .status-active {
+            background: rgba(34, 197, 94, 0.2);
+            color: #22c55e;
+            border: 1px solid rgba(34, 197, 94, 0.3);
+        }
+
+        .status-blacklisted {
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            backdrop-filter: blur(10px);
+            z-index: 10000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: linear-gradient(135deg, rgba(26, 26, 26, 0.98) 0%, rgba(37, 37, 37, 0.98) 100%);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            border-radius: 20px;
+            padding: 30px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 25px 80px rgba(0, 0, 0, 0.8);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-header h3 {
+            font-size: 22px;
+            font-weight: 700;
+            color: #e5e5e5;
+        }
+
+        .modal-close {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            border-radius: 8px;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: #ef4444;
+            font-size: 24px;
+            transition: all 0.2s;
+        }
+
+        .modal-close:hover {
+            background: rgba(239, 68, 68, 0.2);
+            transform: scale(1.05);
+        }
+
+        .modal-body {
+            color: #e5e5e5;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(74, 74, 74, 0.3);
+        }
+
+        .info-row:last-child {
+            border-bottom: none;
+        }
+
+        .info-label {
+            color: #888;
+            font-weight: 600;
+        }
+
+        .info-value {
+            color: #e5e5e5;
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #888;
+        }
+
+        .empty-state-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+
+        .empty-state-text {
+            font-size: 16px;
+        }
+
+        /* Loading */
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #888;
+        }
+
+        /* Form Styles */
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #e5e5e5;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px 16px;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(74, 74, 74, 0.6);
+            border-radius: 8px;
+            color: #e5e5e5;
+            font-size: 14px;
+            transition: all 0.3s;
+            font-family: inherit;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            background: rgba(0, 0, 0, 0.6);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+        }
+
+        .form-input textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        /* Changelog Changes List */
+        .changelog-change-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(74, 74, 74, 0.5);
+            border-radius: 6px;
+            margin-bottom: 8px;
+        }
+
+        .changelog-change-item-text {
+            flex: 1;
+            color: #e5e5e5;
+            font-size: 14px;
+        }
+
+        .changelog-change-item-remove {
+            background: rgba(239, 68, 68, 0.2);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            border-radius: 4px;
+            padding: 4px 8px;
+            color: #ef4444;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .changelog-change-item-remove:hover {
+            background: rgba(239, 68, 68, 0.3);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .admin-container {
+                padding: 15px;
+            }
+
+            .admin-header {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .admin-tabs {
+                flex-direction: column;
+            }
+
+            .admin-table {
+                font-size: 12px;
+            }
+
+            .admin-table th,
+            .admin-table td {
+                padding: 10px 8px;
+            }
+
+            .action-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-animation"></div>
+    <div class="grid-pattern"></div>
+
+    <div class="admin-container">
+        <!-- Header -->
+        <div class="admin-header">
+            <div class="admin-header-left">
+                <div class="admin-logo">⚡</div>
+                <div class="admin-header-title">Admin Control Panel</div>
+            </div>
+            <div class="admin-header-right">
+                <button class="admin-btn admin-btn-primary" onclick="window.location.href='index.html'">
+                    ← Back to Site
+                </button>
+                <button class="admin-btn admin-btn-danger" onclick="logout()">
+                    Logout
+                </button>
+            </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="admin-tabs">
+            <button class="admin-tab active" data-tab="announcements">📢 Announcements</button>
+            <button class="admin-tab" data-tab="changelog">📝 Changelog</button>
+            <button class="admin-tab" data-tab="reviews">⭐ Reviews</button>
+            <button class="admin-tab" data-tab="users">👤 Users</button>
+            <button class="admin-tab" data-tab="maintenance">🔧 Maintenance</button>
+            <button class="admin-tab" data-tab="backup">💾 Backup & Restore</button>
+        </div>
+
+        <!-- Announcements Tab -->
+        <div class="admin-content-card" id="tabAnnouncements">
+            <h2>Announcements Management</h2>
+            <button class="admin-btn admin-btn-primary" style="margin-bottom: 20px;" onclick="editAnnouncement(null)">+ Add Announcement</button>
+            <div id="announcementsContent">
+                <div class="loading">Loading announcements...</div>
+            </div>
+        </div>
+
+        <!-- Changelog Tab -->
+        <div class="admin-content-card" id="tabChangelog" style="display: none;">
+            <h2>Changelog Management</h2>
+            <button class="admin-btn admin-btn-primary" style="margin-bottom: 20px;" onclick="editChangelog(null)">+ Add Changelog Entry</button>
+            <div id="changelogContent">
+                <div class="loading">Loading changelog...</div>
+            </div>
+        </div>
+
+        <!-- Reviews Tab -->
+        <div class="admin-content-card" id="tabReviews" style="display: none;">
+            <h2>Reviews Management</h2>
+            <div id="reviewsContent">
+                <div class="loading">Loading reviews...</div>
+            </div>
+        </div>
+
+        <!-- Users Tab -->
+        <div class="admin-content-card" id="tabUsers" style="display: none;">
+            <h2>User Management</h2>
+            <div id="usersContent">
+                <div class="loading">Loading users...</div>
+            </div>
+        </div>
+
+        <!-- Maintenance Tab -->
+        <div class="admin-content-card" id="tabMaintenance" style="display: none;">
+            <h2>Maintenance Mode</h2>
+            <div id="maintenanceContent">
+                <div class="loading">Loading maintenance settings...</div>
+            </div>
+        </div>
+
+        <!-- Backup & Restore Tab -->
+        <div class="admin-content-card" id="tabBackup" style="display: none;">
+            <h2>Backup & Restore</h2>
+            <div id="backupContent">
+                <div class="loading">Loading backup tools...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- User Info Modal -->
+    <div class="modal" id="userInfoModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>User Information</h3>
+                <button class="modal-close" onclick="closeModal('userInfoModal')">×</button>
+            </div>
+            <div class="modal-body" id="userInfoContent">
+                <!-- User info will be populated here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Announcement Editor Modal -->
+    <div class="modal" id="announcementEditorModal">
+        <div class="modal-content" style="max-width: 700px;">
+            <div class="modal-header">
+                <h3 id="announcementEditorTitle">Add Announcement</h3>
+                <button class="modal-close" onclick="hideAnnouncementEditor()">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Title *</label>
+                    <input type="text" id="announcementTitleInput" class="form-input" placeholder="New Update Available!" maxlength="100">
+                </div>
+                <div class="form-group">
+                    <label>Message *</label>
+                    <textarea id="announcementMessageInput" class="form-input" rows="4" placeholder="Version 1.2.0 is now live with exciting new features." maxlength="500"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Type *</label>
+                    <select id="announcementTypeInput" class="form-input">
+                        <option value="info">Info (Blue)</option>
+                        <option value="success">Success (Green)</option>
+                        <option value="warning">Warning (Orange)</option>
+                        <option value="error">Error (Red)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Priority *</label>
+                    <select id="announcementPriorityInput" class="form-input">
+                        <option value="low">Low</option>
+                        <option value="medium" selected>Medium</option>
+                        <option value="high">High</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>End Date (Optional)</label>
+                    <input type="datetime-local" id="announcementEndDateInput" class="form-input">
+                    <div style="font-size: 12px; color: #888; margin-top: 4px;">Leave empty to show indefinitely</div>
+                </div>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="announcementDismissibleInput" checked> Dismissible (users can close)
+                    </label>
+                </div>
+                <div class="form-group">
+                    <label>Link URL (Optional)</label>
+                    <input type="url" id="announcementLinkInput" class="form-input" placeholder="https://...">
+                </div>
+                <div class="form-group">
+                    <label>Link Text (Optional)</label>
+                    <input type="text" id="announcementLinkTextInput" class="form-input" placeholder="Learn More">
+                </div>
+                <div id="announcementEditorError" style="color: #ef4444; font-size: 13px; margin-bottom: 16px; display: none;"></div>
+                <div style="display: flex; gap: 12px; margin-top: 20px;">
+                    <button class="admin-btn admin-btn-primary" onclick="saveAnnouncement()" style="flex: 1;">Save Announcement</button>
+                    <button class="admin-btn" onclick="hideAnnouncementEditor()" style="flex: 1; background: rgba(74, 74, 74, 0.3);">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Changelog Editor Modal -->
+    <div class="modal" id="changelogEditorModal">
+        <div class="modal-content" style="max-width: 700px;">
+            <div class="modal-header">
+                <h3 id="changelogEditorTitle">Add Changelog Entry</h3>
+                <button class="modal-close" onclick="hideChangelogEditor()">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Version *</label>
+                    <input type="text" id="changelogVersionInput" class="form-input" placeholder="1.2.0" maxlength="20">
+                </div>
+                <div class="form-group">
+                    <label>Release Date *</label>
+                    <input type="date" id="changelogDateInput" class="form-input">
+                </div>
+                <div class="form-group">
+                    <label>Type (Optional)</label>
+                    <select id="changelogTypeInput" class="form-input">
+                        <option value="">None</option>
+                        <option value="major">Major</option>
+                        <option value="minor">Minor</option>
+                        <option value="patch">Patch</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Download URL (Optional)</label>
+                    <input type="url" id="changelogDownloadUrlInput" class="form-input" placeholder="https://github.com/.../releases/tag/v1.2.0">
+                </div>
+                <div class="form-group">
+                    <label>Changes *</label>
+                    <div id="changelogChangesList" style="margin-bottom: 12px;"></div>
+                    <div style="display: flex; gap: 8px;">
+                        <input type="text" id="changelogChangeInput" class="form-input" placeholder="Added new feature..." style="flex: 1;" maxlength="200">
+                        <button type="button" class="btn-action btn-view" onclick="addChangelogChange()" style="white-space: nowrap;">+ Add</button>
+                    </div>
+                    <div style="font-size: 12px; color: #888; margin-top: 4px;">Add each change as a separate item</div>
+                </div>
+                <div id="changelogEditorError" style="color: #ef4444; font-size: 13px; margin-bottom: 16px; display: none;"></div>
+                <div style="display: flex; gap: 12px; margin-top: 20px;">
+                    <button class="admin-btn admin-btn-primary" onclick="saveChangelog()" style="flex: 1;">Save Changelog</button>
+                    <button class="admin-btn" onclick="hideChangelogEditor()" style="flex: 1; background: rgba(74, 74, 74, 0.3);">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Firebase Configuration (same as index.html)
+        const firebaseConfig = {
+            apiKey: "AIzaSyC6CrMVEbsr-AADq-w-TOkzO0AAOZtUqmU",
+            authDomain: "recon-265bc.firebaseapp.com",
+            databaseURL: "https://recon-265bc-default-rtdb.firebaseio.com",
+            projectId: "recon-265bc",
+            storageBucket: "recon-265bc.firebasestorage.app",
+            messagingSenderId: "99005456592",
+            appId: "1:99005456592:web:9ca83e210d9e85ca8a3ed5"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
+        // Check admin session
+        const ADMIN_SESSION_KEY = 'recon_admin_session';
+        const isAdminLoggedIn = sessionStorage.getItem(ADMIN_SESSION_KEY) === 'true';
+
+        if (!isAdminLoggedIn) {
+            window.location.href = 'index.html';
+        }
+
+        // Track admin panel visit (optional)
+        async function trackUserVisit() {
+            // Admin panel visits are tracked but not blocked by blacklist
+            try {
+                const ip = await getClientIP();
+                const userAgent = navigator.userAgent;
+                const timestamp = Date.now();
+                const visitId = `visit_${timestamp}_${Math.random().toString(36).substr(2, 9)}`;
+
+                const visitData = {
+                    ip: ip,
+                    userAgent: userAgent,
+                    timestamp: timestamp,
+                    date: new Date().toISOString(),
+                    url: window.location.href,
+                    isAdmin: true
+                };
+
+                await database.ref(`visits/${visitId}`).set(visitData);
+            } catch (error) {
+                console.error('Error tracking visit:', error);
+            }
+        }
+
+        // Get client IP (using a free service)
+        async function getClientIP() {
+            try {
+                const response = await fetch('https://api.ipify.org?format=json');
+                const data = await response.json();
+                return data.ip;
+            } catch (error) {
+                // Fallback to a generated ID
+                return 'unknown_' + Math.random().toString(36).substr(2, 9);
+            }
+        }
+
+        // Load reviews
+        async function loadReviews() {
+            const content = document.getElementById('reviewsContent');
+            try {
+                const snapshot = await database.ref('ratings').once('value');
+                if (!snapshot.exists()) {
+                    content.innerHTML = '<div class="empty-state"><div class="empty-state-icon">⭐</div><div class="empty-state-text">No reviews yet</div></div>';
+                    return;
+                }
+
+                const ratings = snapshot.val();
+                const reviews = Object.entries(ratings);
+
+                if (reviews.length === 0) {
+                    content.innerHTML = '<div class="empty-state"><div class="empty-state-icon">⭐</div><div class="empty-state-text">No reviews yet</div></div>';
+                    return;
+                }
+
+                let html = `
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>Rating</th>
+                                <th>Review</th>
+                                <th>Timestamp</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+
+                reviews.forEach(([id, review]) => {
+                    const date = new Date(review.timestamp || 0);
+                    const stars = '⭐'.repeat(review.rating || 0);
+                    html += `
+                        <tr>
+                            <td>${stars} (${review.rating || 0}/5)</td>
+                            <td>${escapeHtml(review.review || 'No review text')}</td>
+                            <td>${date.toLocaleString()}</td>
+                            <td>
+                                <div class="action-buttons">
+                                    <button class="btn-action btn-delete" onclick="deleteReview('${id}')">Delete</button>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                });
+
+                html += '</tbody></table>';
+                content.innerHTML = html;
+            } catch (error) {
+                console.error('Error loading reviews:', error);
+                content.innerHTML = '<div class="empty-state"><div class="empty-state-text">Error loading reviews</div></div>';
+            }
+        }
+
+        // Delete review
+        async function deleteReview(id) {
+            if (!confirm('Are you sure you want to delete this review?')) return;
+
+            try {
+                await database.ref(`ratings/${id}`).remove();
+                alert('✅ Review deleted successfully!');
+                loadReviews();
+            } catch (error) {
+                console.error('Error deleting review:', error);
+                alert('❌ Failed to delete review: ' + error.message);
+            }
+        }
+
+        // Load users
+        async function loadUsers() {
+            const content = document.getElementById('usersContent');
+            try {
+                // Load visits
+                const visitsSnapshot = await database.ref('visits').once('value');
+                // Load blacklist
+                const blacklistSnapshot = await database.ref('blacklist').once('value');
+                
+                const blacklist = blacklistSnapshot.exists() ? blacklistSnapshot.val() : {};
+                const visits = visitsSnapshot.exists() ? visitsSnapshot.val() : {};
+
+                // Group visits by IP
+                const usersByIP = {};
+                Object.entries(visits).forEach(([visitId, visit]) => {
+                    const ip = visit.ip || 'unknown';
+                    if (!usersByIP[ip]) {
+                        usersByIP[ip] = {
+                            ip: ip,
+                            visits: [],
+                            firstVisit: visit.timestamp,
+                            lastVisit: visit.timestamp,
+                            userAgent: visit.userAgent
+                        };
+                    }
+                    usersByIP[ip].visits.push(visit);
+                    if (visit.timestamp < usersByIP[ip].firstVisit) {
+                        usersByIP[ip].firstVisit = visit.timestamp;
+                    }
+                    if (visit.timestamp > usersByIP[ip].lastVisit) {
+                        usersByIP[ip].lastVisit = visit.timestamp;
+                    }
+                });
+
+                const users = Object.values(usersByIP).sort((a, b) => b.lastVisit - a.lastVisit);
+
+                if (users.length === 0) {
+                    content.innerHTML = '<div class="empty-state"><div class="empty-state-icon">👤</div><div class="empty-state-text">No users yet</div></div>';
+                    return;
+                }
+
+                let html = `
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>IP Address</th>
+                                <th>Visits</th>
+                                <th>First Visit</th>
+                                <th>Last Visit</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+
+                users.forEach(user => {
+                    const isBlacklisted = blacklist[user.ip] !== undefined;
+                    const firstDate = new Date(user.firstVisit).toLocaleString();
+                    const lastDate = new Date(user.lastVisit).toLocaleString();
+                    
+                    html += `
+                        <tr>
+                            <td>${escapeHtml(user.ip)}</td>
+                            <td>${user.visits.length}</td>
+                            <td>${firstDate}</td>
+                            <td>${lastDate}</td>
+                            <td>
+                                <span class="status-badge ${isBlacklisted ? 'status-blacklisted' : 'status-active'}">
+                                    ${isBlacklisted ? 'Blacklisted' : 'Active'}
+                                </span>
+                            </td>
+                            <td>
+                                <div class="action-buttons">
+                                    <button class="btn-action btn-view" onclick="viewUser('${escapeHtml(user.ip)}')">View</button>
+                                    ${isBlacklisted 
+                                        ? `<button class="btn-action btn-unblacklist" onclick="unblacklistUser('${escapeHtml(user.ip)}')">Unblacklist</button>`
+                                        : `<button class="btn-action btn-blacklist" onclick="blacklistUser('${escapeHtml(user.ip)}')">Blacklist</button>`
+                                    }
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                });
+
+                html += '</tbody></table>';
+                content.innerHTML = html;
+            } catch (error) {
+                console.error('Error loading users:', error);
+                content.innerHTML = '<div class="empty-state"><div class="empty-state-text">Error loading users</div></div>';
+            }
+        }
+
+        // View user
+        async function viewUser(ip) {
+            try {
+                const visitsSnapshot = await database.ref('visits').once('value');
+                const visits = visitsSnapshot.exists() ? visitsSnapshot.val() : {};
+                const userVisits = Object.values(visits).filter(v => v.ip === ip);
+                const blacklistSnapshot = await database.ref('blacklist').once('value');
+                const blacklist = blacklistSnapshot.exists() ? blacklistSnapshot.val() : {};
+                const isBlacklisted = blacklist[ip] !== undefined;
+
+                let html = `
+                    <div class="info-row">
+                        <span class="info-label">IP Address:</span>
+                        <span class="info-value">${escapeHtml(ip)}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Status:</span>
+                        <span class="info-value">
+                            <span class="status-badge ${isBlacklisted ? 'status-blacklisted' : 'status-active'}">
+                                ${isBlacklisted ? 'Blacklisted' : 'Active'}
+                            </span>
+                        </span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Total Visits:</span>
+                        <span class="info-value">${userVisits.length}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">First Visit:</span>
+                        <span class="info-value">${new Date(userVisits[0]?.timestamp || 0).toLocaleString()}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Last Visit:</span>
+                        <span class="info-value">${new Date(userVisits[userVisits.length - 1]?.timestamp || 0).toLocaleString()}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">User Agent:</span>
+                        <span class="info-value" style="font-size: 12px; word-break: break-all;">${escapeHtml(userVisits[0]?.userAgent || 'Unknown')}</span>
+                    </div>
+                `;
+
+                document.getElementById('userInfoContent').innerHTML = html;
+                document.getElementById('userInfoModal').classList.add('active');
+            } catch (error) {
+                console.error('Error viewing user:', error);
+                alert('Error loading user information');
+            }
+        }
+
+        // Blacklist user
+        async function blacklistUser(ip) {
+            if (!confirm(`Are you sure you want to blacklist IP: ${ip}?`)) return;
+
+            try {
+                const blacklistData = {
+                    ip: ip,
+                    timestamp: Date.now(),
+                    date: new Date().toISOString(),
+                    reason: 'Admin action'
+                };
+
+                await database.ref(`blacklist/${ip.replace(/\./g, '_')}`).set(blacklistData);
+                alert('✅ User blacklisted successfully!');
+                loadUsers();
+            } catch (error) {
+                console.error('Error blacklisting user:', error);
+                alert('❌ Failed to blacklist user: ' + error.message);
+            }
+        }
+
+        // Unblacklist user
+        async function unblacklistUser(ip) {
+            if (!confirm(`Are you sure you want to unblacklist IP: ${ip}?`)) return;
+
+            try {
+                await database.ref(`blacklist/${ip.replace(/\./g, '_')}`).remove();
+                alert('✅ User unblacklisted successfully!');
+                loadUsers();
+            } catch (error) {
+                console.error('Error unblacklisting user:', error);
+                alert('❌ Failed to unblacklist user: ' + error.message);
+            }
+        }
+
+        // Close modal
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+        }
+
+        // Logout
+        function logout() {
+            sessionStorage.removeItem(ADMIN_SESSION_KEY);
+            window.location.href = 'index.html';
+        }
+
+        // Escape HTML
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Load announcements
+        async function loadAnnouncements() {
+            const content = document.getElementById('announcementsContent');
+            try {
+                const snapshot = await database.ref('announcements').once('value');
+                if (!snapshot.exists()) {
+                    content.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📢</div><div class="empty-state-text">No announcements yet</div></div>';
+                    return;
+                }
+
+                const announcements = snapshot.val();
+                const entries = Object.entries(announcements);
+
+                if (entries.length === 0) {
+                    content.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📢</div><div class="empty-state-text">No announcements yet</div></div>';
+                    return;
+                }
+
+                let html = `
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>Title</th>
+                                <th>Type</th>
+                                <th>Priority</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+
+                entries.forEach(([id, announcement]) => {
+                    html += `
+                        <tr>
+                            <td>${escapeHtml(announcement.title || 'Untitled')}</td>
+                            <td><span class="status-badge status-active">${announcement.type || 'info'}</span></td>
+                            <td><span class="status-badge status-active">${announcement.priority || 'medium'}</span></td>
+                            <td>
+                                <div class="action-buttons">
+                                    <button class="btn-action btn-view" onclick="editAnnouncement('${id}')">Edit</button>
+                                    <button class="btn-action btn-delete" onclick="deleteAnnouncement('${id}')">Delete</button>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                });
+
+                html += '</tbody></table>';
+                content.innerHTML = html;
+            } catch (error) {
+                console.error('Error loading announcements:', error);
+                content.innerHTML = '<div class="empty-state"><div class="empty-state-text">Error loading announcements</div></div>';
+            }
+        }
+
+        // Load changelog
+        async function loadChangelog() {
+            const content = document.getElementById('changelogContent');
+            try {
+                const snapshot = await database.ref('changelog').once('value');
+                if (!snapshot.exists()) {
+                    content.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📝</div><div class="empty-state-text">No changelog entries yet</div></div>';
+                    return;
+                }
+
+                const changelog = snapshot.val();
+                const entries = Object.entries(changelog);
+
+                if (entries.length === 0) {
+                    content.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📝</div><div class="empty-state-text">No changelog entries yet</div></div>';
+                    return;
+                }
+
+                let html = `
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>Version</th>
+                                <th>Date</th>
+                                <th>Changes</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+
+                entries.forEach(([id, entry]) => {
+                    html += `
+                        <tr>
+                            <td>${escapeHtml(entry.version || 'Unknown')}</td>
+                            <td>${escapeHtml(entry.date || '')}</td>
+                            <td>${(entry.changes || []).length} changes</td>
+                            <td>
+                                <div class="action-buttons">
+                                    <button class="btn-action btn-view" onclick="editChangelog('${id}')">Edit</button>
+                                    <button class="btn-action btn-delete" onclick="deleteChangelog('${id}')">Delete</button>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                });
+
+                html += '</tbody></table>';
+                content.innerHTML = html;
+            } catch (error) {
+                console.error('Error loading changelog:', error);
+                content.innerHTML = '<div class="empty-state"><div class="empty-state-text">Error loading changelog</div></div>';
+            }
+        }
+
+        // Announcement editor functions
+        let changelogChanges = [];
+        window.currentEditingAnnouncementId = null;
+        window.currentEditingChangelogId = null;
+
+        window.editAnnouncement = async function(id) {
+            const modal = document.getElementById('announcementEditorModal');
+            const title = document.getElementById('announcementEditorTitle');
+            const titleInput = document.getElementById('announcementTitleInput');
+            const messageInput = document.getElementById('announcementMessageInput');
+            const typeInput = document.getElementById('announcementTypeInput');
+            const priorityInput = document.getElementById('announcementPriorityInput');
+            const endDateInput = document.getElementById('announcementEndDateInput');
+            const dismissibleInput = document.getElementById('announcementDismissibleInput');
+            const linkInput = document.getElementById('announcementLinkInput');
+            const linkTextInput = document.getElementById('announcementLinkTextInput');
+            const errorDiv = document.getElementById('announcementEditorError');
+
+            if (!modal) return;
+
+            // Clear form
+            titleInput.value = '';
+            messageInput.value = '';
+            typeInput.value = 'info';
+            priorityInput.value = 'medium';
+            endDateInput.value = '';
+            dismissibleInput.checked = true;
+            linkInput.value = '';
+            linkTextInput.value = '';
+            errorDiv.style.display = 'none';
+            errorDiv.textContent = '';
+
+            if (id) {
+                title.textContent = 'Edit Announcement';
+                try {
+                    const snapshot = await database.ref(`announcements/${id}`).once('value');
+                    if (snapshot.exists()) {
+                        const announcement = snapshot.val();
+                        titleInput.value = announcement.title || '';
+                        messageInput.value = announcement.message || '';
+                        typeInput.value = announcement.type || 'info';
+                        priorityInput.value = announcement.priority || 'medium';
+                        if (announcement.endDate) {
+                            const endDate = new Date(announcement.endDate);
+                            endDateInput.value = endDate.toISOString().slice(0, 16);
+                        }
+                        dismissibleInput.checked = announcement.dismissible !== false;
+                        linkInput.value = announcement.link || '';
+                        linkTextInput.value = announcement.linkText || '';
+                    }
+                } catch (error) {
+                    console.error('Error loading announcement:', error);
+                    errorDiv.textContent = 'Failed to load announcement';
+                    errorDiv.style.display = 'block';
+                }
+            } else {
+                title.textContent = 'Add Announcement';
+            }
+
+            modal.classList.add('active');
+            window.currentEditingAnnouncementId = id;
+        };
+
+        window.hideAnnouncementEditor = function() {
+            const modal = document.getElementById('announcementEditorModal');
+            if (modal) {
+                modal.classList.remove('active');
+            }
+            window.currentEditingAnnouncementId = null;
+        };
+
+        window.saveAnnouncement = async function() {
+            const titleInput = document.getElementById('announcementTitleInput');
+            const messageInput = document.getElementById('announcementMessageInput');
+            const typeInput = document.getElementById('announcementTypeInput');
+            const priorityInput = document.getElementById('announcementPriorityInput');
+            const endDateInput = document.getElementById('announcementEndDateInput');
+            const dismissibleInput = document.getElementById('announcementDismissibleInput');
+            const linkInput = document.getElementById('announcementLinkInput');
+            const linkTextInput = document.getElementById('announcementLinkTextInput');
+            const errorDiv = document.getElementById('announcementEditorError');
+
+            if (!titleInput.value.trim()) {
+                errorDiv.textContent = 'Title is required';
+                errorDiv.style.display = 'block';
+                return;
+            }
+            if (!messageInput.value.trim()) {
+                errorDiv.textContent = 'Message is required';
+                errorDiv.style.display = 'block';
+                return;
+            }
+
+            try {
+                const announcementData = {
+                    title: titleInput.value.trim(),
+                    message: messageInput.value.trim(),
+                    type: typeInput.value,
+                    priority: priorityInput.value,
+                    dismissible: dismissibleInput.checked
+                };
+
+                if (endDateInput.value) {
+                    announcementData.endDate = new Date(endDateInput.value).getTime();
+                }
+                if (linkInput.value.trim()) {
+                    announcementData.link = linkInput.value.trim();
+                    announcementData.linkText = linkTextInput.value.trim() || 'Learn More';
+                }
+
+                const id = window.currentEditingAnnouncementId || 'announcement_' + Date.now();
+                await database.ref(`announcements/${id}`).set(announcementData);
+                
+                alert('✅ Announcement saved!');
+                hideAnnouncementEditor();
+                loadAnnouncements();
+            } catch (error) {
+                console.error('Error saving announcement:', error);
+                errorDiv.textContent = 'Failed to save: ' + error.message;
+                errorDiv.style.display = 'block';
+            }
+        };
+
+        window.deleteAnnouncement = async function(id) {
+            if (!confirm('Are you sure you want to delete this announcement?')) return;
+            try {
+                await database.ref(`announcements/${id}`).remove();
+                alert('✅ Announcement deleted!');
+                loadAnnouncements();
+            } catch (error) {
+                console.error('Error deleting announcement:', error);
+                alert('❌ Failed to delete: ' + error.message);
+            }
+        };
+
+        // Changelog editor functions
+        window.editChangelog = async function(id) {
+            const modal = document.getElementById('changelogEditorModal');
+            const title = document.getElementById('changelogEditorTitle');
+            const versionInput = document.getElementById('changelogVersionInput');
+            const dateInput = document.getElementById('changelogDateInput');
+            const typeInput = document.getElementById('changelogTypeInput');
+            const downloadUrlInput = document.getElementById('changelogDownloadUrlInput');
+            const changesList = document.getElementById('changelogChangesList');
+            const errorDiv = document.getElementById('changelogEditorError');
+
+            if (!modal) return;
+
+            changelogChanges = [];
+            versionInput.value = '';
+            dateInput.value = '';
+            typeInput.value = '';
+            downloadUrlInput.value = '';
+            errorDiv.style.display = 'none';
+            errorDiv.textContent = '';
+            renderChangelogChanges();
+
+            if (id) {
+                title.textContent = 'Edit Changelog Entry';
+                try {
+                    const snapshot = await database.ref(`changelog/${id}`).once('value');
+                    if (snapshot.exists()) {
+                        const entry = snapshot.val();
+                        versionInput.value = entry.version || '';
+                        if (entry.date) {
+                            const dateObj = new Date(entry.date);
+                            if (!isNaN(dateObj.getTime())) {
+                                dateInput.value = dateObj.toISOString().split('T')[0];
+                            }
+                        }
+                        typeInput.value = entry.type || '';
+                        downloadUrlInput.value = entry.downloadUrl || '';
+                        changelogChanges = Array.isArray(entry.changes) ? [...entry.changes] : [];
+                        renderChangelogChanges();
+                    }
+                } catch (error) {
+                    console.error('Error loading changelog:', error);
+                    errorDiv.textContent = 'Failed to load changelog entry';
+                    errorDiv.style.display = 'block';
+                }
+            } else {
+                title.textContent = 'Add Changelog Entry';
+                const today = new Date();
+                dateInput.value = today.toISOString().split('T')[0];
+            }
+
+            modal.classList.add('active');
+            window.currentEditingChangelogId = id;
+        };
+
+        window.hideChangelogEditor = function() {
+            const modal = document.getElementById('changelogEditorModal');
+            if (modal) {
+                modal.classList.remove('active');
+            }
+            window.currentEditingChangelogId = null;
+            changelogChanges = [];
+        };
+
+        function renderChangelogChanges() {
+            const changesList = document.getElementById('changelogChangesList');
+            if (!changesList) return;
+
+            if (changelogChanges.length === 0) {
+                changesList.innerHTML = '<div style="color: #888; font-size: 13px; padding: 8px;">No changes added yet</div>';
+                return;
+            }
+
+            changesList.innerHTML = changelogChanges.map((change, index) => `
+                <div class="changelog-change-item">
+                    <span class="changelog-change-item-text">${escapeHtml(change)}</span>
+                    <button type="button" class="changelog-change-item-remove" onclick="removeChangelogChange(${index})">Remove</button>
+                </div>
+            `).join('');
+        }
+
+        window.addChangelogChange = function() {
+            const changeInput = document.getElementById('changelogChangeInput');
+            if (!changeInput) return;
+            const change = changeInput.value.trim();
+            if (!change) return;
+            changelogChanges.push(change);
+            changeInput.value = '';
+            renderChangelogChanges();
+        };
+
+        window.removeChangelogChange = function(index) {
+            changelogChanges.splice(index, 1);
+            renderChangelogChanges();
+        };
+
+        window.saveChangelog = async function() {
+            const versionInput = document.getElementById('changelogVersionInput');
+            const dateInput = document.getElementById('changelogDateInput');
+            const typeInput = document.getElementById('changelogTypeInput');
+            const downloadUrlInput = document.getElementById('changelogDownloadUrlInput');
+            const errorDiv = document.getElementById('changelogEditorError');
+
+            if (!versionInput.value.trim()) {
+                errorDiv.textContent = 'Version is required';
+                errorDiv.style.display = 'block';
+                return;
+            }
+            if (!dateInput.value) {
+                errorDiv.textContent = 'Release date is required';
+                errorDiv.style.display = 'block';
+                return;
+            }
+            if (changelogChanges.length === 0) {
+                errorDiv.textContent = 'At least one change is required';
+                errorDiv.style.display = 'block';
+                return;
+            }
+
+            try {
+                const dateObj = new Date(dateInput.value);
+                const date = dateObj.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+                
+                const changelogData = {
+                    version: versionInput.value.trim(),
+                    date: date,
+                    changes: changelogChanges.filter(c => c.trim().length > 0)
+                };
+
+                if (typeInput.value.trim()) {
+                    changelogData.type = typeInput.value.trim();
+                }
+                if (downloadUrlInput.value.trim()) {
+                    changelogData.downloadUrl = downloadUrlInput.value.trim();
+                }
+
+                const id = window.currentEditingChangelogId || 'v' + versionInput.value.replace(/\./g, '_') + '_' + Date.now();
+                await database.ref(`changelog/${id}`).set(changelogData);
+
+                alert('✅ Changelog saved!');
+                hideChangelogEditor();
+                loadChangelog();
+            } catch (error) {
+                console.error('Error saving changelog:', error);
+                errorDiv.textContent = 'Failed to save: ' + error.message;
+                errorDiv.style.display = 'block';
+            }
+        };
+
+        window.deleteChangelog = async function(id) {
+            if (!confirm('Are you sure you want to delete this changelog entry?')) return;
+            try {
+                await database.ref(`changelog/${id}`).remove();
+                alert('✅ Changelog deleted!');
+                loadChangelog();
+            } catch (error) {
+                console.error('Error deleting changelog:', error);
+                alert('❌ Failed to delete: ' + error.message);
+            }
+        };
+
+        // Tab switching
+        document.querySelectorAll('.admin-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                const tabName = tab.getAttribute('data-tab');
+                
+                // Update tab buttons
+                document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                
+                // Update content
+                document.querySelectorAll('.admin-content-card').forEach(c => c.style.display = 'none');
+                document.getElementById(`tab${tabName.charAt(0).toUpperCase() + tabName.slice(1)}`).style.display = 'block';
+                
+                // Load data for active tab
+                if (tabName === 'announcements') {
+                    loadAnnouncements();
+                } else if (tabName === 'changelog') {
+                    loadChangelog();
+                } else if (tabName === 'reviews') {
+                    loadReviews();
+                } else if (tabName === 'users') {
+                    loadUsers();
+                } else if (tabName === 'maintenance') {
+                    loadMaintenanceSettings();
+                } else if (tabName === 'backup') {
+                    loadBackupTools();
+                }
+            });
+        });
+
+        // ============================================
+        // MAINTENANCE MODE
+        // ============================================
+        async function loadMaintenanceSettings() {
+            const content = document.getElementById('maintenanceContent');
+            try {
+                const snapshot = await database.ref('maintenance').once('value');
+                const maintenance = snapshot.exists() ? snapshot.val() : { enabled: false, message: '', returnTime: null };
+
+                let html = `
+                    <div style="background: ${maintenance.enabled ? 'rgba(239, 68, 68, 0.1)' : 'rgba(34, 197, 94, 0.1)'}; border: 1px solid ${maintenance.enabled ? 'rgba(239, 68, 68, 0.3)' : 'rgba(34, 197, 94, 0.3)'}; border-radius: 12px; padding: 20px; margin-bottom: 30px;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px;">
+                            <div>
+                                <h3 style="color: #e5e5e5; margin-bottom: 5px;">Status: <span style="color: ${maintenance.enabled ? '#ef4444' : '#22c55e'}">${maintenance.enabled ? 'ENABLED' : 'DISABLED'}</span></h3>
+                                ${maintenance.enabled ? '<p style="color: #888; font-size: 13px;">Site is currently in maintenance mode</p>' : '<p style="color: #888; font-size: 13px;">Site is accessible to all users</p>'}
+                            </div>
+                            <button class="admin-btn ${maintenance.enabled ? 'admin-btn-danger' : 'admin-btn-primary'}" onclick="openMaintenanceModal()">
+                                ${maintenance.enabled ? '⚙️ Configure' : '🔧 Enable Maintenance'}
+                            </button>
+                        </div>
+                        ${maintenance.enabled ? `
+                            <div style="background: rgba(0, 0, 0, 0.3); border-radius: 8px; padding: 15px; margin-top: 15px;">
+                                <p style="color: #e5e5e5; margin-bottom: 10px;"><strong>Message:</strong></p>
+                                <p style="color: #888; margin-bottom: 10px;">${escapeHtml(maintenance.message || 'No message set')}</p>
+                                ${maintenance.returnTime ? `<p style="color: #888; font-size: 12px;">Estimated return: ${new Date(maintenance.returnTime).toLocaleString()}</p>` : ''}
+                            </div>
+                        ` : ''}
+                    </div>
+                    <div style="background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 12px; padding: 20px;">
+                        <h4 style="color: #e5e5e5; margin-bottom: 10px;">ℹ️ About Maintenance Mode</h4>
+                        <ul style="color: #888; font-size: 14px; line-height: 1.8; padding-left: 20px;">
+                            <li>When enabled, all users (except admins) will see a maintenance page</li>
+                            <li>You can customize the message shown to users</li>
+                            <li>Set an estimated return time to inform users when the site will be back</li>
+                            <li>Admin panel remains accessible during maintenance</li>
+                        </ul>
+                    </div>
+                `;
+
+                content.innerHTML = html;
+            } catch (error) {
+                console.error('Error loading maintenance settings:', error);
+                content.innerHTML = '<div class="empty-state"><div class="empty-state-text">Error loading maintenance settings</div></div>';
+            }
+        }
+
+        function openMaintenanceModal() {
+            database.ref('maintenance').once('value').then(snapshot => {
+                const maintenance = snapshot.exists() ? snapshot.val() : { enabled: false, message: '', returnTime: null };
+                document.getElementById('maintenanceEnabled').checked = maintenance.enabled || false;
+                document.getElementById('maintenanceMessage').value = maintenance.message || 'We\'re currently performing scheduled maintenance. We\'ll be back shortly!';
+                if (maintenance.returnTime) {
+                    const returnDate = new Date(maintenance.returnTime);
+                    document.getElementById('maintenanceReturnTime').value = returnDate.toISOString().slice(0, 16);
+                } else {
+                    document.getElementById('maintenanceReturnTime').value = '';
+                }
+                document.getElementById('maintenanceModal').classList.add('active');
+            });
+        }
+
+        function closeMaintenanceModal() {
+            document.getElementById('maintenanceModal').classList.remove('active');
+        }
+
+        function toggleMaintenancePreview() {
+            // Could add preview functionality here
+        }
+
+        async function saveMaintenanceSettings() {
+            const enabled = document.getElementById('maintenanceEnabled').checked;
+            const message = document.getElementById('maintenanceMessage').value.trim();
+            const returnTimeInput = document.getElementById('maintenanceReturnTime').value;
+            const errorDiv = document.getElementById('maintenanceError');
+
+            if (enabled && !message) {
+                errorDiv.textContent = 'Message is required when maintenance mode is enabled';
+                errorDiv.style.display = 'block';
+                return;
+            }
+
+            try {
+                const maintenanceData = {
+                    enabled: enabled,
+                    message: message,
+                    updatedAt: Date.now(),
+                    updatedBy: 'admin'
+                };
+
+                if (returnTimeInput) {
+                    maintenanceData.returnTime = new Date(returnTimeInput).getTime();
+                } else {
+                    maintenanceData.returnTime = null;
+                }
+
+                await database.ref('maintenance').set(maintenanceData);
+                alert('✅ Maintenance settings saved!');
+                closeMaintenanceModal();
+                loadMaintenanceSettings();
+            } catch (error) {
+                console.error('Error saving maintenance settings:', error);
+                errorDiv.textContent = 'Failed to save: ' + error.message;
+                errorDiv.style.display = 'block';
+            }
+        }
+
+        // ============================================
+        // BACKUP & RESTORE
+        // ============================================
+        async function loadBackupTools() {
+            const content = document.getElementById('backupContent');
+            
+            // Load backup history
+            let backupHistory = [];
+            try {
+                const snapshot = await database.ref('backups').once('value');
+                if (snapshot.exists()) {
+                    backupHistory = Object.entries(snapshot.val())
+                        .map(([id, backup]) => ({ id, ...backup }))
+                        .sort((a, b) => b.timestamp - a.timestamp)
+                        .slice(0, 10); // Show last 10 backups
+                }
+            } catch (error) {
+                console.error('Error loading backup history:', error);
+            }
+
+            let html = `
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 30px;">
+                    <div style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(59, 130, 246, 0.05) 100%); border: 1px solid rgba(59, 130, 246, 0.2); border-radius: 12px; padding: 24px;">
+                        <div style="font-size: 32px; margin-bottom: 12px;">💾</div>
+                        <h3 style="color: #e5e5e5; margin-bottom: 8px;">Create Backup</h3>
+                        <p style="color: #888; font-size: 13px; margin-bottom: 16px;">Export all database data to a JSON file</p>
+                        <button class="admin-btn admin-btn-primary" onclick="createBackup()" style="width: 100%;">Create Backup Now</button>
+                    </div>
+                    <div style="background: linear-gradient(135deg, rgba(34, 197, 94, 0.1) 0%, rgba(34, 197, 94, 0.05) 100%); border: 1px solid rgba(34, 197, 94, 0.2); border-radius: 12px; padding: 24px;">
+                        <div style="font-size: 32px; margin-bottom: 12px;">📤</div>
+                        <h3 style="color: #e5e5e5; margin-bottom: 8px;">Restore Backup</h3>
+                        <p style="color: #888; font-size: 13px; margin-bottom: 16px;">Import data from a JSON backup file</p>
+                        <button class="admin-btn" onclick="restoreBackup()" style="width: 100%; background: rgba(34, 197, 94, 0.2); border: 1px solid rgba(34, 197, 94, 0.3); color: #22c55e;">Restore from File</button>
+                    </div>
+                </div>
+
+                <div style="background: rgba(26, 26, 26, 0.5); border: 1px solid rgba(74, 74, 74, 0.5); border-radius: 12px; padding: 20px;">
+                    <h3 style="color: #e5e5e5; margin-bottom: 15px;">Backup History</h3>
+            `;
+
+            if (backupHistory.length === 0) {
+                html += '<div class="empty-state"><div class="empty-state-text">No backups created yet</div></div>';
+            } else {
+                html += `
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Size</th>
+                                <th>Items</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+
+                backupHistory.forEach(backup => {
+                    const date = new Date(backup.timestamp);
+                    html += `
+                        <tr>
+                            <td>${date.toLocaleString()}</td>
+                            <td>${formatBytes(backup.size || 0)}</td>
+                            <td>${backup.itemCount || 0} items</td>
+                            <td>
+                                <div class="action-buttons">
+                                    <button class="btn-action btn-view" onclick="downloadBackup('${backup.id}')">Download</button>
+                                    <button class="btn-action btn-delete" onclick="deleteBackup('${backup.id}')">Delete</button>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                });
+
+                html += '</tbody></table>';
+            }
+
+            html += '</div>';
+
+            content.innerHTML = html;
+        }
+
+        async function createBackup() {
+            if (!confirm('Create a backup of all database data? This may take a moment.')) return;
+
+            try {
+                const data = {
+                    announcements: {},
+                    changelog: {},
+                    downloads: {},
+                    ratings: {},
+                    translations: {},
+                    visits: {},
+                    blacklist: {},
+                    maintenance: {}
+                };
+
+                // Try to read each path individually to handle permission errors gracefully
+                const paths = [
+                    { key: 'announcements', ref: database.ref('announcements') },
+                    { key: 'changelog', ref: database.ref('changelog') },
+                    { key: 'downloads', ref: database.ref('downloads') },
+                    { key: 'ratings', ref: database.ref('ratings') },
+                    { key: 'translations', ref: database.ref('translations') },
+                    { key: 'visits', ref: database.ref('visits') },
+                    { key: 'blacklist', ref: database.ref('blacklist') },
+                    { key: 'maintenance', ref: database.ref('maintenance') }
+                ];
+
+                for (const path of paths) {
+                    try {
+                        const snapshot = await path.ref.once('value');
+                        if (snapshot.exists()) {
+                            data[path.key] = snapshot.val();
+                        }
+                    } catch (error) {
+                        console.warn(`Warning: Could not backup ${path.key}:`, error.message);
+                        // Continue with other paths even if one fails
+                    }
+                }
+
+                const jsonData = JSON.stringify(data, null, 2);
+                const blob = new Blob([jsonData], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+                a.download = `recon-backup-${timestamp}.json`;
+                a.click();
+                URL.revokeObjectURL(url);
+
+                // Save backup record
+                const backupId = 'backup_' + Date.now();
+                const itemCount = Object.values(data).reduce((sum, section) => sum + Object.keys(section).length, 0);
+                await database.ref(`backups/${backupId}`).set({
+                    timestamp: Date.now(),
+                    size: blob.size,
+                    itemCount: itemCount,
+                    createdBy: 'admin'
+                });
+
+                alert('✅ Backup created and downloaded successfully!');
+                loadBackupTools();
+            } catch (error) {
+                console.error('Backup error:', error);
+                alert('❌ Failed to create backup: ' + error.message);
+            }
+        }
+
+        async function restoreBackup() {
+            if (!confirm('⚠️ WARNING: This will overwrite all existing data. Are you sure you want to continue?')) return;
+            if (!confirm('⚠️ This action cannot be undone. Continue?')) return;
+
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json';
+            input.onchange = async (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+
+                try {
+                    const text = await file.text();
+                    const data = JSON.parse(text);
+
+                    // Validate backup structure
+                    if (!data || typeof data !== 'object') {
+                        throw new Error('Invalid backup file format');
+                    }
+
+                    // Show progress
+                    const progress = confirm('Restoring backup... This may take a moment. Click OK to continue.');
+                    if (!progress) return;
+
+                    // Restore data
+                    if (data.announcements) await database.ref('announcements').set(data.announcements);
+                    if (data.changelog) await database.ref('changelog').set(data.changelog);
+                    if (data.downloads) await database.ref('downloads').set(data.downloads);
+                    if (data.ratings) await database.ref('ratings').set(data.ratings);
+                    if (data.translations) await database.ref('translations').set(data.translations);
+                    if (data.visits) await database.ref('visits').set(data.visits);
+                    if (data.blacklist) await database.ref('blacklist').set(data.blacklist);
+                    if (data.maintenance) await database.ref('maintenance').set(data.maintenance);
+
+                    alert('✅ Backup restored successfully! The page will reload.');
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1000);
+                } catch (error) {
+                    console.error('Restore error:', error);
+                    alert('❌ Failed to restore backup: ' + error.message);
+                }
+            };
+            input.click();
+        }
+
+        async function downloadBackup(backupId) {
+            // This would download a specific backup from storage
+            // For now, just create a new backup
+            alert('Downloading backup...');
+            createBackup();
+        }
+
+        async function deleteBackup(backupId) {
+            if (!confirm('Delete this backup record?')) return;
+            try {
+                await database.ref(`backups/${backupId}`).remove();
+                alert('✅ Backup record deleted!');
+                loadBackupTools();
+            } catch (error) {
+                console.error('Error deleting backup:', error);
+                alert('❌ Failed to delete: ' + error.message);
+            }
+        }
+
+        function formatBytes(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            trackUserVisit();
+            loadAnnouncements();
+            
+            // Close modals on outside click
+            document.getElementById('announcementEditorModal').addEventListener('click', (e) => {
+                if (e.target.id === 'announcementEditorModal') {
+                    hideAnnouncementEditor();
+                }
+            });
+            
+            document.getElementById('changelogEditorModal').addEventListener('click', (e) => {
+                if (e.target.id === 'changelogEditorModal') {
+                    hideChangelogEditor();
+                }
+            });
+            
+            // Enter key for changelog changes
+            document.getElementById('changelogChangeInput')?.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    addChangelogChange();
+                }
+            });
+        });
+
+        // Close modal on outside click
+        document.getElementById('userInfoModal').addEventListener('click', (e) => {
+            if (e.target.id === 'userInfoModal') {
+                closeModal('userInfoModal');
+            }
+        });
+    </script>
+</body>
+</html>
+

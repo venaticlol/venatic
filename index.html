@@ -2442,31 +2442,41 @@
         }
 
         .admin-form-group {
-            margin-bottom: 16px;
+            margin-bottom: 24px;
         }
 
         .admin-form-group label {
             display: block;
             color: #e5e5e5;
             font-size: 14px;
-            margin-bottom: 8px;
+            margin-bottom: 10px;
+            font-weight: 600;
+            letter-spacing: 0.3px;
         }
 
         .admin-form-input {
             width: 100%;
-            padding: 12px;
-            background: rgba(10, 10, 10, 0.5);
-            border: 1px solid rgba(74, 74, 74, 0.5);
-            border-radius: 8px;
+            padding: 14px 18px;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(74, 74, 74, 0.6);
+            border-radius: 10px;
             color: #e5e5e5;
             font-size: 14px;
-            transition: border-color 0.2s;
+            transition: all 0.3s;
             box-sizing: border-box;
+        }
+
+        .admin-form-input:hover {
+            border-color: rgba(59, 130, 246, 0.4);
+            background: rgba(0, 0, 0, 0.5);
         }
 
         .admin-form-input:focus {
             outline: none;
             border-color: #3b82f6;
+            background: rgba(0, 0, 0, 0.6);
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15), 0 0 20px rgba(59, 130, 246, 0.1);
+            transform: translateY(-1px);
         }
 
         .admin-error-message {
@@ -2481,25 +2491,36 @@
         }
 
         .admin-submit-btn {
-            width: 100%;
-            padding: 12px;
-            background: #3b82f6;
-            border: none;
-            border-radius: 8px;
-            color: #ffffff;
-            font-size: 14px;
-            font-weight: 600;
+            flex: 1;
+            padding: 14px 20px;
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            border-radius: 10px;
+            color: white;
+            font-size: 13px;
+            font-weight: 700;
             cursor: pointer;
-            transition: background 0.2s;
+            transition: all 0.3s;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
         }
 
-        .admin-submit-btn:hover {
-            background: #2563eb;
+        .admin-submit-btn:hover:not(:disabled) {
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(59, 130, 246, 0.5);
+            border-color: rgba(59, 130, 246, 0.5);
+        }
+
+        .admin-submit-btn:active:not(:disabled) {
+            transform: translateY(0);
         }
 
         .admin-submit-btn:disabled {
-            background: #4a4a4a;
+            opacity: 0.5;
             cursor: not-allowed;
+            transform: none;
         }
 
         /* Admin Panel */
@@ -2698,65 +2719,112 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(0, 0, 0, 0.9);
+            background: rgba(0, 0, 0, 0.95);
             z-index: 10002;
-            display: flex;
+            display: none;
             align-items: center;
             justify-content: center;
-            backdrop-filter: blur(5px);
+            backdrop-filter: blur(20px);
             overflow-y: auto;
             padding: 20px;
+            animation: fadeIn 0.2s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
         }
 
         .admin-editor-content {
-            background: #1a1a1a;
-            border: 1px solid rgba(74, 74, 74, 0.5);
-            border-radius: 12px;
+            background: linear-gradient(145deg, #1a1a1a 0%, #252525 50%, #1a1a1a 100%);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            border-radius: 20px;
             width: 100%;
-            max-width: 600px;
+            max-width: 700px;
             max-height: 90vh;
             display: flex;
             flex-direction: column;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+            box-shadow: 0 25px 80px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(59, 130, 246, 0.1);
+            animation: slideUp 0.3s ease;
+            overflow: hidden;
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(30px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
         }
 
         .admin-editor-header {
-            padding: 20px;
-            border-bottom: 1px solid rgba(74, 74, 74, 0.5);
+            padding: 24px 28px;
+            border-bottom: 1px solid rgba(59, 130, 246, 0.2);
             display: flex;
             justify-content: space-between;
             align-items: center;
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(59, 130, 246, 0.05) 100%);
         }
 
         .admin-editor-header h2 {
             color: #e5e5e5;
-            font-size: 20px;
+            font-size: 22px;
             margin: 0;
+            font-weight: 700;
+            background: linear-gradient(135deg, #ffffff 0%, #a0a0a0 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
 
         .admin-editor-close {
-            background: transparent;
-            border: none;
-            color: #888888;
-            font-size: 28px;
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            border-radius: 8px;
+            color: #ef4444;
+            font-size: 24px;
             cursor: pointer;
             padding: 0;
-            width: 32px;
-            height: 32px;
+            width: 36px;
+            height: 36px;
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: color 0.2s;
+            transition: all 0.2s;
+            line-height: 1;
         }
 
         .admin-editor-close:hover {
-            color: #e5e5e5;
+            background: rgba(239, 68, 68, 0.2);
+            border-color: rgba(239, 68, 68, 0.5);
+            transform: scale(1.05);
         }
 
         .admin-editor-body {
-            padding: 20px;
+            padding: 28px;
             overflow-y: auto;
             flex: 1;
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .admin-editor-body::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .admin-editor-body::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .admin-editor-body::-webkit-scrollbar-thumb {
+            background: rgba(59, 130, 246, 0.3);
+            border-radius: 4px;
+        }
+
+        .admin-editor-body::-webkit-scrollbar-thumb:hover {
+            background: rgba(59, 130, 246, 0.5);
         }
 
         .admin-editor-body textarea {
@@ -2793,19 +2861,23 @@
 
         .admin-cancel-btn {
             flex: 1;
-            padding: 12px;
-            background: rgba(74, 74, 74, 0.5);
-            border: 1px solid rgba(106, 106, 106, 0.5);
-            border-radius: 8px;
+            padding: 14px 20px;
+            background: rgba(74, 74, 74, 0.3);
+            border: 1px solid rgba(106, 106, 106, 0.4);
+            border-radius: 10px;
             color: #e5e5e5;
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: all 0.3s;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
         }
 
         .admin-cancel-btn:hover {
-            background: rgba(106, 106, 106, 0.7);
+            background: rgba(106, 106, 106, 0.5);
+            border-color: rgba(106, 106, 106, 0.6);
+            transform: translateY(-1px);
         }
 
         .admin-submit-btn {
@@ -2843,6 +2915,112 @@
 
         .changelog-change-item-remove:hover {
             background: rgba(239, 68, 68, 0.3);
+        }
+
+        /* Advanced Admin Features */
+        .admin-stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .admin-stat-card {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(59, 130, 246, 0.05) 100%);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            transition: all 0.3s;
+        }
+
+        .admin-stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(59, 130, 246, 0.2);
+        }
+
+        .admin-stat-icon {
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+
+        .admin-stat-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: #3b82f6;
+            margin-bottom: 5px;
+        }
+
+        .admin-stat-label {
+            font-size: 13px;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .admin-activity-log {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(74, 74, 74, 0.5);
+            border-radius: 10px;
+            padding: 15px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .admin-activity-item {
+            padding: 12px;
+            border-bottom: 1px solid rgba(74, 74, 74, 0.3);
+            color: #e5e5e5;
+            font-size: 13px;
+        }
+
+        .admin-activity-item:last-child {
+            border-bottom: none;
+        }
+
+        .admin-activity-time {
+            color: #888;
+            font-size: 11px;
+            margin-top: 4px;
+        }
+
+        .admin-tools-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .admin-tool-btn {
+            background: linear-gradient(135deg, rgba(26, 26, 26, 0.8) 0%, rgba(37, 37, 37, 0.8) 100%);
+            border: 1px solid rgba(74, 74, 74, 0.5);
+            border-radius: 12px;
+            padding: 24px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: left;
+        }
+
+        .admin-tool-btn:hover {
+            transform: translateY(-3px);
+            border-color: rgba(59, 130, 246, 0.5);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .admin-tool-icon {
+            font-size: 32px;
+            margin-bottom: 12px;
+        }
+
+        .admin-tool-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #e5e5e5;
+            margin-bottom: 6px;
+        }
+
+        .admin-tool-desc {
+            font-size: 13px;
+            color: #888;
         }
     </style>
 </head>
@@ -2916,9 +3094,11 @@
         </div>
         <div class="admin-panel-content">
             <div class="admin-tabs">
-                <button class="admin-tab active" data-tab="announcements">Announcements</button>
-                <button class="admin-tab" data-tab="changelog">Changelog</button>
-                <button class="admin-tab" data-tab="database">Database</button>
+                <button class="admin-tab active" data-tab="announcements">📢 Announcements</button>
+                <button class="admin-tab" data-tab="changelog">📝 Changelog</button>
+                <button class="admin-tab" data-tab="analytics">📊 Analytics</button>
+                <button class="admin-tab" data-tab="tools">🛠️ Tools</button>
+                <button class="admin-tab" data-tab="database">💾 Database</button>
             </div>
 
             <!-- Announcements Tab -->
@@ -2940,6 +3120,74 @@
                 <h3>Database Management</h3>
                 <button class="admin-action-btn" id="initPathsBtn">Initialize Database Paths</button>
                 <div class="admin-status" id="databaseStatus"></div>
+            </div>
+
+            <!-- Analytics Tab -->
+            <div class="admin-tab-content" id="tabAnalytics">
+                <h3>Analytics Dashboard</h3>
+                <div class="admin-stats-grid">
+                    <div class="admin-stat-card">
+                        <div class="admin-stat-icon">📥</div>
+                        <div class="admin-stat-value" id="statDownloads">0</div>
+                        <div class="admin-stat-label">Total Downloads</div>
+                    </div>
+                    <div class="admin-stat-card">
+                        <div class="admin-stat-icon">⭐</div>
+                        <div class="admin-stat-value" id="statRatings">0</div>
+                        <div class="admin-stat-label">Total Ratings</div>
+                    </div>
+                    <div class="admin-stat-card">
+                        <div class="admin-stat-icon">📢</div>
+                        <div class="admin-stat-value" id="statAnnouncements">0</div>
+                        <div class="admin-stat-label">Active Announcements</div>
+                    </div>
+                    <div class="admin-stat-card">
+                        <div class="admin-stat-icon">📝</div>
+                        <div class="admin-stat-value" id="statChangelogs">0</div>
+                        <div class="admin-stat-label">Changelog Entries</div>
+                    </div>
+                </div>
+                <div class="admin-chart-container">
+                    <h4 style="color: #e5e5e5; margin-top: 30px; margin-bottom: 15px;">Recent Activity</h4>
+                    <div class="admin-activity-log" id="activityLog"></div>
+                </div>
+            </div>
+
+            <!-- Tools Tab -->
+            <div class="admin-tab-content" id="tabTools">
+                <h3>Quick Tools</h3>
+                <div class="admin-tools-grid">
+                    <button class="admin-tool-btn" onclick="exportData()">
+                        <div class="admin-tool-icon">💾</div>
+                        <div class="admin-tool-title">Export Data</div>
+                        <div class="admin-tool-desc">Download all data as JSON</div>
+                    </button>
+                    <button class="admin-tool-btn" onclick="importData()">
+                        <div class="admin-tool-icon">📤</div>
+                        <div class="admin-tool-title">Import Data</div>
+                        <div class="admin-tool-desc">Upload JSON file to restore</div>
+                    </button>
+                    <button class="admin-tool-btn" onclick="clearDismissedAnnouncements()">
+                        <div class="admin-tool-icon">🔄</div>
+                        <div class="admin-tool-title">Reset Dismissals</div>
+                        <div class="admin-tool-desc">Clear all dismissed announcements</div>
+                    </button>
+                    <button class="admin-tool-btn" onclick="bulkDeleteAnnouncements()">
+                        <div class="admin-tool-icon">🗑️</div>
+                        <div class="admin-tool-title">Bulk Delete</div>
+                        <div class="admin-tool-desc">Delete multiple announcements</div>
+                    </button>
+                    <button class="admin-tool-btn" onclick="searchAndFilter()">
+                        <div class="admin-tool-icon">🔍</div>
+                        <div class="admin-tool-title">Search & Filter</div>
+                        <div class="admin-tool-desc">Advanced search options</div>
+                    </button>
+                    <button class="admin-tool-btn" onclick="systemHealthCheck()">
+                        <div class="admin-tool-icon">🏥</div>
+                        <div class="admin-tool-title">System Health</div>
+                        <div class="admin-tool-desc">Check system status</div>
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -2978,12 +3226,9 @@
                     </select>
                 </div>
                 <div class="admin-form-group">
-                    <label for="announcementStartDateInput">Start Date *</label>
-                    <input type="datetime-local" id="announcementStartDateInput" class="admin-form-input">
-                </div>
-                <div class="admin-form-group">
                     <label for="announcementEndDateInput">End Date (Optional)</label>
                     <input type="datetime-local" id="announcementEndDateInput" class="admin-form-input">
+                    <div style="font-size: 12px; color: #888; margin-top: 4px;">Leave empty to show indefinitely</div>
                 </div>
                 <div class="admin-form-group">
                     <label>
@@ -3166,10 +3411,6 @@
                     <div class="info-item">
                         <span class="info-label">Format</span>
                         <span class="info-value">.exe</span>
-                    </div>
-                    <div class="info-item">
-                        <span class="info-label">SHA256</span>
-                        <span class="info-value hash-value">15964f450ff1b7657a637156f8264647fbf3e8b05529cff3132ab122a7d638f4</span>
                     </div>
                 </div>
             </div>
@@ -3360,8 +3601,14 @@
                 firebaseInitialized = true;
                 console.log('Firebase initialized successfully');
                 
+                // Check maintenance mode first
+                checkMaintenanceMode();
+                
                 // Initialize database structure if it doesn't exist
                 initializeDatabaseStructure();
+                
+                // Track user visit
+                trackUserVisit();
                 
                 // Set up periodic monitoring to auto-recreate deleted structures
                 setupDatabaseStructureMonitor();
@@ -3600,10 +3847,10 @@
                 for (const [id, announcement] of Object.entries(announcements)) {
                     if (dismissed.includes(id)) continue;
                     
-                    const startDate = announcement.startDate || 0;
+                    // Check end date only (start date removed - announcements show instantly)
                     const endDate = announcement.endDate || Infinity;
                     
-                    if (now >= startDate && now <= endDate) {
+                    if (now <= endDate) {
                         // Check priority (higher priority first)
                         if (!activeAnnouncement || 
                             (announcement.priority === 'high' && activeAnnouncement.priority !== 'high')) {
@@ -3659,12 +3906,19 @@
             banner.style.display = 'flex';
             document.body.style.paddingTop = '60px';
 
+            // Store announcement ID for close button
+            banner.setAttribute('data-announcement-id', announcement.id);
+            
             // Close button handler
-            closeBtn.onclick = () => {
-                if (announcement.dismissible !== false) {
-                    dismissAnnouncement(announcement.id);
-                }
-            };
+            if (closeBtn) {
+                closeBtn.onclick = (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (announcement.dismissible !== false) {
+                        dismissAnnouncement(announcement.id);
+                    }
+                };
+            }
         }
 
         function dismissAnnouncement(id) {
@@ -3766,6 +4020,137 @@
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
+        }
+
+        // Track user visit
+        async function trackUserVisit() {
+            if (!firebaseInitialized || !database) return;
+            
+            try {
+                // Check if user is blacklisted
+                const ip = await getClientIP();
+                const blacklistSnapshot = await database.ref('blacklist').once('value');
+                const blacklist = blacklistSnapshot.exists() ? blacklistSnapshot.val() : {};
+                const ipKey = ip.replace(/\./g, '_');
+                
+                if (blacklist[ipKey]) {
+                    // User is blacklisted - could redirect or show message
+                    console.warn('Blacklisted user detected:', ip);
+                    return;
+                }
+
+                const userAgent = navigator.userAgent;
+                const timestamp = Date.now();
+                const visitId = `visit_${timestamp}_${Math.random().toString(36).substr(2, 9)}`;
+
+                const visitData = {
+                    ip: ip,
+                    userAgent: userAgent,
+                    timestamp: timestamp,
+                    date: new Date().toISOString(),
+                    url: window.location.href
+                };
+
+                await database.ref(`visits/${visitId}`).set(visitData);
+            } catch (error) {
+                console.error('Error tracking visit:', error);
+            }
+        }
+
+        // Get client IP
+        async function getClientIP() {
+            try {
+                const response = await fetch('https://api.ipify.org?format=json');
+                const data = await response.json();
+                return data.ip;
+            } catch (error) {
+                // Fallback to a generated ID
+                return 'unknown_' + Math.random().toString(36).substr(2, 9);
+            }
+        }
+
+        // Check maintenance mode
+        async function checkMaintenanceMode() {
+            if (!firebaseInitialized || !database) return;
+            
+            try {
+                const snapshot = await database.ref('maintenance').once('value');
+                if (snapshot.exists()) {
+                    const maintenance = snapshot.val();
+                    if (maintenance.enabled) {
+                        // Check if user is admin
+                        const isAdmin = sessionStorage.getItem('recon_admin_session') === 'true';
+                        if (!isAdmin) {
+                            showMaintenancePage(maintenance);
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('Error checking maintenance mode:', error);
+            }
+        }
+
+        // Show maintenance page
+        function showMaintenancePage(maintenance) {
+            document.body.innerHTML = `
+                <style>
+                    * { margin: 0; padding: 0; box-sizing: border-box; }
+                    body {
+                        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+                        background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #0a0a0a 100%);
+                        color: #e5e5e5;
+                        min-height: 100vh;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        padding: 20px;
+                    }
+                    .maintenance-container {
+                        text-align: center;
+                        max-width: 600px;
+                        background: linear-gradient(135deg, rgba(26, 26, 26, 0.95) 0%, rgba(37, 37, 37, 0.95) 100%);
+                        border: 1px solid rgba(59, 130, 246, 0.2);
+                        border-radius: 20px;
+                        padding: 60px 40px;
+                        box-shadow: 0 25px 80px rgba(0, 0, 0, 0.8);
+                    }
+                    .maintenance-icon {
+                        font-size: 80px;
+                        margin-bottom: 30px;
+                        animation: pulse 2s ease infinite;
+                    }
+                    @keyframes pulse {
+                        0%, 100% { transform: scale(1); }
+                        50% { transform: scale(1.1); }
+                    }
+                    .maintenance-title {
+                        font-size: 32px;
+                        font-weight: 800;
+                        margin-bottom: 20px;
+                        background: linear-gradient(135deg, #ffffff 0%, #a0a0a0 100%);
+                        -webkit-background-clip: text;
+                        -webkit-text-fill-color: transparent;
+                        background-clip: text;
+                    }
+                    .maintenance-message {
+                        font-size: 18px;
+                        color: #888;
+                        line-height: 1.6;
+                        margin-bottom: 30px;
+                    }
+                    .maintenance-time {
+                        font-size: 14px;
+                        color: #666;
+                        margin-top: 20px;
+                    }
+                </style>
+                <div class="maintenance-container">
+                    <div class="maintenance-icon">🔧</div>
+                    <h1 class="maintenance-title">Under Maintenance</h1>
+                    <p class="maintenance-message">${escapeHtml(maintenance.message || 'We\'re currently performing scheduled maintenance. We\'ll be back shortly!')}</p>
+                    ${maintenance.returnTime ? `<p class="maintenance-time">Estimated return: ${new Date(maintenance.returnTime).toLocaleString()}</p>` : ''}
+                </div>
+            `;
         }
 
         // ============================================
@@ -4883,13 +5268,9 @@
             }
         }
 
-        // Show admin panel
+        // Show admin panel - redirect to admin.html
         function showAdminPanel() {
-            const panel = document.getElementById('adminPanel');
-            if (panel) {
-                panel.style.display = 'flex';
-                loadAdminData();
-            }
+            window.location.href = 'admin.html';
         }
 
         // Hide admin panel
@@ -4928,6 +5309,80 @@
             if (!isAdminLoggedIn) return;
             await loadAnnouncementsList();
             await loadChangelogList();
+            await loadAnalytics();
+        }
+
+        // Load analytics data
+        async function loadAnalytics() {
+            if (!firebaseInitialized || !database) return;
+
+            try {
+                // Load downloads
+                const downloadsSnapshot = await database.ref('downloads/count').once('value');
+                const downloads = downloadsSnapshot.exists() ? downloadsSnapshot.val() : 0;
+                document.getElementById('statDownloads').textContent = downloads.toLocaleString();
+
+                // Load ratings count
+                const ratingsSnapshot = await database.ref('ratings').once('value');
+                const ratings = ratingsSnapshot.exists() ? Object.keys(ratingsSnapshot.val()).length : 0;
+                document.getElementById('statRatings').textContent = ratings.toLocaleString();
+
+                // Load announcements count
+                const announcementsSnapshot = await database.ref('announcements').once('value');
+                const announcements = announcementsSnapshot.exists() ? Object.keys(announcementsSnapshot.val()).length : 0;
+                document.getElementById('statAnnouncements').textContent = announcements.toLocaleString();
+
+                // Load changelog count
+                const changelogSnapshot = await database.ref('changelog').once('value');
+                const changelogs = changelogSnapshot.exists() ? Object.keys(changelogSnapshot.val()).length : 0;
+                document.getElementById('statChangelogs').textContent = changelogs.toLocaleString();
+
+                // Load activity log
+                loadActivityLog();
+            } catch (error) {
+                console.error('Error loading analytics:', error);
+            }
+        }
+
+        // Load activity log
+        async function loadActivityLog() {
+            const logContainer = document.getElementById('activityLog');
+            if (!logContainer) return;
+
+            const activities = [];
+            const now = new Date();
+
+            // Get recent announcements
+            try {
+                const announcementsSnapshot = await database.ref('announcements').once('value');
+                if (announcementsSnapshot.exists()) {
+                    Object.entries(announcementsSnapshot.val()).forEach(([id, announcement]) => {
+                        activities.push({
+                            type: 'announcement',
+                            text: `Announcement: "${announcement.title}"`,
+                            time: now
+                        });
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading activity:', error);
+            }
+
+            // Sort by time (most recent first) and limit to 10
+            activities.sort((a, b) => b.time - a.time);
+            const recentActivities = activities.slice(0, 10);
+
+            if (recentActivities.length === 0) {
+                logContainer.innerHTML = '<div style="color: #888; padding: 20px; text-align: center;">No recent activity</div>';
+                return;
+            }
+
+            logContainer.innerHTML = recentActivities.map(activity => `
+                <div class="admin-activity-item">
+                    <div>${activity.text}</div>
+                    <div class="admin-activity-time">${activity.time.toLocaleString()}</div>
+                </div>
+            `).join('');
         }
 
         // Load announcements list for admin
@@ -5028,6 +5483,171 @@
             }
         }
 
+        // Advanced Admin Tools
+        window.exportData = async function() {
+            if (!firebaseInitialized || !database) {
+                alert('Firebase not initialized');
+                return;
+            }
+
+            try {
+                const data = {
+                    announcements: {},
+                    changelog: {},
+                    downloads: {},
+                    ratings: {},
+                    translations: {}
+                };
+
+                const snapshots = await Promise.all([
+                    database.ref('announcements').once('value'),
+                    database.ref('changelog').once('value'),
+                    database.ref('downloads').once('value'),
+                    database.ref('ratings').once('value'),
+                    database.ref('translations').once('value')
+                ]);
+
+                if (snapshots[0].exists()) data.announcements = snapshots[0].val();
+                if (snapshots[1].exists()) data.changelog = snapshots[1].val();
+                if (snapshots[2].exists()) data.downloads = snapshots[2].val();
+                if (snapshots[3].exists()) data.ratings = snapshots[3].val();
+                if (snapshots[4].exists()) data.translations = snapshots[4].val();
+
+                const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `recon-backup-${new Date().toISOString().split('T')[0]}.json`;
+                a.click();
+                URL.revokeObjectURL(url);
+                alert('✅ Data exported successfully!');
+            } catch (error) {
+                console.error('Export error:', error);
+                alert('❌ Failed to export data: ' + error.message);
+            }
+        };
+
+        window.importData = function() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json';
+            input.onchange = async (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+
+                try {
+                    const text = await file.text();
+                    const data = JSON.parse(text);
+
+                    if (!confirm('⚠️ This will overwrite existing data. Continue?')) return;
+
+                    if (!firebaseInitialized || !database) {
+                        alert('Firebase not initialized');
+                        return;
+                    }
+
+                    if (data.announcements) await database.ref('announcements').set(data.announcements);
+                    if (data.changelog) await database.ref('changelog').set(data.changelog);
+                    if (data.downloads) await database.ref('downloads').set(data.downloads);
+                    if (data.ratings) await database.ref('ratings').set(data.ratings);
+                    if (data.translations) await database.ref('translations').set(data.translations);
+
+                    alert('✅ Data imported successfully!');
+                    loadAdminData();
+                } catch (error) {
+                    console.error('Import error:', error);
+                    alert('❌ Failed to import data: ' + error.message);
+                }
+            };
+            input.click();
+        };
+
+        window.clearDismissedAnnouncements = function() {
+            if (confirm('Clear all dismissed announcements? Users will see them again.')) {
+                localStorage.removeItem(ANNOUNCEMENT_DISMISSED_KEY);
+                alert('✅ Dismissed announcements cleared!');
+            }
+        };
+
+        window.bulkDeleteAnnouncements = async function() {
+            if (!firebaseInitialized || !database) {
+                alert('Firebase not initialized');
+                return;
+            }
+
+            try {
+                const snapshot = await database.ref('announcements').once('value');
+                if (!snapshot.exists()) {
+                    alert('No announcements to delete');
+                    return;
+                }
+
+                const announcements = snapshot.val();
+                const ids = Object.keys(announcements);
+                const selected = prompt(`Enter announcement IDs to delete (comma-separated):\n\nAvailable IDs: ${ids.join(', ')}`);
+                
+                if (!selected) return;
+
+                const toDelete = selected.split(',').map(id => id.trim()).filter(id => ids.includes(id));
+                if (toDelete.length === 0) {
+                    alert('No valid IDs selected');
+                    return;
+                }
+
+                if (confirm(`Delete ${toDelete.length} announcement(s)?`)) {
+                    await Promise.all(toDelete.map(id => database.ref(`announcements/${id}`).remove()));
+                    alert(`✅ Deleted ${toDelete.length} announcement(s)!`);
+                    loadAnnouncementsList();
+                }
+            } catch (error) {
+                console.error('Bulk delete error:', error);
+                alert('❌ Failed to delete: ' + error.message);
+            }
+        };
+
+        window.searchAndFilter = function() {
+            const query = prompt('Enter search query:');
+            if (!query) return;
+
+            // Simple search implementation
+            const items = document.querySelectorAll('.admin-list-item');
+            items.forEach(item => {
+                const text = item.textContent.toLowerCase();
+                item.style.display = text.includes(query.toLowerCase()) ? '' : 'none';
+            });
+        };
+
+        window.systemHealthCheck = async function() {
+            if (!firebaseInitialized || !database) {
+                alert('❌ Firebase not initialized');
+                return;
+            }
+
+            try {
+                const checks = [];
+                
+                // Check Firebase connection
+                try {
+                    await database.ref('.info/connected').once('value');
+                    checks.push('✅ Firebase connected');
+                } catch (e) {
+                    checks.push('❌ Firebase connection failed');
+                }
+
+                // Check database paths
+                const paths = ['announcements', 'changelog', 'downloads', 'ratings', 'translations'];
+                for (const path of paths) {
+                    const snapshot = await database.ref(path).once('value');
+                    checks.push(snapshot.exists() ? `✅ ${path} exists` : `⚠️ ${path} missing`);
+                }
+
+                alert('System Health Check:\n\n' + checks.join('\n'));
+            } catch (error) {
+                console.error('Health check error:', error);
+                alert('❌ Health check failed: ' + error.message);
+            }
+        };
+
         // Event listeners
         document.addEventListener('DOMContentLoaded', () => {
             // Initialize KeyAuth
@@ -5101,7 +5721,14 @@
                     document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
                     document.querySelectorAll('.admin-tab-content').forEach(c => c.classList.remove('active'));
                     tab.classList.add('active');
-                    document.getElementById('tab' + tabName.charAt(0).toUpperCase() + tabName.slice(1)).classList.add('active');
+                    const tabContent = document.getElementById('tab' + tabName.charAt(0).toUpperCase() + tabName.slice(1));
+                    if (tabContent) {
+                        tabContent.classList.add('active');
+                        // Load analytics when switching to analytics tab
+                        if (tabName === 'analytics') {
+                            loadAnalytics();
+                        }
+                    }
                 });
             });
 
@@ -5216,7 +5843,6 @@
             messageInput.value = '';
             typeInput.value = 'info';
             priorityInput.value = 'medium';
-            startDateInput.value = '';
             endDateInput.value = '';
             dismissibleInput.checked = true;
             linkInput.value = '';
@@ -5237,11 +5863,7 @@
                         typeInput.value = announcement.type || 'info';
                         priorityInput.value = announcement.priority || 'medium';
                         
-                        // Convert timestamps to datetime-local format
-                        if (announcement.startDate) {
-                            const startDate = new Date(announcement.startDate);
-                            startDateInput.value = startDate.toISOString().slice(0, 16);
-                        }
+                        // Convert timestamp to datetime-local format
                         if (announcement.endDate) {
                             const endDate = new Date(announcement.endDate);
                             endDateInput.value = endDate.toISOString().slice(0, 16);
@@ -5257,9 +5879,6 @@
                 }
             } else {
                 title.textContent = 'Add Announcement';
-                // Set default start date to now
-                const now = new Date();
-                startDateInput.value = now.toISOString().slice(0, 16);
             }
 
             // Show modal
@@ -5291,7 +5910,6 @@
             const messageInput = document.getElementById('announcementMessageInput');
             const typeInput = document.getElementById('announcementTypeInput');
             const priorityInput = document.getElementById('announcementPriorityInput');
-            const startDateInput = document.getElementById('announcementStartDateInput');
             const endDateInput = document.getElementById('announcementEndDateInput');
             const dismissibleInput = document.getElementById('announcementDismissibleInput');
             const linkInput = document.getElementById('announcementLinkInput');
@@ -5308,17 +5926,12 @@
                 showAnnouncementEditorError('Message is required');
                 return;
             }
-            if (!startDateInput.value) {
-                showAnnouncementEditorError('Start date is required');
-                return;
-            }
 
             // Get values
             const title = titleInput.value.trim();
             const message = messageInput.value.trim();
             const type = typeInput.value;
             const priority = priorityInput.value;
-            const startDate = new Date(startDateInput.value).getTime();
             const endDate = endDateInput.value ? new Date(endDateInput.value).getTime() : null;
             const dismissible = dismissibleInput.checked;
             const link = linkInput.value.trim() || null;
@@ -5348,7 +5961,6 @@
                     message: message,
                     type: type,
                     priority: priority,
-                    startDate: startDate,
                     dismissible: dismissible
                 };
 
