@@ -3551,6 +3551,9 @@
     <script>
         // Initialize page on load
         document.addEventListener('DOMContentLoaded', () => {
+            // Check rate limit on page load
+            checkRateLimitOnLoad();
+            
             // Initialize particles
             if (document.getElementById('particles')) {
                 createParticles();
@@ -5407,8 +5410,121 @@
 
         
         // Handle download button click
+        // Rate limiting configuration
+        const RATE_LIMIT_CONFIG = {
+            maxDownloads: 3,        // Maximum downloads allowed
+            timeWindow: 60 * 60 * 1000, // Time window in milliseconds (1 hour)
+            storageKey: 'recon_download_limits'
+        };
+
+        // Check if user can download (rate limiting)
+        function checkDownloadLimit() {
+            const now = Date.now();
+            const stored = localStorage.getItem(RATE_LIMIT_CONFIG.storageKey);
+            
+            if (!stored) {
+                // First download, create new record
+                const record = {
+                    downloads: [now],
+                    resetAt: now + RATE_LIMIT_CONFIG.timeWindow
+                };
+                localStorage.setItem(RATE_LIMIT_CONFIG.storageKey, JSON.stringify(record));
+                return { allowed: true, remaining: RATE_LIMIT_CONFIG.maxDownloads - 1, resetAt: record.resetAt };
+            }
+            
+            try {
+                const record = JSON.parse(stored);
+                
+                // Check if time window has expired
+                if (now > record.resetAt) {
+                    // Reset the limit
+                    const newRecord = {
+                        downloads: [now],
+                        resetAt: now + RATE_LIMIT_CONFIG.timeWindow
+                    };
+                    localStorage.setItem(RATE_LIMIT_CONFIG.storageKey, JSON.stringify(newRecord));
+                    return { allowed: true, remaining: RATE_LIMIT_CONFIG.maxDownloads - 1, resetAt: newRecord.resetAt };
+                }
+                
+                // Filter out old downloads outside the time window
+                const validDownloads = record.downloads.filter(timestamp => 
+                    (now - timestamp) < RATE_LIMIT_CONFIG.timeWindow
+                );
+                
+                // Check if limit is reached
+                if (validDownloads.length >= RATE_LIMIT_CONFIG.maxDownloads) {
+                    const timeUntilReset = record.resetAt - now;
+                    const minutesLeft = Math.ceil(timeUntilReset / (60 * 1000));
+                    return { 
+                        allowed: false, 
+                        remaining: 0, 
+                        resetAt: record.resetAt,
+                        minutesLeft: minutesLeft
+                    };
+                }
+                
+                // Add new download timestamp
+                validDownloads.push(now);
+                const updatedRecord = {
+                    downloads: validDownloads,
+                    resetAt: record.resetAt
+                };
+                localStorage.setItem(RATE_LIMIT_CONFIG.storageKey, JSON.stringify(updatedRecord));
+                
+                return { 
+                    allowed: true, 
+                    remaining: RATE_LIMIT_CONFIG.maxDownloads - validDownloads.length,
+                    resetAt: record.resetAt
+                };
+            } catch (error) {
+                console.error('Error checking download limit:', error);
+                // On error, allow download but reset storage
+                localStorage.removeItem(RATE_LIMIT_CONFIG.storageKey);
+                return { allowed: true, remaining: RATE_LIMIT_CONFIG.maxDownloads - 1 };
+            }
+        }
+
+        // Show rate limit message
+        function showRateLimitMessage(minutesLeft) {
+            const message = `Download limit reached. Please try again in ${minutesLeft} minute${minutesLeft !== 1 ? 's' : ''}.`;
+            alert(message);
+        }
+
+        // Update download button state
+        function updateDownloadButtonState(limitInfo) {
+            const buttons = document.querySelectorAll('.download-btn');
+            buttons.forEach(btn => {
+                if (!limitInfo.allowed) {
+                    btn.style.opacity = '0.5';
+                    btn.style.cursor = 'not-allowed';
+                    btn.style.pointerEvents = 'none';
+                    btn.title = `Rate limit reached. Try again in ${limitInfo.minutesLeft} minute${limitInfo.minutesLeft !== 1 ? 's' : ''}.`;
+                } else {
+                    btn.style.opacity = '';
+                    btn.style.cursor = '';
+                    btn.style.pointerEvents = '';
+                    btn.title = '';
+                }
+            });
+        }
+
+        // Check rate limit on page load
+        function checkRateLimitOnLoad() {
+            const limitInfo = checkDownloadLimit();
+            updateDownloadButtonState(limitInfo);
+        }
+
         async function handleDownload(event) {
             event.preventDefault();
+            
+            // Check rate limit
+            const limitInfo = checkDownloadLimit();
+            
+            if (!limitInfo.allowed) {
+                showRateLimitMessage(limitInfo.minutesLeft);
+                updateDownloadButtonState(limitInfo);
+                return;
+            }
             
             const counterElement = document.getElementById('downloadCount');
             const oldCount = parseInt(counterElement?.getAttribute('data-count') || '0', 10);
@@ -5439,6 +5555,10 @@
             setTimeout(() => {
                 document.body.removeChild(link);
             }, 100);
+            
+            // Update button state after download
+            const updatedLimitInfo = checkDownloadLimit();
+            updateDownloadButtonState(updatedLimitInfo);
         }
         
         // Animate counter from one value to another
