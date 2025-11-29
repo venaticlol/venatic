@@ -4685,6 +4685,13 @@
 
                 await database.ref(`ticketMessages/${ticketId}/${Date.now()}`).set(messageData);
 
+                // Store ticket ID in localStorage for persistence
+                const storedTickets = JSON.parse(localStorage.getItem('user_ticket_ids') || '[]');
+                if (!storedTickets.includes(ticketId)) {
+                    storedTickets.push(ticketId);
+                    localStorage.setItem('user_ticket_ids', JSON.stringify(storedTickets));
+                }
+
                 alert('✅ Ticket created successfully! Your ticket ID is: ' + ticketId);
                 closeTicketModal();
                 loadUserTickets();
@@ -4706,19 +4713,44 @@
             if (!content) return;
 
             try {
-                const ip = await getClientIP();
+                // Get stored ticket IDs from localStorage
+                const storedTicketIds = JSON.parse(localStorage.getItem('user_ticket_ids') || '[]');
+                
+                // Get current IP for additional filtering
+                let currentIp = null;
+                try {
+                    currentIp = await getClientIP();
+                } catch (e) {
+                    console.warn('Could not get IP address:', e);
+                }
+
                 const snapshot = await database.ref('tickets').once('value');
                 
-                if (!snapshot.exists()) {
+                if (!snapshot.exists() && storedTicketIds.length === 0) {
                     content.innerHTML = '<div class="changelog-empty">No tickets created yet</div>';
                     return;
                 }
 
-                const tickets = snapshot.val();
-                const userTickets = Object.entries(tickets)
-                    .map(([id, ticket]) => ({ id, ...ticket }))
-                    .filter(ticket => ticket.userIp === ip)
-                    .sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+                const allTickets = snapshot.exists() ? snapshot.val() : {};
+                const ticketEntries = Object.entries(allTickets).map(([id, ticket]) => ({ id, ...ticket }));
+                
+                // Filter tickets: include if ticket ID is in localStorage OR if IP matches
+                const userTickets = ticketEntries.filter(ticket => {
+                    // Include if ticket ID is stored in localStorage
+                    if (storedTicketIds.includes(ticket.id)) {
+                        return true;
+                    }
+                    // Include if IP matches (for backward compatibility)
+                    if (currentIp && ticket.userIp === currentIp) {
+                        // Also add to localStorage if not already there
+                        if (!storedTicketIds.includes(ticket.id)) {
+                            storedTicketIds.push(ticket.id);
+                            localStorage.setItem('user_ticket_ids', JSON.stringify(storedTicketIds));
+                        }
+                        return true;
+                    }
+                    return false;
+                }).sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
 
                 if (userTickets.length === 0) {
                     content.innerHTML = '<div class="changelog-empty">No tickets created yet</div>';
@@ -4755,6 +4787,18 @@
             const idEl = document.getElementById('ticketViewId');
             const messagesContainer = document.getElementById('ticketMessagesContainer');
 
+            if (!modal) {
+                console.error('Ticket view modal not found');
+                alert('Error: Ticket view modal not found. Please refresh the page.');
+                return;
+            }
+
+            if (!titleEl || !idEl || !messagesContainer) {
+                console.error('Ticket view modal elements not found', { titleEl, idEl, messagesContainer });
+                alert('Error: Ticket view modal elements not found. Please refresh the page.');
+                return;
+            }
+
             try {
                 const ticketSnapshot = await database.ref(`tickets/${ticketId}`).once('value');
                 if (!ticketSnapshot.exists()) {
@@ -4763,8 +4807,8 @@
                 }
 
                 const ticket = ticketSnapshot.val();
-                titleEl.textContent = ticket.subject;
-                idEl.textContent = ticket.id;
+                if (titleEl) titleEl.textContent = ticket.subject || 'No Subject';
+                if (idEl) idEl.textContent = ticket.id || ticketId;
 
                 // Load messages
                 const messagesSnapshot = await database.ref(`ticketMessages/${ticketId}`).once('value');
