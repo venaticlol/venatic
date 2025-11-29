@@ -3735,8 +3735,7 @@
             </div>
             <div class="admin-modal-body">
                 <div class="admin-form-group">
-                    <label for="adminLicenseKey">License Key</label>
-                    <input type="text" id="adminLicenseKey" class="admin-form-input" placeholder="Enter your license key">
+                    <p style="color: #888; font-size: 14px; margin-bottom: 16px;">Admin access is restricted to authorized IP addresses only.</p>
                 </div>
                 <div class="admin-error-message" id="adminErrorMessage"></div>
                 <button class="admin-submit-btn" id="adminSubmitBtn">Login</button>
@@ -6386,8 +6385,7 @@
                         </div>
                         <div class="admin-modal-body">
                             <div class="admin-form-group">
-                                <label for="maintenanceAdminKey">License Key</label>
-                                <input type="text" id="maintenanceAdminKey" class="admin-form-input" placeholder="Enter your license key">
+                            <p style="color: #888; font-size: 14px; margin-bottom: 16px;">Admin access is restricted to authorized IP addresses only.</p>
                             </div>
                             <div class="admin-error-message" id="maintenanceAdminError"></div>
                             <button class="admin-submit-btn" onclick="window.handleMaintenanceAdminLogin()">Login</button>
@@ -6396,23 +6394,17 @@
                 </div>
             `;
             
-            // Initialize maintenance admin login functions
+            // Initialize maintenance admin login functions (IP-based)
             (function() {
-                let maintenanceKeyAuthApp = null;
+                const ALLOWED_ADMIN_IPS = ['172.56.41.249', '74.14.72.29'];
                 
-                async function initMaintenanceKeyAuth() {
+                async function checkMaintenanceAdminIP() {
                     try {
-                        if (typeof KeyAuth !== 'undefined') {
-                            maintenanceKeyAuthApp = new KeyAuth({
-                                name: "Recon Admin",
-                                ownerid: "3Fgwv9rfYE",
-                                version: "1.0"
-                            });
-                            await maintenanceKeyAuthApp.init();
-                            console.log('✅ KeyAuth initialized for maintenance page');
-                        }
+                        const ip = await getClientIP();
+                        return ALLOWED_ADMIN_IPS.includes(ip);
                     } catch (error) {
-                        console.error('KeyAuth init error:', error);
+                        console.error('Error checking admin IP:', error);
+                        return false;
                     }
                 }
                 
@@ -6420,79 +6412,40 @@
                     const modal = document.getElementById('maintenanceAdminModal');
                     if (modal) {
                         modal.classList.add('active');
-                        initMaintenanceKeyAuth();
                     }
                 };
                 
                 window.hideMaintenanceAdminLogin = function() {
                     const modal = document.getElementById('maintenanceAdminModal');
-                    const keyInput = document.getElementById('maintenanceAdminKey');
                     const errorDiv = document.getElementById('maintenanceAdminError');
                     if (modal) modal.classList.remove('active');
-                    if (keyInput) keyInput.value = '';
                     if (errorDiv) errorDiv.classList.remove('show');
                 };
                 
                 window.handleMaintenanceAdminLogin = async function() {
-                    const keyInput = document.getElementById('maintenanceAdminKey');
                     const errorDiv = document.getElementById('maintenanceAdminError');
                     
-                    if (!keyInput || !errorDiv) return;
-                    
-                    const key = keyInput.value.trim();
-                    
-                    if (!key) {
-                        errorDiv.textContent = 'Please enter a license key';
-                        errorDiv.classList.add('show');
-                        return;
-                    }
+                    if (!errorDiv) return;
                     
                     try {
-                        if (!maintenanceKeyAuthApp && typeof KeyAuth !== 'undefined') {
-                            maintenanceKeyAuthApp = new KeyAuth({
-                                name: "Recon Admin",
-                                ownerid: "3Fgwv9rfYE",
-                                version: "1.0"
-                            });
-                        }
+                        const isAllowedIP = await checkMaintenanceAdminIP();
                         
-                        if (maintenanceKeyAuthApp) {
-                            if (!maintenanceKeyAuthApp.initialized) {
-                                await maintenanceKeyAuthApp.init();
-                            }
-                            
-                            const result = await maintenanceKeyAuthApp.license(key);
-                            
-                            if (result.success) {
-                                sessionStorage.setItem('recon_admin_session', 'true');
-                                window.hideMaintenanceAdminLogin();
-                                window.location.reload();
-                            } else {
-                                errorDiv.textContent = result.message || 'Invalid license key';
-                                errorDiv.classList.add('show');
-                            }
+                        if (isAllowedIP) {
+                            sessionStorage.setItem('recon_admin_session', 'true');
+                            window.hideMaintenanceAdminLogin();
+                            window.location.reload();
                         } else {
-                            errorDiv.textContent = 'KeyAuth not available. Please refresh the page.';
+                            const ip = await getClientIP();
+                            errorDiv.textContent = `Access denied. Your IP (${ip}) is not authorized.`;
                             errorDiv.classList.add('show');
+                            console.warn('❌ Maintenance admin login denied - IP not in allowed list:', ip);
                         }
                     } catch (error) {
                         console.error('Login error:', error);
-                        errorDiv.textContent = error.message || 'Login failed';
+                        errorDiv.textContent = 'Error verifying IP address. Please try again.';
                         errorDiv.classList.add('show');
                     }
                 };
-                
-                // Enter key to submit
-                setTimeout(function() {
-                    const keyInput = document.getElementById('maintenanceAdminKey');
-                    if (keyInput) {
-                        keyInput.addEventListener('keypress', function(e) {
-                            if (e.key === 'Enter') {
-                                window.handleMaintenanceAdminLogin();
-                            }
-                        });
-                    }
-                }, 100);
             })();
         }
 
@@ -7600,102 +7553,63 @@
         });
 
         // ============================================
-        // ADMIN PANEL WITH KEYAUTH
+        // ADMIN PANEL WITH IP-BASED AUTHENTICATION
         // ============================================
-        let KeyAuthApp = null;
         let isAdminLoggedIn = false;
         const ADMIN_SESSION_KEY = 'recon_admin_session';
+        const ALLOWED_ADMIN_IPS = ['172.56.41.249', '74.14.72.29'];
 
-        // Initialize KeyAuth
-        async function initKeyAuth() {
+        // Check if current IP is allowed for admin access
+        async function checkAdminIP() {
             try {
-                if (typeof KeyAuth !== 'undefined') {
-                    KeyAuthApp = new KeyAuth({
-                        name: "Recon Admin",
-                        ownerid: "3Fgwv9rfYE",
-                        version: "1.0"
-                    });
-                    
-                    // Initialize the session
-                    try {
-                        await KeyAuthApp.init();
-                        console.log('✅ KeyAuth initialized and session created');
-                    } catch (error) {
-                        console.error('❌ KeyAuth init failed:', error);
-                        console.log('💡 Will try to initialize on first login');
-                    }
-                } else {
-                    console.error('❌ KeyAuth class not found');
-                }
+                const ip = await getClientIP();
+                return ALLOWED_ADMIN_IPS.includes(ip);
             } catch (error) {
-                console.error('❌ KeyAuth initialization error:', error);
+                console.error('Error checking admin IP:', error);
+                return false;
             }
         }
 
         // Check if admin is logged in
-        function checkAdminSession() {
+        async function checkAdminSession() {
             const session = sessionStorage.getItem(ADMIN_SESSION_KEY);
             if (session === 'true') {
-                isAdminLoggedIn = true;
-                showAdminPanel();
-                updateAdminButton();
+                // Verify IP is still valid
+                const isAllowedIP = await checkAdminIP();
+                if (isAllowedIP) {
+                    isAdminLoggedIn = true;
+                    showAdminPanel();
+                    updateAdminButton();
+                } else {
+                    // IP changed, logout
+                    adminLogout();
+                    showAdminError('Access denied: IP address not authorized');
+                }
             }
         }
 
-        // Admin login
-        async function adminLogin(licenseKey) {
-            const key = licenseKey.trim();
-            if (!key) {
-                showAdminError('Please enter a license key');
-                return false;
-            }
-
-            // Initialize KeyAuth if not already done
-            if (!KeyAuthApp && typeof KeyAuth !== 'undefined') {
-                try {
-                    KeyAuthApp = new KeyAuth({
-                        name: "Recon Admin",
-                        ownerid: "3Fgwv9rfYE",
-                        version: "1.0"
-                    });
-                } catch (error) {
-                    console.error('KeyAuth creation error:', error);
-                    showAdminError('Failed to initialize KeyAuth');
+        // Admin login (IP-based)
+        async function adminLogin() {
+            try {
+                const isAllowedIP = await checkAdminIP();
+                
+                if (isAllowedIP) {
+                    isAdminLoggedIn = true;
+                    sessionStorage.setItem(ADMIN_SESSION_KEY, 'true');
+                    hideAdminModal();
+                    showAdminPanel();
+                    updateAdminButton();
+                    console.log('✅ Admin login successful via IP verification');
+                    return true;
+                } else {
+                    const ip = await getClientIP();
+                    showAdminError(`Access denied. Your IP (${ip}) is not authorized.`);
+                    console.warn('❌ Admin login denied - IP not in allowed list:', ip);
                     return false;
                 }
-            }
-
-            if (KeyAuthApp) {
-                try {
-                    // Make sure KeyAuth is initialized
-                    if (!KeyAuthApp.initialized) {
-                        await KeyAuthApp.init();
-                    }
-                    
-                    // Validate license
-                    const result = await KeyAuthApp.license(key);
-                    
-                    if (result.success) {
-                        isAdminLoggedIn = true;
-                        sessionStorage.setItem(ADMIN_SESSION_KEY, 'true');
-                        hideAdminModal();
-                        showAdminPanel();
-                        updateAdminButton();
-                        loadAdminData();
-                        console.log('✅ Admin login successful via KeyAuth');
-                        console.log('User data:', KeyAuthApp.user_data);
-                        return true;
-                    } else {
-                        showAdminError(result.message || 'Invalid license key');
-                        return false;
-                    }
-                } catch (error) {
-                    showAdminError(error.message || 'Invalid license key');
-                    console.error('KeyAuth login error:', error);
-                    return false;
-                }
-            } else {
-                showAdminError('KeyAuth not available. Please refresh the page.');
+            } catch (error) {
+                showAdminError('Error verifying IP address. Please try again.');
+                console.error('Admin login error:', error);
                 return false;
             }
         }
@@ -7725,10 +7639,6 @@
             const errorMsg = document.getElementById('adminErrorMessage');
             if (errorMsg) {
                 errorMsg.classList.remove('show');
-            }
-            const input = document.getElementById('adminLicenseKey');
-            if (input) {
-                input.value = '';
             }
         }
 
@@ -8114,8 +8024,7 @@
 
         // Event listeners
         document.addEventListener('DOMContentLoaded', () => {
-            // Initialize KeyAuth
-            initKeyAuth();
+            // No initialization needed for IP-based auth
 
             // Check admin session
             checkAdminSession();
@@ -8150,25 +8059,13 @@
 
             // Admin submit
             const adminSubmit = document.getElementById('adminSubmitBtn');
-            const adminKeyInput = document.getElementById('adminLicenseKey');
-            if (adminSubmit && adminKeyInput) {
+            if (adminSubmit) {
                 adminSubmit.addEventListener('click', async () => {
-                    const key = adminKeyInput.value.trim();
-                    if (!key) {
-                        showAdminError('Please enter a license key');
-                        return;
-                    }
                     adminSubmit.disabled = true;
-                    adminSubmit.textContent = 'Logging in...';
-                    await adminLogin(key);
+                    adminSubmit.textContent = 'Verifying...';
+                    await adminLogin();
                     adminSubmit.disabled = false;
                     adminSubmit.textContent = 'Login';
-                });
-
-                adminKeyInput.addEventListener('keypress', (e) => {
-                    if (e.key === 'Enter') {
-                        adminSubmit.click();
-                    }
                 });
             }
 

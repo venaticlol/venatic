@@ -1411,13 +1411,40 @@
             window.firebaseInitialized = false;
         }
 
-        // Check admin session
+        // Check admin access (IP-based)
         const ADMIN_SESSION_KEY = 'recon_admin_session';
-        const isAdminLoggedIn = sessionStorage.getItem(ADMIN_SESSION_KEY) === 'true';
-
-        if (!isAdminLoggedIn) {
-            window.location.href = '/';
+        const ALLOWED_ADMIN_IPS = ['172.56.41.249', '74.14.72.29'];
+        
+        async function verifyAdminAccess() {
+            try {
+                // Check session first
+                const session = sessionStorage.getItem(ADMIN_SESSION_KEY);
+                if (session !== 'true') {
+                    window.location.href = '/';
+                    return false;
+                }
+                
+                // Verify IP is still authorized
+                const ip = await getClientIP();
+                if (!ALLOWED_ADMIN_IPS.includes(ip)) {
+                    // IP not authorized - clear session and redirect
+                    sessionStorage.removeItem(ADMIN_SESSION_KEY);
+                    alert(`Access denied. Your IP (${ip}) is not authorized for admin access.`);
+                    window.location.href = '/';
+                    return false;
+                }
+                
+                console.log('✅ Admin access verified - IP:', ip);
+                return true;
+            } catch (error) {
+                console.error('Error verifying admin access:', error);
+                window.location.href = '/';
+                return false;
+            }
         }
+        
+        // Verify admin access on page load
+        verifyAdminAccess();
 
         // Track admin panel visit (optional)
         async function trackUserVisit() {
