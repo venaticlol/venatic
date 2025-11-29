@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recon-Spoofer - Terms of Service</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #000000;
+            background-image: 
+                linear-gradient(rgba(42, 42, 42, 0.1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(42, 42, 42, 0.1) 1px, transparent 1px);
+            background-size: 50px 50px;
+            color: #e5e5e5;
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(rgba(42, 42, 42, 0.1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(42, 42, 42, 0.1) 1px, transparent 1px);
+            background-size: 50px 50px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        /* Animated background particles */
+        .particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+            overflow: hidden;
+        }
+
+        .particle {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: rgba(150, 150, 150, 0.3);
+            border-radius: 50%;
+            animation: float 20s infinite ease-in-out;
+        }
+
+        @keyframes float {
+            0%, 100% {
+                transform: translateY(0) translateX(0);
+                opacity: 0;
+            }
+            10% {
+                opacity: 0.3;
+            }
+            90% {
+                opacity: 0.3;
+            }
+            50% {
+                transform: translateY(-100vh) translateX(50px);
+                opacity: 0.5;
+            }
+        }
+
+        /* Container */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 24px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Header */
+        .header {
+            padding: 32px 0;
+            border-bottom: 1px solid #1a1a1a;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #ffffff 0%, #b0b0b0 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-decoration: none;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 32px;
+            align-items: center;
+        }
+
+        .nav-link {
+            color: #888888;
+            text-decoration: none;
+            font-size: 14px;
+            transition: color 0.3s ease;
+            position: relative;
+        }
+
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            bottom: -4px;
+            left: 0;
+            width: 0;
+            height: 1px;
+            background: #6a6a6a;
+            transition: width 0.3s ease;
+        }
+
+        .nav-link:hover {
+            color: #e5e5e5;
+        }
+
+        .nav-link:hover::after {
+            width: 100%;
+        }
+
+        /* Hero Section */
+        .doc-hero {
+            padding: 80px 24px 60px;
+            text-align: center;
+            position: relative;
+        }
+
+        .doc-hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(ellipse at center, rgba(100, 100, 100, 0.08) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .doc-title {
+            font-size: clamp(36px, 6vw, 56px);
+            font-weight: 700;
+            margin-bottom: 16px;
+            background: linear-gradient(135deg, #ffffff 0%, #b0b0b0 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .doc-subtitle {
+            font-size: 18px;
+            color: #888888;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* Content Section */
+        .content {
+            padding: 60px 24px;
+        }
+
+        .doc-section {
+            margin-bottom: 64px;
+        }
+
+        .section-title {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 24px;
+            color: #e5e5e5;
+            padding-bottom: 16px;
+            border-bottom: 1px solid #1a1a1a;
+        }
+
+        .section-content {
+            color: #a0a0a0;
+            font-size: 16px;
+            line-height: 1.8;
+        }
+
+        .section-content h3 {
+            font-size: 24px;
+            font-weight: 600;
+            color: #e5e5e5;
+            margin-top: 32px;
+            margin-bottom: 16px;
+        }
+
+        .section-content h4 {
+            font-size: 20px;
+            font-weight: 600;
+            color: #d0d0d0;
+            margin-top: 24px;
+            margin-bottom: 12px;
+        }
+
+        .section-content p {
+            margin-bottom: 16px;
+        }
+
+        .section-content ul, .section-content ol {
+            margin-left: 24px;
+            margin-bottom: 16px;
+        }
+
+        .section-content li {
+            margin-bottom: 8px;
+        }
+
+        .last-updated {
+            color: #666666;
+            font-size: 14px;
+            font-style: italic;
+            margin-bottom: 32px;
+        }
+
+        /* Footer */
+        .footer {
+            padding: 64px 24px;
+            text-align: center;
+            border-top: 1px solid #1a1a1a;
+            background: #000000;
+            margin-top: 80px;
+        }
+
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            flex-wrap: wrap;
+            margin-bottom: 32px;
+        }
+
+        .footer-link {
+            color: #888888;
+            text-decoration: none;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .footer-link::after {
+            content: '';
+            position: absolute;
+            bottom: -4px;
+            left: 0;
+            width: 0;
+            height: 1px;
+            background: #6a6a6a;
+            transition: width 0.3s ease;
+        }
+
+        .footer-link:hover {
+            color: #e5e5e5;
+        }
+
+        .footer-link:hover::after {
+            width: 100%;
+        }
+
+        .footer-text {
+            color: #666666;
+            font-size: 12px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                gap: 20px;
+            }
+
+            .nav-links {
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 20px;
+            }
+
+            .doc-hero {
+                padding: 60px 24px 40px;
+            }
+
+            .content {
+                padding: 40px 24px;
+            }
+
+            .section-title {
+                font-size: 24px;
+            }
+
+            .section-content h3 {
+                font-size: 20px;
+            }
+
+            .section-content h4 {
+                font-size: 18px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Animated Background Particles -->
+    <div class="particles" id="particles"></div>
+
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <a href="index.html" class="logo">RECON-SPOOFER</a>
+                <nav class="nav-links">
+                    <a href="index.html" class="nav-link">Home</a>
+                    <a href="documentation.html" class="nav-link">Documentation</a>
+                    <a href="https://discord.gg/getrecon" target="_blank" class="nav-link">Support</a>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="doc-hero">
+        <div class="container">
+            <h1 class="doc-title">Terms of Service</h1>
+            <p class="doc-subtitle">Please read these terms carefully before using our software</p>
+        </div>
+    </section>
+
+    <!-- Content -->
+    <section class="content">
+        <div class="container">
+            <div class="doc-section">
+                <p class="last-updated">Last Updated: November 27, 2024</p>
+                
+                <div class="section-content">
+                    <h2 class="section-title">Agreement to Terms</h2>
+                    <p>By accessing or using Recon-Spoofer ("the Software"), you agree to be bound by these Terms of Service and all applicable laws and regulations. If you do not agree with any of these terms, you are prohibited from using or accessing this software.</p>
+
+                    <h3>License Grant</h3>
+                    <p>Subject to your compliance with these Terms, we grant you a limited, non-exclusive, non-transferable, revocable license to use Recon-Spoofer for your personal or commercial use in accordance with the terms of your purchased license.</p>
+
+                    <h3>License Restrictions</h3>
+                    <p>You agree not to:</p>
+                    <ul>
+                        <li>Copy, modify, or create derivative works of the Software</li>
+                        <li>Reverse engineer, decompile, or disassemble the Software</li>
+                        <li>Remove or alter any copyright, trademark, or other proprietary notices</li>
+                        <li>Share, sell, rent, or sublicense your license key to others</li>
+                        <li>Use the Software for any illegal or unauthorized purpose</li>
+                        <li>Attempt to bypass or circumvent any security or licensing mechanisms</li>
+                    </ul>
+
+                    <h3>License Key</h3>
+                    <p>Your license key is personal to you and may not be shared, transferred, or resold. Each license key is tied to your hardware and may have usage restrictions as specified in your purchase agreement.</p>
+
+                    <h3>Payment and Refunds</h3>
+                    <p>All fees for licenses are due at the time of purchase. Refund policies are as specified at the time of purchase. We reserve the right to change our pricing at any time, but price changes will not affect existing licenses.</p>
+
+                    <h3>Intellectual Property</h3>
+                    <p>Recon-Spoofer and all related content, including but not limited to software, graphics, logos, and documentation, are the property of Recon-Spoofer and are protected by copyright, trademark, and other intellectual property laws.</p>
+
+                    <h3>User Responsibilities</h3>
+                    <p>You are responsible for:</p>
+                    <ul>
+                        <li>Maintaining the confidentiality of your license key</li>
+                        <li>All activities that occur under your license</li>
+                        <li>Ensuring your system meets the minimum requirements</li>
+                        <li>Using the Software in compliance with all applicable laws</li>
+                    </ul>
+
+                    <h3>Warranty Disclaimer</h3>
+                    <p>THE SOFTWARE IS PROVIDED "AS IS" AND "AS AVAILABLE" WITHOUT WARRANTIES OF ANY KIND, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, OR NON-INFRINGEMENT.</p>
+
+                    <h3>Limitation of Liability</h3>
+                    <p>TO THE MAXIMUM EXTENT PERMITTED BY LAW, IN NO EVENT SHALL RECON-SPOOFER BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES, OR ANY LOSS OF PROFITS OR REVENUES, WHETHER INCURRED DIRECTLY OR INDIRECTLY, OR ANY LOSS OF DATA, USE, GOODWILL, OR OTHER INTANGIBLE LOSSES.</p>
+
+                    <h3>Termination</h3>
+                    <p>We reserve the right to terminate or suspend your access to the Software immediately, without prior notice, for any breach of these Terms. Upon termination, your right to use the Software will cease immediately.</p>
+
+                    <h3>Updates and Modifications</h3>
+                    <p>We reserve the right to modify, update, or discontinue the Software at any time. We may also update these Terms from time to time. Continued use of the Software after such changes constitutes acceptance of the new Terms.</p>
+
+                    <h3>Governing Law</h3>
+                    <p>These Terms shall be governed by and construed in accordance with applicable laws, without regard to its conflict of law provisions.</p>
+
+                    <h3>Severability</h3>
+                    <p>If any provision of these Terms is found to be unenforceable or invalid, that provision shall be limited or eliminated to the minimum extent necessary, and the remaining provisions shall remain in full force and effect.</p>
+
+                    <h3>Contact Information</h3>
+                    <p>If you have any questions about these Terms of Service, please contact us through our <a href="https://discord.gg/getrecon" target="_blank" style="color: #6a6a6a; text-decoration: underline;">Discord support server</a>.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-links">
+                <a href="index.html" class="footer-link">Home</a>
+                <a href="documentation.html" class="footer-link">Documentation</a>
+                <a href="https://discord.gg/getrecon" target="_blank" class="footer-link">Support</a>
+                <a href="terms.html" class="footer-link">Terms</a>
+                <a href="privacy.html" class="footer-link">Privacy</a>
+            </div>
+            <p class="footer-text">© 2024 Recon-Spoofer. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Create animated particles
+        function createParticles() {
+            const particlesContainer = document.getElementById('particles');
+            const particleCount = 30;
+            
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.animationDelay = Math.random() * 20 + 's';
+                particle.style.animationDuration = (15 + Math.random() * 10) + 's';
+                particlesContainer.appendChild(particle);
+            }
+        }
+
+        // Initialize particles on page load
+        createParticles();
+    </script>
+</body>
+</html>
+

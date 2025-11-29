@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recon-Spoofer - Documentation</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #000000;
+            color: #e5e5e5;
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        /* Animated background particles */
+        .particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+            overflow: hidden;
+        }
+
+        .particle {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: rgba(150, 150, 150, 0.3);
+            border-radius: 50%;
+            animation: float 20s infinite ease-in-out;
+        }
+
+        @keyframes float {
+            0%, 100% {
+                transform: translateY(0) translateX(0);
+                opacity: 0;
+            }
+            10% {
+                opacity: 0.3;
+            }
+            90% {
+                opacity: 0.3;
+            }
+            50% {
+                transform: translateY(-100vh) translateX(50px);
+                opacity: 0.5;
+            }
+        }
+
+        /* Container */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 24px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Header */
+        .header {
+            padding: 32px 0;
+            border-bottom: 1px solid #1a1a1a;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #ffffff 0%, #b0b0b0 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-decoration: none;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 32px;
+            align-items: center;
+        }
+
+        .nav-link {
+            color: #888888;
+            text-decoration: none;
+            font-size: 14px;
+            transition: color 0.3s ease;
+            position: relative;
+        }
+
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            bottom: -4px;
+            left: 0;
+            width: 0;
+            height: 1px;
+            background: #6a6a6a;
+            transition: width 0.3s ease;
+        }
+
+        .nav-link:hover {
+            color: #e5e5e5;
+        }
+
+        .nav-link:hover::after {
+            width: 100%;
+        }
+
+        /* Hero Section */
+        .doc-hero {
+            padding: 80px 24px 60px;
+            text-align: center;
+            position: relative;
+        }
+
+        .doc-hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(ellipse at center, rgba(100, 100, 100, 0.08) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .doc-title {
+            font-size: clamp(36px, 6vw, 56px);
+            font-weight: 700;
+            margin-bottom: 16px;
+            background: linear-gradient(135deg, #ffffff 0%, #b0b0b0 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .doc-subtitle {
+            font-size: 18px;
+            color: #888888;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* Content Section */
+        .content {
+            padding: 60px 24px;
+        }
+
+        .doc-section {
+            margin-bottom: 64px;
+        }
+
+        .section-title {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 24px;
+            color: #e5e5e5;
+            padding-bottom: 16px;
+            border-bottom: 1px solid #1a1a1a;
+        }
+
+        .section-content {
+            color: #a0a0a0;
+            font-size: 16px;
+            line-height: 1.8;
+        }
+
+        .section-content h3 {
+            font-size: 24px;
+            font-weight: 600;
+            color: #e5e5e5;
+            margin-top: 32px;
+            margin-bottom: 16px;
+        }
+
+        .section-content h4 {
+            font-size: 20px;
+            font-weight: 600;
+            color: #d0d0d0;
+            margin-top: 24px;
+            margin-bottom: 12px;
+        }
+
+        .section-content p {
+            margin-bottom: 16px;
+        }
+
+        .section-content ul, .section-content ol {
+            margin-left: 24px;
+            margin-bottom: 16px;
+        }
+
+        .section-content li {
+            margin-bottom: 8px;
+        }
+
+        .code-block {
+            background: #0a0a0a;
+            border: 1px solid #1a1a1a;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            overflow-x: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            color: #e5e5e5;
+        }
+
+        .info-box {
+            background: rgba(26, 26, 26, 0.5);
+            border: 1px solid #3a3a3a;
+            border-left: 3px solid #6a6a6a;
+            border-radius: 8px;
+            padding: 16px 20px;
+            margin: 20px 0;
+        }
+
+        .info-box.warning {
+            border-left-color: #ffa500;
+            background: rgba(255, 165, 0, 0.1);
+        }
+
+        .info-box.success {
+            border-left-color: #4ade80;
+            background: rgba(74, 222, 128, 0.1);
+        }
+
+        .info-box.error {
+            border-left-color: #ff6b6b;
+            background: rgba(255, 107, 107, 0.1);
+        }
+
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+
+        .table th,
+        .table td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid #1a1a1a;
+        }
+
+        .table th {
+            background: #0a0a0a;
+            color: #e5e5e5;
+            font-weight: 600;
+        }
+
+        .table td {
+            color: #a0a0a0;
+        }
+
+        .table tr:hover {
+            background: rgba(26, 26, 26, 0.3);
+        }
+
+        /* Footer */
+        .footer {
+            padding: 64px 24px;
+            text-align: center;
+            border-top: 1px solid #1a1a1a;
+            background: #000000;
+            margin-top: 80px;
+        }
+
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            flex-wrap: wrap;
+            margin-bottom: 32px;
+        }
+
+        .footer-link {
+            color: #888888;
+            text-decoration: none;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .footer-link::after {
+            content: '';
+            position: absolute;
+            bottom: -4px;
+            left: 0;
+            width: 0;
+            height: 1px;
+            background: #6a6a6a;
+            transition: width 0.3s ease;
+        }
+
+        .footer-link:hover {
+            color: #e5e5e5;
+        }
+
+        .footer-link:hover::after {
+            width: 100%;
+        }
+
+        .footer-text {
+            color: #666666;
+            font-size: 12px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                gap: 20px;
+            }
+
+            .nav-links {
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 20px;
+            }
+
+            .doc-hero {
+                padding: 60px 24px 40px;
+            }
+
+            .content {
+                padding: 40px 24px;
+            }
+
+            .section-title {
+                font-size: 24px;
+            }
+
+            .section-content h3 {
+                font-size: 20px;
+            }
+
+            .section-content h4 {
+                font-size: 18px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Animated Background Particles -->
+    <div class="particles" id="particles"></div>
+
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <a href="index.html" class="logo">RECON-SPOOFER</a>
+                <nav class="nav-links">
+                    <a href="index.html" class="nav-link">Home</a>
+                    <a href="documentation.html" class="nav-link">Documentation</a>
+                    <a href="https://discord.gg/getrecon" target="_blank" class="nav-link">Support</a>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="doc-hero">
+        <div class="container">
+            <h1 class="doc-title">Documentation</h1>
+            <p class="doc-subtitle">Complete guide to installing, configuring, and using Recon-Spoofer</p>
+        </div>
+    </section>
+
+    <!-- Content -->
+    <section class="content">
+        <div class="container">
+            <!-- Installation Section -->
+            <div class="doc-section">
+                <h2 class="section-title">Installation</h2>
+                <div class="section-content">
+                    <h3>System Requirements</h3>
+                    <p>Before installing Recon-Spoofer, ensure your system meets the following requirements:</p>
+                    <ul>
+                        <li>Windows 10 (22H2 or later)</li>
+                        <li>Windows 11 (22H2 or later)</li>
+                        <li>64-bit processor</li>
+                        <li>Administrator privileges</li>
+                        <li>At least 50 MB of free disk space</li>
+                    </ul>
+
+                    <h3>Download & Install</h3>
+                    <ol>
+                        <li>Download the installer from the main page</li>
+                        <li>Run the installer executable as Administrator</li>
+                        <li>Follow the installation wizard</li>
+                        <li>Complete the setup process</li>
+                    </ol>
+
+                    <div class="info-box warning">
+                        <strong>Important:</strong> Always run the installer with Administrator privileges to ensure proper installation.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Getting Started Section -->
+            <div class="doc-section">
+                <h2 class="section-title">Getting Started</h2>
+                <div class="section-content">
+                    <h3>First Launch</h3>
+                    <p>When you first launch Recon-Spoofer, you'll need to:</p>
+                    <ol>
+                        <li>Enter your license key (if not already activated)</li>
+                        <li>Configure your initial settings</li>
+                        <li>Restart your system if prompted</li>
+                    </ol>
+
+                    <h3>Basic Configuration</h3>
+                    <p>The application features an intuitive interface that guides you through the setup process. Most users can get started with the default settings.</p>
+
+                    <div class="info-box success">
+                        <strong>Tip:</strong> The application includes automatic updates, so you'll always have the latest version without manual intervention.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Features Section -->
+            <div class="doc-section">
+                <h2 class="section-title">Features</h2>
+                <div class="section-content">
+                    <h3>Lightweight Installer</h3>
+                    <p>Recon-Spoofer features a minimal footprint installer that ensures fast installation without compromising functionality.</p>
+
+                    <h3>Quick Setup</h3>
+                    <p>Get up and running in minutes with our intuitive configuration system. No technical expertise required.</p>
+
+                    <h3>Automatic Updates</h3>
+                    <p>Stay current with seamless background updates. The application automatically checks for and installs updates, ensuring you always have the latest features and security patches.</p>
+                </div>
+            </div>
+
+            <!-- Troubleshooting Section -->
+            <div class="doc-section">
+                <h2 class="section-title">Troubleshooting</h2>
+                <div class="section-content">
+                    <h3>Common Issues</h3>
+
+                    <h4>Installation Fails</h4>
+                    <ul>
+                        <li>Ensure you're running the installer as Administrator</li>
+                        <li>Check that your system meets the minimum requirements</li>
+                        <li>Disable antivirus temporarily during installation</li>
+                        <li>Ensure you have sufficient disk space</li>
+                    </ul>
+
+                    <h4>License Key Issues</h4>
+                    <ul>
+                        <li>Verify your license key is entered correctly</li>
+                        <li>Check that your license hasn't expired</li>
+                        <li>Ensure you have an active internet connection</li>
+                        <li>Contact support if the issue persists</li>
+                    </ul>
+
+                    <h4>Application Won't Start</h4>
+                    <ul>
+                        <li>Run the application as Administrator</li>
+                        <li>Check Windows Event Viewer for error messages</li>
+                        <li>Reinstall the application if necessary</li>
+                        <li>Ensure all Windows updates are installed</li>
+                    </ul>
+
+                    <div class="info-box">
+                        <strong>Need More Help?</strong> If you're experiencing issues not covered here, please visit our <a href="https://discord.gg/getrecon" target="_blank" style="color: #6a6a6a; text-decoration: underline;">Discord support server</a> for assistance.
+                    </div>
+                </div>
+            </div>
+
+            <!-- FAQ Section -->
+            <div class="doc-section">
+                <h2 class="section-title">Frequently Asked Questions</h2>
+                <div class="section-content">
+                    <h3>General Questions</h3>
+
+                    <h4>What is Recon-Spoofer?</h4>
+                    <p>Recon-Spoofer is a professional-grade application designed for Windows systems with a focus on security and reliability.</p>
+
+                    <h4>Do I need a license?</h4>
+                    <p>Yes, a valid license key is required to use Recon-Spoofer. You can purchase a license from our website.</p>
+
+                    <h4>How do I get support?</h4>
+                    <p>You can get support by joining our Discord server at <a href="https://discord.gg/getrecon" target="_blank" style="color: #6a6a6a; text-decoration: underline;">discord.gg/getrecon</a>.</p>
+
+                    <h4>Is my data safe?</h4>
+                    <p>Yes, we take security seriously. The application is designed with privacy and security in mind.</p>
+
+                    <h4>Can I use it on multiple devices?</h4>
+                    <p>License terms vary. Please check your license agreement or contact support for details.</p>
+                </div>
+            </div>
+
+            <!-- Version Information -->
+            <div class="doc-section">
+                <h2 class="section-title">Version Information</h2>
+                <div class="section-content">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Version</th>
+                                <th>Release Date</th>
+                                <th>File Size</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>1.7</td>
+                                <td>November 27, 2025</td>
+                                <td>1.19 MB</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-links">
+                <a href="index.html" class="footer-link">Home</a>
+                <a href="documentation.html" class="footer-link">Documentation</a>
+                <a href="https://discord.gg/getrecon" target="_blank" class="footer-link">Support</a>
+                <a href="#" class="footer-link">Terms</a>
+                <a href="#" class="footer-link">Privacy</a>
+            </div>
+            <p class="footer-text">© 2024 Recon-Spoofer. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Create animated particles
+        function createParticles() {
+            const particlesContainer = document.getElementById('particles');
+            const particleCount = 30;
+            
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.animationDelay = Math.random() * 20 + 's';
+                particle.style.animationDuration = (15 + Math.random() * 10) + 's';
+                particlesContainer.appendChild(particle);
+            }
+        }
+
+        // Initialize particles on page load
+        createParticles();
+    </script>
+</body>
+</html>
+

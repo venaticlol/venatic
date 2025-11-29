@@ -1,0 +1,3598 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recon-Spoofer - Download</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #000000;
+            background-image: 
+                linear-gradient(rgba(42, 42, 42, 0.1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(42, 42, 42, 0.1) 1px, transparent 1px);
+            background-size: 50px 50px;
+            background-position: 0 0, 0 0;
+            color: #e5e5e5;
+            line-height: 1.6;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(rgba(42, 42, 42, 0.1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(42, 42, 42, 0.1) 1px, transparent 1px);
+            background-size: 50px 50px;
+            background-position: 0 0, 0 0;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* Smooth scrolling */
+        html {
+            scroll-behavior: smooth;
+        }
+
+        /* Animated background particles */
+        .particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+            overflow: hidden;
+        }
+
+        .particle {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: rgba(150, 150, 150, 0.3);
+            border-radius: 50%;
+            animation: float 20s infinite ease-in-out;
+        }
+
+        @keyframes float {
+            0%, 100% {
+                transform: translateY(0) translateX(0);
+                opacity: 0;
+            }
+            10% {
+                opacity: 0.3;
+            }
+            90% {
+                opacity: 0.3;
+            }
+            50% {
+                transform: translateY(-100vh) translateX(50px);
+                opacity: 0.5;
+            }
+        }
+
+        /* Container */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 24px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Hero Section */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 80px 24px;
+            position: relative;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(ellipse at center, rgba(100, 100, 100, 0.08) 0%, transparent 70%);
+            pointer-events: none;
+            animation: pulse 4s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 0.5;
+                transform: scale(1);
+            }
+            50% {
+                opacity: 0.8;
+                transform: scale(1.05);
+            }
+        }
+
+        .brand-title {
+            font-size: clamp(48px, 8vw, 72px);
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            margin-bottom: 24px;
+            background: linear-gradient(135deg, #ffffff 0%, #b0b0b0 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            opacity: 0;
+            animation: fadeInUp 0.8s ease-out 0.2s forwards, subtleFloat 6s ease-in-out infinite 1s;
+            position: relative;
+        }
+
+        @keyframes subtleFloat {
+            0%, 100% {
+                transform: translateY(0);
+            }
+            50% {
+                transform: translateY(-8px);
+            }
+        }
+
+        .tagline {
+            font-size: clamp(18px, 2.5vw, 24px);
+            font-weight: 400;
+            color: #a0a0a0;
+            margin-bottom: 48px;
+            letter-spacing: 0.02em;
+            opacity: 0;
+            animation: fadeInUp 0.8s ease-out 0.4s forwards;
+        }
+
+        .download-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            padding: 18px 56px;
+            font-size: 16px;
+            font-weight: 600;
+            color: #e5e5e5;
+            background: #1a1a1a;
+            border: 1px solid #4a4a4a;
+            border-radius: 2px;
+            text-decoration: none;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            opacity: 0;
+            animation: fadeInUp 0.8s ease-out 0.6s forwards;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .download-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.08), transparent);
+            transition: left 0.6s;
+        }
+
+        .download-btn:hover::before {
+            left: 100%;
+        }
+
+        .download-btn:hover {
+            transform: translateY(-4px) scale(1.02);
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+            border-color: #6a6a6a;
+            background: #222222;
+        }
+
+        .download-btn:active {
+            transform: translateY(-2px) scale(1);
+        }
+
+        .download-icon {
+            width: 18px;
+            height: 18px;
+            transition: transform 0.3s ease;
+        }
+
+        .download-btn:hover .download-icon {
+            transform: translateY(2px);
+        }
+
+        /* Stats Bar */
+        .stats-bar {
+            display: flex;
+            justify-content: center;
+            gap: 48px;
+            margin-top: 64px;
+            flex-wrap: wrap;
+            opacity: 0;
+            animation: fadeInUp 0.8s ease-out 0.8s forwards;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 32px;
+            font-weight: 700;
+            color: #e5e5e5;
+            display: block;
+            margin-bottom: 8px;
+            background: linear-gradient(135deg, #ffffff 0%, #b0b0b0 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #888888;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+
+        /* Features Section */
+        .features {
+            padding: 120px 24px;
+            background: linear-gradient(to bottom, #000000 0%, #0a0a0a 100%);
+            position: relative;
+        }
+
+        .section-title {
+            font-size: 36px;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 16px;
+            background: linear-gradient(135deg, #ffffff 0%, #b0b0b0 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .section-subtitle {
+            text-align: center;
+            color: #888888;
+            font-size: 16px;
+            margin-bottom: 64px;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 32px;
+            margin-top: 64px;
+        }
+
+        .feature-card {
+            padding: 40px;
+            background: #0a0a0a;
+            border: 1px solid #1a1a1a;
+            border-radius: 4px;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            opacity: 0;
+            transform: translateY(30px);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .feature-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.03), transparent);
+            transition: left 0.6s;
+        }
+
+        .feature-card:hover::before {
+            left: 100%;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-8px);
+            border-color: #3a3a3a;
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        .feature-icon {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, #2a2a2a 0%, #1a1a1a 100%);
+            border: 1px solid #3a3a3a;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 24px;
+            font-size: 24px;
+            transition: all 0.3s ease;
+        }
+
+        .feature-card:hover .feature-icon {
+            transform: scale(1.1) rotate(5deg);
+            border-color: #4a4a4a;
+        }
+
+        .feature-title {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: #e5e5e5;
+        }
+
+        .feature-text {
+            font-size: 14px;
+            color: #888888;
+            line-height: 1.7;
+        }
+
+        /* System Requirements */
+        .requirements {
+            padding: 120px 24px;
+            background: linear-gradient(to bottom, #0a0a0a 0%, #000000 100%);
+        }
+
+        .requirements-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 32px;
+            margin-top: 48px;
+            max-width: 400px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .req-card {
+            padding: 32px;
+            background: #0a0a0a;
+            border: 1px solid #1a1a1a;
+            border-radius: 4px;
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.4s ease;
+        }
+
+        .req-card:hover {
+            transform: translateY(-4px);
+            border-color: #2a2a2a;
+        }
+
+        .req-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            color: #e5e5e5;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #1a1a1a;
+        }
+
+        .req-list {
+            list-style: none;
+        }
+
+        .req-list li {
+            padding: 8px 0;
+            color: #888888;
+            font-size: 14px;
+            position: relative;
+            padding-left: 24px;
+        }
+
+        .req-list li::before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: #6a6a6a;
+            font-weight: 600;
+        }
+
+        /* Installer Info Panel */
+        .installer-info {
+            padding: 120px 24px;
+            display: flex;
+            justify-content: center;
+            background: linear-gradient(to bottom, #000000 0%, #0a0a0a 100%);
+        }
+
+        .info-card {
+            background: #0a0a0a;
+            border: 1px solid #1a1a1a;
+            border-radius: 4px;
+            padding: 48px;
+            max-width: 600px;
+            width: 100%;
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.4s ease;
+        }
+
+        .info-card:hover {
+            border-color: #2a2a2a;
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        .info-title {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 32px;
+            color: #e5e5e5;
+            text-align: center;
+        }
+
+        .info-grid {
+            display: grid;
+            gap: 16px;
+        }
+
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 20px;
+            background: #050505;
+            border: 1px solid #1a1a1a;
+            border-radius: 4px;
+            transition: all 0.3s ease;
+        }
+
+        .info-item:hover {
+            border-color: #2a2a2a;
+            background: #0f0f0f;
+        }
+
+        .info-label {
+            color: #888888;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        .info-value {
+            color: #e5e5e5;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .hash-value {
+            font-size: 11px;
+            word-break: break-all;
+            text-align: right;
+            max-width: 300px;
+        }
+
+        /* Changelog Section */
+        .changelog {
+            padding: 120px 24px;
+            background: linear-gradient(to bottom, #0a0a0a 0%, #000000 100%);
+        }
+
+        .changelog-content {
+            max-width: 800px;
+            margin: 0 auto;
+            background: #0a0a0a;
+            border: 1px solid #1a1a1a;
+            border-radius: 4px;
+            padding: 40px;
+            opacity: 0;
+            transform: translateY(30px);
+        }
+
+        .changelog-item {
+            padding: 20px 0;
+            border-bottom: 1px solid #1a1a1a;
+        }
+
+        .changelog-item:last-child {
+            border-bottom: none;
+        }
+
+        .changelog-version {
+            font-size: 18px;
+            font-weight: 600;
+            color: #e5e5e5;
+            margin-bottom: 8px;
+        }
+
+        .changelog-date {
+            font-size: 12px;
+            color: #666666;
+            margin-bottom: 12px;
+        }
+
+        .changelog-list {
+            list-style: none;
+            padding-left: 0;
+        }
+
+        .changelog-list li {
+            padding: 6px 0;
+            padding-left: 24px;
+            color: #888888;
+            font-size: 14px;
+            position: relative;
+        }
+
+        .changelog-list li::before {
+            content: '•';
+            position: absolute;
+            left: 8px;
+            color: #6a6a6a;
+        }
+
+        /* Second Download Section */
+        .download-section {
+            padding: 120px 24px;
+            text-align: center;
+            background: linear-gradient(to bottom, #000000 0%, #0a0a0a 100%);
+            position: relative;
+        }
+
+        .download-section::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 200px;
+            height: 200px;
+            background: radial-gradient(circle, rgba(100, 100, 100, 0.05) 0%, transparent 70%);
+            animation: pulse 3s ease-in-out infinite;
+        }
+
+        .download-section .download-btn {
+            opacity: 1;
+            animation: none;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Footer */
+        .footer {
+            padding: 64px 24px;
+            text-align: center;
+            border-top: 1px solid #1a1a1a;
+            background: #000000;
+        }
+
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            flex-wrap: wrap;
+            margin-bottom: 32px;
+        }
+
+        .footer-link {
+            color: #888888;
+            text-decoration: none;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .footer-link::after {
+            content: '';
+            position: absolute;
+            bottom: -4px;
+            left: 0;
+            width: 0;
+            height: 1px;
+            background: #6a6a6a;
+            transition: width 0.3s ease;
+        }
+
+        .footer-link:hover {
+            color: #e5e5e5;
+        }
+
+        .footer-link:hover::after {
+            width: 100%;
+        }
+
+        .footer-text {
+            color: #666666;
+            font-size: 12px;
+        }
+
+        /* Rating Section */
+        .rating-section {
+            padding: 120px 24px;
+            background: linear-gradient(to bottom, #0a0a0a 0%, #000000 100%);
+        }
+
+        .rating-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: #0a0a0a;
+            border: 1px solid #1a1a1a;
+            border-radius: 4px;
+            padding: 48px;
+            opacity: 0;
+            transform: translateY(30px);
+        }
+
+        .rating-display {
+            text-align: center;
+            margin-bottom: 40px;
+            padding-bottom: 40px;
+            border-bottom: 1px solid #1a1a1a;
+        }
+
+        .rating-stars-display {
+            font-size: 48px;
+            letter-spacing: 8px;
+            margin-bottom: 16px;
+            color: #4a4a4a;
+        }
+
+        .rating-stars-display .star {
+            display: inline-block;
+            transition: color 0.3s ease;
+        }
+
+        .rating-stars-display .star.filled {
+            color: #ffd700;
+        }
+
+        .rating-stars-display .star.half {
+            background: linear-gradient(90deg, #ffd700 50%, #4a4a4a 50%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .rating-value {
+            font-size: 36px;
+            font-weight: 700;
+            color: #e5e5e5;
+            margin-bottom: 8px;
+        }
+
+        .rating-count {
+            font-size: 14px;
+            color: #888888;
+        }
+
+        .rating-input {
+            text-align: center;
+        }
+
+        .rating-label {
+            font-size: 16px;
+            color: #a0a0a0;
+            margin-bottom: 20px;
+        }
+
+        .star-rating {
+            font-size: 40px;
+            letter-spacing: 12px;
+            margin-bottom: 24px;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .star-input {
+            color: #4a4a4a;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .star-input:hover {
+            color: #ffd700;
+            transform: scale(1.2);
+        }
+
+        .star-input.active {
+            color: #ffd700;
+        }
+
+        .rating-submit-btn {
+            padding: 14px 32px;
+            background: #1a1a1a;
+            border: 1px solid #4a4a4a;
+            border-radius: 4px;
+            color: #e5e5e5;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: inherit;
+        }
+
+        .rating-submit-btn:hover:not(:disabled) {
+            background: #222222;
+            border-color: #6a6a6a;
+            transform: translateY(-2px);
+        }
+
+        .rating-submit-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .rating-message {
+            margin-top: 16px;
+            font-size: 14px;
+            min-height: 20px;
+        }
+
+        .rating-message.success {
+            color: #4ade80;
+        }
+
+        .rating-message.error {
+            color: #ff6b6b;
+        }
+
+        /* Review Bubbles */
+        .review-bubbles-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 100;
+            overflow: hidden;
+        }
+
+        .review-bubble {
+            position: fixed;
+            background: rgba(10, 10, 10, 0.9);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(42, 42, 42, 0.7);
+            border-radius: 12px;
+            padding: 12px 16px;
+            max-width: 240px;
+            min-width: 200px;
+            pointer-events: auto;
+            opacity: 0;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+            transition: all 0.3s ease;
+            font-size: 12px;
+            z-index: 100;
+        }
+
+        .review-bubble.slide-left {
+            left: 20px;
+            animation: bubbleSlideIn 6s ease-in-out forwards;
+        }
+
+        .review-bubble.slide-right {
+            right: 20px;
+            animation: bubbleSlideInRight 6s ease-in-out forwards;
+        }
+
+        .review-bubble:hover {
+            background: rgba(10, 10, 10, 0.95);
+            transform: translateY(-2px) scale(1.02);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+            border-color: rgba(58, 58, 58, 0.8);
+        }
+
+        .review-bubble-close {
+            position: absolute;
+            top: 6px;
+            right: 8px;
+            width: 18px;
+            height: 18px;
+            background: rgba(42, 42, 42, 0.6);
+            border: none;
+            border-radius: 50%;
+            color: #888888;
+            font-size: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: all 0.2s ease;
+            pointer-events: auto;
+            line-height: 1;
+        }
+
+        .review-bubble:hover .review-bubble-close {
+            opacity: 1;
+        }
+
+        .review-bubble-close:hover {
+            background: rgba(58, 58, 58, 0.8);
+            color: #e5e5e5;
+        }
+
+        .review-bubble-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .review-bubble-stars {
+            color: #ffd700;
+            font-size: 11px;
+            letter-spacing: 1px;
+        }
+
+        .review-bubble-text {
+            font-size: 11px;
+            color: #b0b0b0;
+            line-height: 1.4;
+            margin-bottom: 6px;
+            margin-top: 4px;
+        }
+
+        .review-bubble-author {
+            font-size: 10px;
+            color: #666666;
+            font-style: italic;
+        }
+
+        @keyframes bubbleSlideIn {
+            0% {
+                opacity: 0;
+                transform: translateX(-100%) translateY(0);
+            }
+            10% {
+                opacity: 0.8;
+                transform: translateX(0) translateY(0);
+            }
+            80% {
+                opacity: 0.8;
+                transform: translateX(0) translateY(0);
+            }
+            100% {
+                opacity: 0;
+                transform: translateX(-100%) translateY(0);
+            }
+        }
+
+        @keyframes bubbleSlideInRight {
+            0% {
+                opacity: 0;
+                transform: translateX(100%) translateY(0);
+            }
+            10% {
+                opacity: 0.8;
+                transform: translateX(0) translateY(0);
+            }
+            80% {
+                opacity: 0.8;
+                transform: translateX(0) translateY(0);
+            }
+            100% {
+                opacity: 0;
+                transform: translateX(100%) translateY(0);
+            }
+        }
+
+        /* Review Stream Ticker */
+        .review-stream-section {
+            padding: 30px 0;
+            background: rgba(0, 0, 0, 0.3);
+            border-top: 1px solid rgba(42, 42, 42, 0.3);
+            border-bottom: 1px solid rgba(42, 42, 42, 0.3);
+            overflow: hidden;
+            position: relative;
+        }
+
+        .review-stream-container {
+            width: 100%;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .review-stream-track {
+            display: inline-flex;
+            gap: 30px;
+            animation: streamScroll 8s linear infinite;
+            will-change: transform;
+            white-space: nowrap;
+        }
+
+        .review-stream-track:hover {
+            animation-play-state: paused;
+        }
+
+        @keyframes streamScroll {
+            from {
+                transform: translateX(0);
+            }
+            to {
+                transform: translateX(-50%);
+            }
+        }
+
+        .review-stream-item {
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 20px;
+            background: rgba(10, 10, 10, 0.6);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(42, 42, 42, 0.5);
+            border-radius: 8px;
+            white-space: nowrap;
+            min-width: fit-content;
+        }
+
+        .review-stream-stars {
+            color: #ffd700;
+            font-size: 14px;
+            letter-spacing: 2px;
+            flex-shrink: 0;
+        }
+
+        .review-stream-text {
+            color: #b0b0b0;
+            font-size: 13px;
+            max-width: 400px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .review-stream-separator {
+            width: 1px;
+            height: 20px;
+            background: rgba(42, 42, 42, 0.5);
+            flex-shrink: 0;
+        }
+
+
+        .review-bubbles-container.hidden {
+            display: none;
+        }
+
+        .review-bubbles-toggle {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 48px;
+            height: 48px;
+            background: rgba(10, 10, 10, 0.8);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(42, 42, 42, 0.6);
+            border-radius: 50%;
+            color: #888888;
+            font-size: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 101;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .review-bubbles-toggle:hover {
+            background: rgba(10, 10, 10, 0.95);
+            border-color: rgba(58, 58, 58, 0.8);
+            color: #e5e5e5;
+            transform: scale(1.1);
+        }
+
+        .review-bubbles-toggle.hidden {
+            opacity: 0.5;
+        }
+
+        /* Animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Scroll reveal animation */
+        .reveal {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .reveal.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Login Modal */
+        .login-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            background-image: 
+                linear-gradient(rgba(42, 42, 42, 0.15) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(42, 42, 42, 0.15) 1px, transparent 1px);
+            background-size: 50px 50px;
+            background-position: 0 0, 0 0;
+            backdrop-filter: blur(10px);
+            z-index: 10000;
+            opacity: 1;
+            transition: opacity 0.3s ease;
+            overflow: hidden;
+        }
+
+        .login-overlay.hide-landing {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow-y: auto;
+        }
+
+        .login-overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        /* Login Landing Page */
+        .login-landing {
+            min-height: 100vh;
+            max-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            padding: 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .login-landing.hidden {
+            display: none;
+        }
+
+        .landing-hero {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 80px 24px;
+            position: relative;
+        }
+
+        .landing-hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(ellipse at center, rgba(100, 100, 100, 0.08) 0%, transparent 70%);
+            pointer-events: none;
+            animation: pulse 4s ease-in-out infinite;
+        }
+
+        .landing-title {
+            font-size: clamp(48px, 8vw, 72px);
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            margin-bottom: 24px;
+            background: linear-gradient(135deg, #ffffff 0%, #b0b0b0 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            opacity: 0;
+            animation: fadeInUp 0.8s ease-out 0.2s forwards;
+            position: relative;
+            z-index: 1;
+        }
+
+        .landing-subtitle {
+            font-size: clamp(18px, 2.5vw, 24px);
+            font-weight: 400;
+            color: #a0a0a0;
+            margin-bottom: 48px;
+            letter-spacing: 0.02em;
+            opacity: 0;
+            animation: fadeInUp 0.8s ease-out 0.4s forwards;
+            position: relative;
+            z-index: 1;
+        }
+
+        .landing-features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 24px;
+            max-width: 900px;
+            width: 100%;
+            margin: 0 auto 48px;
+            opacity: 0;
+            animation: fadeInUp 0.8s ease-out 0.6s forwards;
+            position: relative;
+            z-index: 1;
+        }
+
+        .landing-feature {
+            padding: 24px;
+            background: rgba(10, 10, 10, 0.6);
+            border: 1px solid rgba(42, 42, 42, 0.5);
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .landing-feature:hover {
+            transform: translateY(-4px);
+            border-color: rgba(74, 74, 74, 0.7);
+            background: rgba(15, 15, 15, 0.6);
+        }
+
+        .landing-feature-icon {
+            font-size: 32px;
+            margin-bottom: 12px;
+        }
+
+        .landing-feature-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #e5e5e5;
+            margin-bottom: 8px;
+        }
+
+        .landing-feature-text {
+            font-size: 13px;
+            color: #888888;
+            line-height: 1.5;
+        }
+
+        .landing-cta {
+            opacity: 0;
+            animation: fadeInUp 0.8s ease-out 0.8s forwards;
+            position: relative;
+            z-index: 1;
+        }
+
+        .landing-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            padding: 18px 56px;
+            font-size: 16px;
+            font-weight: 600;
+            color: #e5e5e5;
+            background: linear-gradient(135deg, #1a1a1a 0%, #0f0f0f 100%);
+            border: 1px solid #4a4a4a;
+            border-radius: 8px;
+            text-decoration: none;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .landing-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.08), transparent);
+            transition: left 0.6s;
+        }
+
+        .landing-btn:hover::before {
+            left: 100%;
+        }
+
+        .landing-btn:hover {
+            transform: translateY(-4px) scale(1.02);
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+            border-color: #6a6a6a;
+            background: linear-gradient(135deg, #222222 0%, #1a1a1a 100%);
+        }
+
+        .landing-btn:active {
+            transform: translateY(-2px) scale(1);
+        }
+
+        .landing-btn-icon {
+            width: 18px;
+            height: 18px;
+            transition: transform 0.3s ease;
+        }
+
+        .landing-btn:hover .landing-btn-icon {
+            transform: translateX(4px);
+        }
+
+        .login-modal {
+            background: linear-gradient(135deg, #0a0a0a 0%, #0f0f0f 100%);
+            border: 1px solid #2a2a2a;
+            border-radius: 12px;
+            padding: 0;
+            max-width: 520px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.05);
+            animation: modalSlideIn 0.4s ease-out;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .login-modal::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            animation: shimmer 3s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        @keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .login-header {
+            padding: 40px 48px 32px;
+            text-align: center;
+            background: linear-gradient(180deg, rgba(26, 26, 26, 0.5) 0%, transparent 100%);
+            border-bottom: 1px solid rgba(42, 42, 42, 0.5);
+        }
+
+        .login-icon {
+            width: 64px;
+            height: 64px;
+            margin: 0 auto 20px;
+            background: linear-gradient(135deg, #1a1a1a 0%, #0a0a0a 100%);
+            border: 2px solid #3a3a3a;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .login-icon::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.05), transparent);
+            animation: rotate 3s linear infinite;
+        }
+
+        @keyframes rotate {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .login-icon svg {
+            position: relative;
+            z-index: 1;
+            width: 36px;
+            height: 36px;
+            stroke: #e5e5e5;
+        }
+
+        .login-title {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            background: linear-gradient(135deg, #ffffff 0%, #b0b0b0 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -0.02em;
+        }
+
+        .login-subtitle {
+            color: #888888;
+            font-size: 15px;
+            margin-bottom: 0;
+            line-height: 1.5;
+        }
+
+        .login-body {
+            padding: 32px 48px 40px;
+        }
+
+        .login-info {
+            background: rgba(5, 5, 5, 0.6);
+            border: 1px solid rgba(42, 42, 42, 0.5);
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+        }
+
+        .login-info-icon {
+            width: 20px;
+            height: 20px;
+            flex-shrink: 0;
+            margin-top: 2px;
+            color: #6a6a6a;
+        }
+
+        .login-info-text {
+            font-size: 13px;
+            color: #a0a0a0;
+            line-height: 1.6;
+        }
+
+        .login-info-text strong {
+            color: #e5e5e5;
+            font-weight: 600;
+        }
+
+        .login-form {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .form-label {
+            font-size: 14px;
+            font-weight: 600;
+            color: #c0c0c0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .form-label-icon {
+            width: 16px;
+            height: 16px;
+            color: #6a6a6a;
+        }
+
+        .form-input-wrapper {
+            position: relative;
+        }
+
+        .form-input {
+            padding: 16px 48px 16px 16px;
+            background: #050505;
+            border: 1px solid #2a2a2a;
+            border-radius: 8px;
+            color: #e5e5e5;
+            font-size: 15px;
+            font-family: inherit;
+            transition: all 0.3s ease;
+            width: 100%;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #4a4a4a;
+            background: #0a0a0a;
+            box-shadow: 0 0 0 3px rgba(74, 74, 74, 0.1);
+        }
+
+        .form-input::placeholder {
+            color: #555555;
+        }
+
+        .input-icon {
+            position: absolute;
+            right: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 20px;
+            height: 20px;
+            color: #6a6a6a;
+            pointer-events: none;
+        }
+
+        .form-input:focus + .input-icon {
+            color: #8a8a8a;
+        }
+
+        .login-btn {
+            padding: 18px;
+            background: linear-gradient(135deg, #1a1a1a 0%, #0f0f0f 100%);
+            border: 1px solid #4a4a4a;
+            border-radius: 8px;
+            color: #e5e5e5;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: inherit;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 8px;
+        }
+
+        .login-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            transition: left 0.5s;
+        }
+
+        .login-btn:hover:not(:disabled)::before {
+            left: 100%;
+        }
+
+        .login-btn:hover:not(:disabled) {
+            background: linear-gradient(135deg, #222222 0%, #1a1a1a 100%);
+            border-color: #6a6a6a;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+        }
+
+        .login-btn:active:not(:disabled) {
+            transform: translateY(0);
+        }
+
+        .login-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-icon {
+            width: 18px;
+            height: 18px;
+            transition: transform 0.3s ease;
+        }
+
+        .login-btn:hover:not(:disabled) .btn-icon {
+            transform: translateX(2px);
+        }
+
+        .login-footer {
+            padding: 24px 48px 32px;
+            text-align: center;
+            border-top: 1px solid rgba(42, 42, 42, 0.5);
+            background: rgba(5, 5, 5, 0.3);
+        }
+
+        .login-footer-text {
+            font-size: 12px;
+            color: #666666;
+            margin-bottom: 12px;
+        }
+
+        .login-footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .login-footer-link {
+            color: #888888;
+            text-decoration: none;
+            font-size: 12px;
+            transition: color 0.3s ease;
+            position: relative;
+        }
+
+        .login-footer-link::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 0;
+            height: 1px;
+            background: #6a6a6a;
+            transition: width 0.3s ease;
+        }
+
+        .login-footer-link:hover {
+            color: #e5e5e5;
+        }
+
+        .login-footer-link:hover::after {
+            width: 100%;
+        }
+
+        /* Login Reviews Section */
+        .login-reviews {
+            padding: 24px 48px;
+            border-top: 1px solid rgba(42, 42, 42, 0.5);
+            border-bottom: 1px solid rgba(42, 42, 42, 0.5);
+            background: rgba(5, 5, 5, 0.3);
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .login-reviews-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #c0c0c0;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .login-reviews-title svg {
+            width: 16px;
+            height: 16px;
+            color: #6a6a6a;
+        }
+
+        .login-reviews-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .login-review-item {
+            padding: 12px;
+            background: rgba(10, 10, 10, 0.5);
+            border: 1px solid rgba(42, 42, 42, 0.5);
+            border-radius: 6px;
+            transition: all 0.3s ease;
+        }
+
+        .login-review-item:hover {
+            border-color: rgba(74, 74, 74, 0.7);
+            background: rgba(15, 15, 15, 0.5);
+        }
+
+        .login-review-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+
+        .login-review-stars {
+            color: #ffd700;
+            font-size: 12px;
+            letter-spacing: 1px;
+        }
+
+        .login-review-text {
+            font-size: 12px;
+            color: #a0a0a0;
+            line-height: 1.5;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .login-reviews-empty {
+            text-align: center;
+            padding: 20px;
+            color: #666666;
+            font-size: 12px;
+        }
+
+        .login-reviews::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .login-reviews::-webkit-scrollbar-track {
+            background: rgba(10, 10, 10, 0.5);
+            border-radius: 3px;
+        }
+
+        .login-reviews::-webkit-scrollbar-thumb {
+            background: rgba(74, 74, 74, 0.5);
+            border-radius: 3px;
+        }
+
+        .login-reviews::-webkit-scrollbar-thumb:hover {
+            background: rgba(106, 106, 106, 0.7);
+        }
+
+        .error-message {
+            padding: 14px 16px;
+            background: rgba(220, 38, 38, 0.1);
+            border: 1px solid rgba(220, 38, 38, 0.3);
+            border-radius: 8px;
+            color: #ff6b6b;
+            font-size: 14px;
+            text-align: left;
+            display: none;
+            position: relative;
+            padding-left: 44px;
+            line-height: 1.5;
+        }
+
+        .error-message::before {
+            content: '⚠';
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 18px;
+        }
+
+        .error-message.show {
+            display: block;
+            animation: shake 0.4s ease;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+
+        .loading-spinner {
+            display: none;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #4a4a4a;
+            border-top-color: #e5e5e5;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto;
+        }
+
+        .login-btn.loading .loading-spinner {
+            display: block;
+        }
+
+        .login-btn.loading {
+            color: transparent;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Hide main content when not authenticated */
+        body:not(.authenticated) .main-content {
+            display: none;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero {
+                min-height: 80vh;
+                padding: 60px 24px;
+            }
+
+            .features, .requirements, .installer-info, .changelog, .rating-section {
+                padding: 80px 24px;
+            }
+
+            .rating-container {
+                padding: 32px 24px;
+            }
+
+            .rating-stars-display {
+                font-size: 36px;
+            }
+
+            .star-rating {
+                font-size: 32px;
+            }
+
+            .features-grid, .requirements-grid {
+                grid-template-columns: 1fr;
+                gap: 24px;
+            }
+
+            .info-card {
+                padding: 32px 24px;
+            }
+
+            .stats-bar {
+                gap: 32px;
+            }
+
+            .footer-links {
+                flex-direction: column;
+                gap: 20px;
+            }
+
+            .login-modal {
+                max-width: 95%;
+            }
+
+            .login-header {
+                padding: 32px 24px 24px;
+            }
+
+            .login-icon {
+                width: 56px;
+                height: 56px;
+                font-size: 28px;
+            }
+
+            .login-icon svg {
+                width: 32px;
+                height: 32px;
+            }
+
+            .login-title {
+                font-size: 26px;
+            }
+
+            .login-subtitle {
+                font-size: 14px;
+            }
+
+            .login-body {
+                padding: 24px 24px 32px;
+            }
+
+            .login-info {
+                padding: 14px;
+            }
+
+            .login-info-text {
+                font-size: 12px;
+            }
+
+            .login-footer {
+                padding: 20px 24px 24px;
+            }
+
+            .login-footer-links {
+                gap: 16px;
+            }
+
+            .login-reviews {
+                padding: 20px 24px;
+                max-height: 180px;
+            }
+
+            .login-reviews-title {
+                font-size: 13px;
+            }
+
+            .login-review-item {
+                padding: 10px;
+            }
+
+            .login-review-text {
+                font-size: 11px;
+            }
+
+            .landing-hero {
+                padding: 60px 24px;
+            }
+
+            .landing-title {
+                font-size: 42px;
+            }
+
+            .landing-subtitle {
+                font-size: 18px;
+            }
+
+            .landing-features {
+                grid-template-columns: 1fr;
+                gap: 16px;
+                margin-bottom: 32px;
+            }
+
+            .landing-feature {
+                padding: 20px;
+            }
+
+            .landing-btn {
+                padding: 16px 40px;
+                font-size: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Login Modal -->
+    <div class="login-overlay" id="loginOverlay">
+        <!-- Login Landing Page -->
+        <div class="login-landing" id="loginLanding">
+            <div class="landing-hero">
+                <h1 class="landing-title">RECON-SPOOFER</h1>
+                <p class="landing-subtitle">Professional Software Solution</p>
+                
+                <div class="landing-features">
+                    <div class="landing-feature">
+                        <div class="landing-feature-icon">⚡</div>
+                        <h3 class="landing-feature-title">Lightweight</h3>
+                        <p class="landing-feature-text">Minimal footprint with fast performance</p>
+                    </div>
+                    <div class="landing-feature">
+                        <div class="landing-feature-icon">🚀</div>
+                        <h3 class="landing-feature-title">Quick Setup</h3>
+                        <p class="landing-feature-text">Get started in minutes</p>
+                    </div>
+                    <div class="landing-feature">
+                        <div class="landing-feature-icon">🔄</div>
+                        <h3 class="landing-feature-title">Auto Updates</h3>
+                        <p class="landing-feature-text">Always up to date</p>
+                    </div>
+                </div>
+
+                <div class="landing-cta">
+                    <button class="landing-btn" id="showLoginBtn">
+                        <span>Get Started</span>
+                        <svg class="landing-btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="9 18 15 12 9 6"></polyline>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Login Modal -->
+        <div class="login-modal" id="loginModal" style="display: none;">
+            <div class="login-header">
+                <div class="login-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                    </svg>
+                </div>
+                <h1 class="login-title">RECON-SPOOFER</h1>
+                <p class="login-subtitle">Secure License Verification</p>
+            </div>
+            
+            <div class="login-body">
+                <div class="login-info">
+                    <svg class="login-info-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="16" x2="12" y2="12"></line>
+                        <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                    </svg>
+                    <div class="login-info-text">
+                        <strong>License Key Required</strong><br>
+                        Enter your valid license key to access the download portal. Your license key can be found in your purchase confirmation email or account dashboard.
+                    </div>
+                </div>
+
+                <div class="error-message" id="errorMessage"></div>
+                
+                <form class="login-form" id="loginForm">
+                    <div class="form-group">
+                        <label class="form-label" for="licenseKey">
+                            <svg class="form-label-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                            </svg>
+                            License Key
+                        </label>
+                        <div class="form-input-wrapper">
+                            <input 
+                                type="text" 
+                                id="licenseKey" 
+                                class="form-input" 
+                                placeholder="XXXX-XXXX-XXXX-XXXX"
+                                required
+                                autocomplete="off"
+                                spellcheck="false"
+                            >
+                            <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="7 10 12 15 17 10"></polyline>
+                                <line x1="12" y1="15" x2="12" y2="3"></line>
+                            </svg>
+                        </div>
+                    </div>
+                    <button type="submit" class="login-btn" id="loginBtn">
+                        <span class="btn-text">Verify & Continue</span>
+                        <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="9 18 15 12 9 6"></polyline>
+                        </svg>
+                        <div class="loading-spinner"></div>
+                    </button>
+                </form>
+            </div>
+
+            <div class="login-reviews" id="loginReviews">
+                <div class="login-reviews-title">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                    </svg>
+                    What Users Are Saying
+                </div>
+                <div class="login-reviews-list" id="loginReviewsList">
+                    <div class="login-reviews-empty">Loading reviews...</div>
+                </div>
+            </div>
+
+            <div class="login-footer">
+                <p class="login-footer-text">Need help? Contact our support team</p>
+                <div class="login-footer-links">
+                    <a href="https://discord.gg/getrecon" target="_blank" class="login-footer-link">Support</a>
+                    <a href="#" class="login-footer-link">Purchase License</a>
+                    <a href="documentation.html" class="login-footer-link">Documentation</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content (hidden until authenticated) -->
+    <div class="main-content">
+        
+        <!-- Animated Background Particles -->
+        <div class="particles" id="particles"></div>
+
+        <!-- Hero Section -->
+    <section class="hero">
+        <div class="container">
+            <h1 class="brand-title">RECON-SPOOFER</h1>
+            <p class="tagline">Simple. Secure. Reliable.</p>
+            <a href="#" class="download-btn" id="downloadBtn1" onclick="handleDownload(event)">
+                <svg class="download-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="7 10 12 15 17 10"></polyline>
+                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                Download Installer
+            </a>
+            
+            <div class="stats-bar">
+                <div class="stat-item">
+                    <span class="stat-number" id="downloadCount" data-count="1">0</span>
+                    <span class="stat-label">Downloads</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number" data-count="99">0</span>
+                    <span class="stat-label">% Uptime</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number" id="ratingDisplay" data-count="0">0</span>
+                    <span class="stat-label">Rating</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Review Stream Ticker -->
+    <section class="review-stream-section">
+        <div class="review-stream-container">
+            <div class="review-stream-track" id="reviewStreamTrack">
+                <!-- Reviews will be dynamically added here -->
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features">
+        <div class="container">
+            <h2 class="section-title reveal">Key Features</h2>
+            <p class="section-subtitle reveal">Everything you need in one powerful package</p>
+            <div class="features-grid">
+                <div class="feature-card reveal">
+                    <div class="feature-icon">⚡</div>
+                    <h3 class="feature-title">Lightweight Installer</h3>
+                    <p class="feature-text">Minimal footprint with fast installation process. Optimized for performance without compromising functionality.</p>
+                </div>
+                <div class="feature-card reveal">
+                    <div class="feature-icon">🚀</div>
+                    <h3 class="feature-title">Quick Setup</h3>
+                    <p class="feature-text">Get up and running in minutes with intuitive configuration. No technical expertise required.</p>
+                </div>
+                <div class="feature-card reveal">
+                    <div class="feature-icon">🔄</div>
+                    <h3 class="feature-title">Automatic Updates</h3>
+                    <p class="feature-text">Stay current with seamless background updates. Always have the latest features and security patches.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- System Requirements -->
+    <section class="requirements">
+        <div class="container">
+            <h2 class="section-title reveal">System Requirements</h2>
+            <p class="section-subtitle reveal">Windows operating system required</p>
+            <div class="requirements-grid">
+                <div class="req-card reveal">
+                    <h3 class="req-title">Windows</h3>
+                    <ul class="req-list">
+                        <li>Windows 10 (22H2 or later)</li>
+                        <li>Windows 11 (22H2 or later)</li>
+                        <li>Windows 11 (24H2 or later)</li>
+                        <li>64-bit processor</li>
+                        <li>Administrator privileges</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Installer Info Panel -->
+    <section class="installer-info">
+        <div class="container">
+            <div class="info-card reveal">
+                <h2 class="info-title">Installer Information</h2>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <span class="info-label">Version</span>
+                        <span class="info-value">1.7</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Release Date</span>
+                        <span class="info-value">November 27, 2025</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">File Size</span>
+                        <span class="info-value">1.19 MB</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Format</span>
+                        <span class="info-value">.exe</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">SHA256</span>
+                        <span class="info-value hash-value">15964f450ff1b7657a637156f8264647fbf3e8b05529cff3132ab122a7d638f4</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Changelog Section -->
+    <section class="changelog">
+        <div class="container">
+            <h2 class="section-title reveal">What's New</h2>
+            <p class="section-subtitle reveal">Latest updates and improvements</p>
+            <div class="changelog-content reveal">
+                <div class="changelog-item">
+                    <div class="changelog-version">Version 1.0.0</div>
+                    <div class="changelog-date">Released on January 15, 2024</div>
+                    <ul class="changelog-list">
+                        <li>Initial public release</li>
+                        <li>Core functionality implementation</li>
+                        <li>Single-platform support (Windows)</li>
+                        <li>Automatic update system</li>
+                        <li>Enhanced security features</li>
+                        <li>Improved performance and stability</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Second Download Section -->
+    <section class="download-section" id="download">
+        <div class="container">
+            <h2 class="section-title reveal" style="margin-bottom: 32px;">Ready to Get Started?</h2>
+            <p class="section-subtitle reveal" style="margin-bottom: 48px;">Download now and experience the difference</p>
+            <a href="#" class="download-btn" id="downloadBtn2" onclick="handleDownload(event)">
+                <svg class="download-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="7 10 12 15 17 10"></polyline>
+                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                Download Installer
+            </a>
+        </div>
+    </section>
+
+    <!-- Rating Section -->
+    <section class="rating-section">
+        <div class="container">
+            <h2 class="section-title reveal">Rate Your Experience</h2>
+            <p class="section-subtitle reveal">Help us improve by sharing your feedback</p>
+            <div class="rating-container reveal">
+                <div class="rating-display">
+                    <div class="rating-stars-display" id="ratingStarsDisplay">
+                        <span class="star">★</span>
+                        <span class="star">★</span>
+                        <span class="star">★</span>
+                        <span class="star">★</span>
+                        <span class="star">★</span>
+                    </div>
+                    <div class="rating-value" id="ratingValue">0.0</div>
+                    <div class="rating-count" id="ratingCount">(0 ratings)</div>
+                </div>
+                <div class="rating-input">
+                    <div class="rating-label">Your Rating:</div>
+                    <div class="star-rating" id="starRating">
+                        <span class="star-input" data-rating="1">★</span>
+                        <span class="star-input" data-rating="2">★</span>
+                        <span class="star-input" data-rating="3">★</span>
+                        <span class="star-input" data-rating="4">★</span>
+                        <span class="star-input" data-rating="5">★</span>
+                    </div>
+                    <div class="form-group" style="margin-top: 20px;">
+                        <label class="form-label" for="reviewText">Review (Optional):</label>
+                        <textarea 
+                            id="reviewText" 
+                            class="form-input" 
+                            rows="3" 
+                            placeholder="Share your experience..."
+                            maxlength="200"
+                            style="resize: vertical; min-height: 80px;"
+                        ></textarea>
+                        <div style="font-size: 12px; color: #666; text-align: right; margin-top: 4px;">
+                            <span id="reviewCharCount">0</span>/200
+                        </div>
+                    </div>
+                    <button class="rating-submit-btn" id="ratingSubmitBtn" disabled>Submit Rating</button>
+                    <div class="rating-message" id="ratingMessage"></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-links">
+                <a href="https://discord.gg/getrecon" target="_blank" class="footer-link">Support</a>
+                <a href="documentation.html" class="footer-link">Documentation</a>
+                <a href="terms.html" class="footer-link">Terms</a>
+                <a href="privacy.html" class="footer-link">Privacy</a>
+                <a href="#" class="footer-link">GitHub</a>
+            </div>
+            <p class="footer-text">© 2024 Recon-Spoofer. All rights reserved.</p>
+        </div>
+    </footer>
+    </div> <!-- End main-content -->
+
+    <script>
+        // Browser-compatible KeyAuth Implementation
+        class KeyAuth {
+            constructor(options) {
+                this.name = options.name;
+                this.ownerid = options.ownerid;
+                this.version = options.version;
+                this.url = options.url || "https://keyauth.win/api/1.3/";
+                this.public_key = "5586b4bc69c7a4b487e4563a4cd96afd39140f919bd31cea7d1c6a1e8439422b";
+                this.sessionid = null;
+                this.initialized = false;
+                this.user_data = null;
+            }
+
+            async init() {
+                if (this.initialized && this.sessionid) {
+                    return;
+                }
+
+                const post_data = {
+                    type: "init",
+                    name: this.name,
+                    ownerid: this.ownerid,
+                    version: this.version
+                };
+
+                try {
+                    const response = await this.__do_request(post_data);
+                    
+                    if (response === "KeyAuth_Invalid") {
+                        throw new Error("Application does not exist");
+                    }
+
+                    if (response["message"] === "invalidver") {
+                        throw new Error("Application version is outdated");
+                    }
+
+                    if (response["success"] === false) {
+                        throw new Error(response["message"] || "Initialization failed");
+                    }
+
+                    this.sessionid = response["sessionid"];
+                    this.initialized = true;
+                    return true;
+                } catch (error) {
+                    throw error;
+                }
+            }
+
+            async license(license, code) {
+                this.checkinit();
+                const hwid = this.get_hwid();
+
+                const post_data = {
+                    type: "license",
+                    name: this.name,
+                    ownerid: this.ownerid,
+                    sessionid: this.sessionid,
+                    key: license,
+                    hwid: hwid
+                };
+
+                if (code) {
+                    post_data.code = code;
+                }
+
+                const response = await this.__do_request(post_data);
+
+                if (response["success"] === true) {
+                    this.__load_user_data(response["info"]);
+                    return true;
+                } else {
+                    throw new Error(response["message"] || "License verification failed");
+                }
+            }
+
+            async check() {
+                this.checkinit();
+
+                const post_data = {
+                    type: "check",
+                    name: this.name,
+                    ownerid: this.ownerid,
+                    sessionid: this.sessionid
+                };
+
+                const response = await this.__do_request(post_data);
+                return response["success"] === true;
+            }
+
+            checkinit() {
+                if (!this.sessionid || !this.initialized) {
+                    throw new Error("Application not initialized");
+                }
+            }
+
+            get_hwid() {
+                // Browser fingerprinting for HWID
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                ctx.textBaseline = 'top';
+                ctx.font = '14px Arial';
+                ctx.fillText('HWID', 2, 2);
+                
+                const fingerprint = [
+                    navigator.userAgent,
+                    navigator.language,
+                    screen.width + 'x' + screen.height,
+                    new Date().getTimezoneOffset(),
+                    canvas.toDataURL(),
+                    navigator.platform,
+                    navigator.hardwareConcurrency || 'unknown'
+                ].join('|');
+
+                // Simple hash function
+                let hash = 0;
+                for (let i = 0; i < fingerprint.length; i++) {
+                    const char = fingerprint.charCodeAt(i);
+                    hash = ((hash << 5) - hash) + char;
+                    hash = hash & hash;
+                }
+                return Math.abs(hash).toString(16);
+            }
+
+            __load_user_data(data) {
+                this.user_data = {
+                    username: data["username"],
+                    ip: data["ip"],
+                    hwid: data["hwid"] || "N/A",
+                    expires: data["subscriptions"][0]["expiry"],
+                    createdate: data["createdate"],
+                    lastlogin: data["lastlogin"],
+                    subscription: data["subscriptions"][0]["subscription"],
+                    subscriptions: data["subscriptions"]
+                };
+            }
+
+            async __do_request(data) {
+                try {
+                    const response = await fetch(this.url, {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/x-www-form-urlencoded"
+                        },
+                        body: new URLSearchParams(data).toString()
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! Status: ${response.status}`);
+                    }
+
+                    const responseData = await response.json();
+                    return responseData;
+                } catch (error) {
+                    throw new Error(`Request failed: ${error.message}`);
+                }
+            }
+        }
+
+        // Initialize KeyAuth
+        const KeyAuthApp = new KeyAuth({
+            name: "Recon Spoofer",
+            ownerid: "3Fgwv9rfYE",
+            version: "1.7"
+        });
+
+        // Authentication State Management
+        const AUTH_KEY = 'recon_spoofer_auth';
+        const SESSION_KEY = 'recon_spoofer_session';
+
+        function isAuthenticated() {
+            const authData = sessionStorage.getItem(AUTH_KEY);
+            if (!authData) return false;
+            
+            try {
+                const data = JSON.parse(authData);
+                // Check if session is still valid (expires after 1 hour)
+                if (Date.now() - data.timestamp > 3600000) {
+                    sessionStorage.removeItem(AUTH_KEY);
+                    sessionStorage.removeItem(SESSION_KEY);
+                    return false;
+                }
+                return true;
+            } catch {
+                return false;
+            }
+        }
+
+        function setAuthenticated(sessionId) {
+            sessionStorage.setItem(AUTH_KEY, JSON.stringify({
+                authenticated: true,
+                timestamp: Date.now()
+            }));
+            sessionStorage.setItem(SESSION_KEY, sessionId);
+        }
+
+        function clearAuth() {
+            sessionStorage.removeItem(AUTH_KEY);
+            sessionStorage.removeItem(SESSION_KEY);
+        }
+
+        // Check authentication on page load
+        async function checkAuthOnLoad() {
+            if (isAuthenticated()) {
+                try {
+                    // Re-initialize with stored session
+                    KeyAuthApp.sessionid = sessionStorage.getItem(SESSION_KEY);
+                    KeyAuthApp.initialized = true;
+                    
+                    // Verify session is still valid
+                    const isValid = await KeyAuthApp.check();
+                    if (isValid) {
+                        showMainContent();
+                        return;
+                    } else {
+                        clearAuth();
+                    }
+                } catch (error) {
+                    console.error('Session check failed:', error);
+                    clearAuth();
+                }
+            }
+            
+            // Show login modal
+            showLoginModal();
+        }
+
+        function showLoginModal() {
+            document.body.classList.remove('authenticated');
+            const overlay = document.getElementById('loginOverlay');
+            const landing = document.getElementById('loginLanding');
+            const modal = document.getElementById('loginModal');
+            
+            overlay.classList.remove('hidden');
+            
+            // Show landing page by default, hide modal
+            if (landing) {
+                landing.classList.remove('hidden');
+            }
+            if (modal) {
+                modal.style.display = 'none';
+            }
+            overlay.classList.remove('hide-landing');
+        }
+
+        function showLoginForm() {
+            const landing = document.getElementById('loginLanding');
+            const modal = document.getElementById('loginModal');
+            const overlay = document.getElementById('loginOverlay');
+            
+            if (landing && modal) {
+                landing.classList.add('hidden');
+                modal.style.display = 'block';
+                overlay.classList.add('hide-landing');
+                loadLoginReviews();
+            }
+        }
+
+        function showMainContent() {
+            document.body.classList.add('authenticated');
+            const overlay = document.getElementById('loginOverlay');
+            overlay.classList.add('hidden');
+            
+            // Initialize page animations only after authentication
+            if (document.getElementById('particles')) {
+                createParticles();
+            }
+            
+            // Load review stream after authentication
+            setTimeout(() => {
+                loadReviewBubbles();
+            }, 1000);
+        }
+
+        // Handle login form submission
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const licenseKey = document.getElementById('licenseKey').value.trim();
+            const loginBtn = document.getElementById('loginBtn');
+            const errorMsg = document.getElementById('errorMessage');
+            
+            if (!licenseKey) {
+                showError('Please enter a license key');
+                return;
+            }
+
+            // Disable button and show loading
+            loginBtn.disabled = true;
+            loginBtn.classList.add('loading');
+            errorMsg.classList.remove('show');
+
+            try {
+                // Initialize KeyAuth
+                await KeyAuthApp.init();
+                
+                // Verify license
+                await KeyAuthApp.license(licenseKey);
+                
+                // Store authentication
+                setAuthenticated(KeyAuthApp.sessionid);
+                
+                // Show main content
+                showMainContent();
+                
+            } catch (error) {
+                showError(error.message || 'License verification failed. Please check your key and try again.');
+            } finally {
+                loginBtn.disabled = false;
+                loginBtn.classList.remove('loading');
+            }
+        });
+
+        function showError(message) {
+            const errorMsg = document.getElementById('errorMessage');
+            errorMsg.textContent = message;
+            errorMsg.classList.add('show');
+            
+            // Auto-hide after 5 seconds
+            setTimeout(() => {
+                errorMsg.classList.remove('show');
+            }, 5000);
+        }
+
+        // Periodic session check (every 5 minutes)
+        setInterval(async () => {
+            if (isAuthenticated() && KeyAuthApp.initialized) {
+                try {
+                    const isValid = await KeyAuthApp.check();
+                    if (!isValid) {
+                        clearAuth();
+                        showLoginModal();
+                    }
+                } catch (error) {
+                    console.error('Session check failed:', error);
+                }
+            }
+        }, 300000); // 5 minutes
+
+        // Prevent bypassing by checking on visibility change
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden && !isAuthenticated()) {
+                showLoginModal();
+            }
+        });
+
+        // Prevent bypassing by checking on focus
+        window.addEventListener('focus', () => {
+            if (!isAuthenticated()) {
+                showLoginModal();
+            }
+        });
+
+        // Additional security: Check authentication on any storage event (prevents manual sessionStorage manipulation)
+        window.addEventListener('storage', (e) => {
+            if (e.key === AUTH_KEY && !isAuthenticated()) {
+                showLoginModal();
+            }
+        });
+
+        // Prevent right-click and F12 (basic protection)
+        document.addEventListener('contextmenu', (e) => {
+            if (!isAuthenticated()) {
+                e.preventDefault();
+            }
+        });
+
+        // Check authentication periodically (every 30 seconds)
+        setInterval(() => {
+            if (!isAuthenticated() && document.body.classList.contains('authenticated')) {
+                showLoginModal();
+            }
+        }, 30000);
+
+        // Initialize on page load
+        checkAuthOnLoad();
+
+        // Landing page button event listener
+        document.addEventListener('DOMContentLoaded', () => {
+            const showLoginBtn = document.getElementById('showLoginBtn');
+            if (showLoginBtn) {
+                showLoginBtn.addEventListener('click', showLoginForm);
+            }
+        });
+
+        // Original page scripts
+        // Create animated particles
+        function createParticles() {
+            const particlesContainer = document.getElementById('particles');
+            const particleCount = 30;
+            
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.animationDelay = Math.random() * 20 + 's';
+                particle.style.animationDuration = (15 + Math.random() * 10) + 's';
+                particlesContainer.appendChild(particle);
+            }
+        }
+
+        // Scroll reveal animation
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -100px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('active');
+                }
+            });
+        }, observerOptions);
+
+        // Observe all reveal elements
+        document.querySelectorAll('.reveal').forEach(el => {
+            observer.observe(el);
+        });
+
+        // ============================================
+        // FIREBASE CONFIGURATION - REQUIRED FOR GLOBAL DOWNLOAD TRACKING
+        // ============================================
+        // SECURITY NOTE: Firebase API keys are PUBLIC by design and safe to expose.
+        // They identify your project but don't grant access by themselves.
+        // Real security comes from Firebase Security Rules (see FIREBASE_SETUP.md).
+        // Anyone can see these keys in your code - this is NORMAL and EXPECTED.
+        // 
+        // To set up Firebase:
+        // 1. Go to https://console.firebase.google.com/
+        // 2. Create a new project or select existing
+        // 3. Enable Realtime Database
+        // 4. Set up Security Rules (IMPORTANT - see FIREBASE_SETUP.md)
+        // 5. Get your config from: Project Settings > General > Your apps
+        // 6. Replace the values below with your actual Firebase config
+        // 
+        // See FIREBASE_SETUP.md for detailed instructions and security setup
+        // ============================================
+        const firebaseConfig = {
+          apiKey: "AIzaSyC6CrMVEbsr-AADq-w-TOkzO0AAOZtUqmU",
+          authDomain: "recon-265bc.firebaseapp.com",
+          databaseURL: "https://recon-265bc-default-rtdb.firebaseio.com",
+          projectId: "recon-265bc",
+          storageBucket: "recon-265bc.firebasestorage.app",
+          messagingSenderId: "99005456592",
+          appId: "1:99005456592:web:9ca83e210d9e85ca8a3ed5"
+        };
+
+        // Initialize Firebase
+        let database = null;
+        let firebaseInitialized = false;
+
+        try {
+            if (typeof firebase !== 'undefined') {
+                firebase.initializeApp(firebaseConfig);
+                database = firebase.database();
+                firebaseInitialized = true;
+                console.log('Firebase initialized successfully');
+                
+                // Initialize database structure if it doesn't exist
+                initializeDatabaseStructure();
+                
+                // Set up periodic monitoring to auto-recreate deleted structures
+                setupDatabaseStructureMonitor();
+            }
+        } catch (error) {
+            console.error('Firebase initialization error:', error);
+            console.log('Using fallback localStorage tracking');
+        }
+
+        // Initialize database structure (creates all required paths if they don't exist)
+        async function initializeDatabaseStructure() {
+            if (!firebaseInitialized || !database) return;
+
+            try {
+                // Initialize downloads/count
+                const downloadsRef = database.ref('downloads/count');
+                const downloadsSnapshot = await downloadsRef.once('value');
+                if (downloadsSnapshot.val() === null) {
+                    await downloadsRef.set(0);
+                    console.log('✅ Initialized: downloads/count = 0');
+                }
+
+                // Initialize ratings path (just ensure it exists, can be empty)
+                const ratingsRef = database.ref('ratings');
+                const ratingsSnapshot = await ratingsRef.once('value');
+                if (ratingsSnapshot.val() === null) {
+                    // Create empty object to initialize the path
+                    await ratingsRef.set({});
+                    console.log('✅ Initialized: ratings path');
+                }
+
+                console.log('✅ Database structure check complete');
+            } catch (error) {
+                console.error('❌ Error initializing database structure:', error);
+            }
+        }
+
+        // Periodic check to ensure database structures exist (runs every 30 seconds)
+        function setupDatabaseStructureMonitor() {
+            if (!firebaseInitialized || !database) return;
+
+            // Real-time listener for downloads/count - auto-recreate if deleted
+            database.ref('downloads/count').on('value', async (snapshot) => {
+                if (snapshot.val() === null) {
+                    try {
+                        await database.ref('downloads/count').set(0);
+                        console.log('🔄 Auto-recreated: downloads/count = 0');
+                    } catch (error) {
+                        console.error('Error recreating downloads/count:', error);
+                    }
+                }
+            }, (error) => {
+                console.error('Error monitoring downloads/count:', error);
+            });
+
+            // Real-time listener for ratings - auto-recreate if deleted
+            database.ref('ratings').on('value', async (snapshot) => {
+                if (snapshot.val() === null) {
+                    try {
+                        await database.ref('ratings').set({});
+                        console.log('🔄 Auto-recreated: ratings path');
+                    } catch (error) {
+                        console.error('Error recreating ratings:', error);
+                    }
+                }
+            }, (error) => {
+                console.error('Error monitoring ratings:', error);
+            });
+
+            // Periodic check as backup (every 30 seconds)
+            setInterval(async () => {
+                try {
+                    // Check downloads/count
+                    const downloadsRef = database.ref('downloads/count');
+                    const downloadsSnapshot = await downloadsRef.once('value');
+                    if (downloadsSnapshot.val() === null) {
+                        await downloadsRef.set(0);
+                        console.log('🔄 Periodic check: Recreated downloads/count = 0');
+                    }
+
+                    // Check ratings path
+                    const ratingsRef = database.ref('ratings');
+                    const ratingsSnapshot = await ratingsRef.once('value');
+                    if (ratingsSnapshot.val() === null) {
+                        await ratingsRef.set({});
+                        console.log('🔄 Periodic check: Recreated ratings path');
+                    }
+                } catch (error) {
+                    console.error('Error in database structure monitor:', error);
+                }
+            }, 30000); // Check every 30 seconds
+        }
+
+
+        // Download tracking with Firebase (global counter)
+        const DOWNLOAD_COUNT_PATH = 'downloads/count';
+        
+        // Get download count from Firebase
+        async function getDownloadCount() {
+            if (!firebaseInitialized || !database) {
+                // Fallback to localStorage if Firebase not configured
+                const count = localStorage.getItem('recon_spoofer_downloads');
+                return count ? parseInt(count, 10) : 0;
+            }
+
+            try {
+                const snapshot = await database.ref(DOWNLOAD_COUNT_PATH).once('value');
+                const count = snapshot.val();
+                return count ? parseInt(count, 10) : 0;
+            } catch (error) {
+                console.error('Error getting download count:', error);
+                return 0;
+            }
+        }
+        
+        // Increment download count in Firebase
+        async function incrementDownloadCount() {
+            if (!firebaseInitialized || !database) {
+                // Fallback to localStorage
+                const currentCount = parseInt(localStorage.getItem('recon_spoofer_downloads') || '0', 10);
+                const newCount = currentCount + 1;
+                localStorage.setItem('recon_spoofer_downloads', newCount.toString());
+                return newCount;
+            }
+
+            try {
+                // Get current count first
+                const currentSnapshot = await database.ref(DOWNLOAD_COUNT_PATH).once('value');
+                const currentCount = currentSnapshot.val() || 0;
+                const newCount = currentCount + 1;
+                
+                // Set the new value (Security Rules will validate it's only +1)
+                await database.ref(DOWNLOAD_COUNT_PATH).set(newCount);
+                
+                // If using rate-limited rules, update lastWrite timestamp
+                try {
+                    await database.ref('downloads/lastWrite').set(Date.now());
+                } catch (e) {
+                    // Ignore if lastWrite doesn't exist (not using rate-limited rules)
+                }
+                
+                return newCount;
+            } catch (error) {
+                console.error('Error incrementing download count:', error);
+                // If security rules reject it, fallback to localStorage
+                const currentCount = parseInt(localStorage.getItem('recon_spoofer_downloads') || '0', 10);
+                const newCount = currentCount + 1;
+                localStorage.setItem('recon_spoofer_downloads', newCount.toString());
+                return newCount;
+            }
+        }
+        
+        // Listen for real-time updates to download count
+        function setupDownloadCountListener() {
+            if (!firebaseInitialized || !database) {
+                return;
+            }
+
+            try {
+                const counterElement = document.getElementById('downloadCount');
+                if (!counterElement) return;
+
+                database.ref(DOWNLOAD_COUNT_PATH).on('value', (snapshot) => {
+                    const count = snapshot.val() || 0;
+                    const oldCount = parseInt(counterElement.getAttribute('data-count') || '0', 10);
+                    
+                    if (count !== oldCount) {
+                        counterElement.setAttribute('data-count', count);
+                        animateCounterFromTo(counterElement, oldCount, count);
+                    }
+                }, (error) => {
+                    console.error('Error listening to download count:', error);
+                });
+            } catch (error) {
+                console.error('Error setting up download count listener:', error);
+            }
+        }
+        
+        // Update download counter display
+        async function updateDownloadCounterDisplay() {
+            const count = await getDownloadCount();
+            const counterElement = document.getElementById('downloadCount');
+            if (counterElement) {
+                counterElement.setAttribute('data-count', count);
+                // Only animate if this is the initial load
+                if (!counterElement.hasAttribute('data-initialized')) {
+                    animateCounter(counterElement);
+                    counterElement.setAttribute('data-initialized', 'true');
+                }
+            }
+        }
+
+        // Rating System
+        const RATINGS_PATH = 'ratings';
+        const RATING_STORAGE_KEY = 'recon_spoofer_rated';
+        let selectedRating = 0;
+        let hasRated = false;
+
+        // Check if user has already rated
+        function checkIfRated() {
+            hasRated = localStorage.getItem(RATING_STORAGE_KEY) === 'true';
+            if (hasRated) {
+                const starInputs = document.querySelectorAll('.star-input');
+                starInputs.forEach(star => {
+                    star.style.pointerEvents = 'none';
+                    star.style.opacity = '0.5';
+                });
+                document.getElementById('ratingSubmitBtn').disabled = true;
+                document.getElementById('ratingSubmitBtn').textContent = 'Already Rated';
+            }
+        }
+
+        // Get average rating from Firebase
+        async function getAverageRating() {
+            if (!firebaseInitialized || !database) {
+                return { average: 0, count: 0 };
+            }
+
+            try {
+                const snapshot = await database.ref(RATINGS_PATH).once('value');
+                if (!snapshot.exists()) {
+                    return { average: 0, count: 0 };
+                }
+
+                const ratings = snapshot.val();
+                const ratingValues = Object.values(ratings).map(r => r.rating || r);
+                const sum = ratingValues.reduce((a, b) => a + b, 0);
+                const count = ratingValues.length;
+                const average = count > 0 ? sum / count : 0;
+
+                return { average: parseFloat(average.toFixed(1)), count };
+            } catch (error) {
+                console.error('Error getting average rating:', error);
+                return { average: 0, count: 0 };
+            }
+        }
+
+        // Update rating display
+        async function updateRatingDisplay() {
+            const { average, count } = await getAverageRating();
+            
+            // Update stats bar
+            const ratingDisplay = document.getElementById('ratingDisplay');
+            if (ratingDisplay) {
+                ratingDisplay.setAttribute('data-count', average);
+                if (!ratingDisplay.hasAttribute('data-initialized')) {
+                    animateCounter(ratingDisplay);
+                    ratingDisplay.setAttribute('data-initialized', 'true');
+                } else {
+                    const oldValue = parseFloat(ratingDisplay.getAttribute('data-count') || '0');
+                    if (oldValue !== average) {
+                        animateCounterFromTo(ratingDisplay, oldValue, average);
+                    }
+                }
+            }
+
+            // Update rating section
+            const ratingValue = document.getElementById('ratingValue');
+            const ratingCount = document.getElementById('ratingCount');
+            const ratingStarsDisplay = document.getElementById('ratingStarsDisplay');
+
+            if (ratingValue) ratingValue.textContent = average.toFixed(1);
+            if (ratingCount) ratingCount.textContent = `(${count} ${count === 1 ? 'rating' : 'ratings'})`;
+
+            if (ratingStarsDisplay) {
+                const stars = ratingStarsDisplay.querySelectorAll('.star');
+                const fullStars = Math.floor(average);
+                const hasHalfStar = (average % 1) >= 0.5;
+
+                stars.forEach((star, index) => {
+                    star.classList.remove('filled', 'half');
+                    if (index < fullStars) {
+                        star.classList.add('filled');
+                    } else if (index === fullStars && hasHalfStar) {
+                        star.classList.add('half');
+                    }
+                });
+            }
+        }
+
+        // Submit rating
+        async function submitRating(rating) {
+            if (!firebaseInitialized || !database) {
+                showRatingMessage('Error: Firebase not connected', 'error');
+                return;
+            }
+
+            if (hasRated) {
+                showRatingMessage('You have already submitted a rating', 'error');
+                return;
+            }
+
+            try {
+                let reviewText = document.getElementById('reviewText').value.trim();
+                
+                // Filter review text before submission
+                if (reviewText && reviewText.length > 0) {
+                    const filterResult = filterText(reviewText);
+                    if (filterResult.filtered) {
+                        let errorMsg = 'Your review contains inappropriate content.';
+                        switch (filterResult.reason) {
+                            case 'spam_pattern':
+                                errorMsg = 'Your review contains spam patterns. Please write a genuine review.';
+                                break;
+                            case 'excessive_special_chars':
+                                errorMsg = 'Your review contains too many special characters.';
+                                break;
+                            case 'word_repetition':
+                                errorMsg = 'Your review contains excessive word repetition.';
+                                break;
+                            case 'character_repetition':
+                                errorMsg = 'Your review contains suspicious character patterns.';
+                                break;
+                            case 'excessive_caps':
+                                errorMsg = 'Your review contains excessive capitalization.';
+                                break;
+                            case 'suspicious_pattern':
+                                errorMsg = 'Your review contains suspicious patterns.';
+                                break;
+                            case 'too_short':
+                                errorMsg = 'Your review is too short. Please write a meaningful review.';
+                                break;
+                            case 'inappropriate_language':
+                            default:
+                                errorMsg = 'Your review contains inappropriate content. Please keep it professional.';
+                                break;
+                        }
+                        showRatingMessage(errorMsg, 'error');
+                        return;
+                    }
+                    reviewText = filterResult.text;
+                }
+                
+                // Generate unique rating ID
+                const ratingId = 'rating_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                const ratingRef = database.ref(RATINGS_PATH + '/' + ratingId);
+
+                const ratingData = {
+                    rating: rating,
+                    timestamp: Date.now()
+                };
+
+                // Only add review text if provided
+                if (reviewText && reviewText.length > 0) {
+                    ratingData.review = reviewText;
+                }
+
+                await ratingRef.set(ratingData);
+
+                // Mark as rated
+                localStorage.setItem(RATING_STORAGE_KEY, 'true');
+                hasRated = true;
+
+                // Update UI
+                checkIfRated();
+                await updateRatingDisplay();
+                showRatingMessage('Thank you for your rating!', 'success');
+
+                // Reset selection
+                selectedRating = 0;
+                document.getElementById('reviewText').value = '';
+                document.getElementById('reviewCharCount').textContent = '0';
+                document.querySelectorAll('.star-input').forEach(star => {
+                    star.classList.remove('active');
+                });
+                document.getElementById('ratingSubmitBtn').disabled = true;
+
+                // Reload review stream if review text was provided
+                if (reviewText && reviewText.length > 0) {
+                    loadReviewBubbles();
+                }
+
+            } catch (error) {
+                console.error('Error submitting rating:', error);
+                showRatingMessage('Failed to submit rating. Please try again.', 'error');
+            }
+        }
+
+        // Show rating message
+        function showRatingMessage(message, type) {
+            const messageEl = document.getElementById('ratingMessage');
+            if (messageEl) {
+                messageEl.textContent = message;
+                messageEl.className = 'rating-message ' + (type || '');
+                setTimeout(() => {
+                    messageEl.textContent = '';
+                    messageEl.className = 'rating-message';
+                }, 3000);
+            }
+        }
+
+        // Setup rating system
+        function setupRatingSystem() {
+            // Star input interaction
+            const starInputs = document.querySelectorAll('.star-input');
+            const submitBtn = document.getElementById('ratingSubmitBtn');
+
+            starInputs.forEach(star => {
+                star.addEventListener('click', () => {
+                    if (hasRated) return;
+                    selectedRating = parseInt(star.getAttribute('data-rating'));
+                    
+                    // Update visual state
+                    starInputs.forEach((s, index) => {
+                        if (index < selectedRating) {
+                            s.classList.add('active');
+                        } else {
+                            s.classList.remove('active');
+                        }
+                    });
+
+                    submitBtn.disabled = false;
+                });
+
+                star.addEventListener('mouseenter', () => {
+                    if (hasRated) return;
+                    const hoverRating = parseInt(star.getAttribute('data-rating'));
+                    starInputs.forEach((s, index) => {
+                        if (index < hoverRating) {
+                            s.style.color = '#ffd700';
+                        } else {
+                            s.style.color = '#4a4a4a';
+                        }
+                    });
+                });
+            });
+
+            // Reset on mouse leave
+            document.getElementById('starRating').addEventListener('mouseleave', () => {
+                if (hasRated) return;
+                starInputs.forEach((s, index) => {
+                    if (index < selectedRating) {
+                        s.style.color = '#ffd700';
+                    } else {
+                        s.style.color = '#4a4a4a';
+                    }
+                });
+            });
+
+            // Submit button
+            submitBtn.addEventListener('click', () => {
+                if (selectedRating > 0 && !hasRated) {
+                    submitRating(selectedRating);
+                }
+            });
+
+            // Check if already rated
+            checkIfRated();
+
+            // Load and display current rating
+            updateRatingDisplay();
+
+            // Listen for rating updates
+            if (firebaseInitialized && database) {
+                database.ref(RATINGS_PATH).on('value', () => {
+                    updateRatingDisplay();
+                    loadReviewBubbles();
+                    loadLoginReviews(); // Also update login page reviews
+                });
+            }
+
+            // Character counter for review text
+            const reviewTextInput = document.getElementById('reviewText');
+            const reviewCharCount = document.getElementById('reviewCharCount');
+            if (reviewTextInput && reviewCharCount) {
+                reviewTextInput.addEventListener('input', () => {
+                    const length = reviewTextInput.value.length;
+                    reviewCharCount.textContent = length;
+                    if (length > 200) {
+                        reviewCharCount.style.color = '#ff6b6b';
+                    } else {
+                        reviewCharCount.style.color = '#666';
+                    }
+                });
+            }
+        }
+
+        // Word Filter System - Comprehensive list
+        const FILTERED_WORDS = [
+            // Profanity (common)
+            'fuck', 'fucking', 'fucked', 'fucker', 'fuckers', 'fuckin', 'fuk', 'fuking', 'fuker',
+            'shit', 'shitting', 'shitted', 'shits', 'shitty', 'shyt', 'sht',
+            'damn', 'damned', 'dammit', 'dmn',
+            'hell', 'hells', 'hll',
+            'ass', 'asses', 'asshole', 'assholes', 'arse', 'arses', 'arsehole',
+            'bitch', 'bitches', 'bitching', 'bich', 'btch', 'biatch',
+            'bastard', 'bastards', 'basterd',
+            'crap', 'crappy', 'crp',
+            'piss', 'pissing', 'pissed', 'pss',
+            'dick', 'dicks', 'dickhead', 'dik', 'dck',
+            'cock', 'cocks', 'cok',
+            'pussy', 'pussies', 'puss', 'pssy',
+            'tits', 'titties', 'tities', 'titty',
+            'slut', 'sluts', 'slutty', 'slt',
+            'whore', 'whores', 'whre',
+            'nigger', 'niggers', 'nigga', 'niggas', 'niga', 'niger', 'ngga',
+            'retard', 'retarded', 'retards', 'rtard', 'tard',
+            'gay', 'gays', 'fag', 'fags', 'faggot', 'faggots', 'fagot',
+            // Inappropriate/Offensive
+            'kill', 'killing', 'killed', 'killer', 'killers', 'kil', 'kilz',
+            'die', 'dying', 'died', 'death', 'dead', 'dye',
+            'hate', 'hating', 'hated', 'hater', 'haters', 'hte',
+            'stupid', 'stupidity', 'stupidly', 'stpid', 'stupd',
+            'idiot', 'idiots', 'idiotic', 'idot', 'idit',
+            'moron', 'morons', 'moronic', 'mron',
+            'dumb', 'dumber', 'dumbest', 'dumbass', 'dmb',
+            'loser', 'losers', 'losr',
+            'suck', 'sucks', 'sucking', 'sucked', 'sucker', 'suk', 'suking',
+            'trash', 'trashy', 'trsh',
+            'garbage', 'garbages', 'garbge',
+            // Leetspeak variations (bypassed profanity)
+            'f*ck', 'f**k', 'f***', 'f@ck', 'f#ck', 'f$ck',
+            'sh*t', 's**t', 's@t', 's#t', 'sh!t',
+            'a$$', 'a**', 'a@@', 'a##',
+            'b!tch', 'b*tch', 'b@tch', 'b#tch', 'btch',
+            'd!ck', 'd*ck', 'd@ck', 'd#ck', 'dck',
+            'p*ssy', 'p@ssy', 'p#ssy', 'pssy',
+            'n*gga', 'n@gga', 'n#gga', 'ngga',
+            // Inappropriate content
+            'porn', 'porno', 'pornography', 'xxx', 'sex', 'sexual', 'sexy',
+            'nude', 'naked', 'nudes', 'nsfw', 'nsfw content',
+            // Threats/Violence
+            'threat', 'threats', 'threatening', 'violence', 'violent',
+            'attack', 'attacking', 'attacked', 'bomb', 'bombs', 'bombing',
+            'gun', 'guns', 'weapon', 'weapons', 'shoot', 'shooting', 'shooter',
+            'murder', 'murdering', 'murdered', 'kill you', 'i will kill',
+            // Self-harm
+            'suicide', 'suicidal', 'kill myself', 'self harm', 'end my life',
+            // Other inappropriate
+            'drug', 'drugs', 'cocaine', 'heroin', 'marijuana', 'weed',
+            'alcohol', 'drunk', 'drinking', 'beer', 'wine',
+            // Bypass attempts (spaces/dots between letters)
+            'f u c k', 's h i t', 'a s s', 'b i t c h',
+            'f.u.c.k', 's.h.i.t', 'a.s.s', 'b.i.t.c.h',
+            'fu ck', 'sh it', 'as s', 'bi tch',
+            // Additional offensive terms
+            'cunt', 'cunts', 'cnt',
+            'rape', 'raping', 'raped', 'rapist',
+            'pedo', 'pedophile', 'pedophilia',
+            'nazi', 'nazis', 'hitler',
+        ];
+
+        // Additional spam patterns (more lenient - only obvious spam)
+        const SPAM_PATTERNS = [
+
+        ];
+
+        // Filter text for inappropriate content - ONLY bad words and bypassed bad words
+        function filterText(text) {
+            if (!text || typeof text !== 'string') return { filtered: false, text: text };
+
+            const originalText = text;
+            let filteredText = text.toLowerCase();
+            
+            // Remove common bypass characters (spaces, dots, dashes, underscores, etc. between letters)
+            // This catches attempts like "f u c k", "f.u.c.k", "f-u-c-k", etc.
+            const normalizedText = filteredText.replace(/[\s\.\-\*\_\@\#\$\%\^\&\*\(\)\[\]{}|\\\/:;"'<>,?~`!]/g, '');
+
+            // Check for filtered words (both in original and normalized text)
+            for (const word of FILTERED_WORDS) {
+                const wordLower = word.toLowerCase();
+                const wordNormalized = wordLower.replace(/[\s\.\-\*\_]/g, ''); // Normalize the filter word too
+                
+                // Skip very short words (1-2 chars) to avoid false positives
+                if (wordNormalized.length < 3) continue;
+                
+                // Check in original text (word boundary match)
+                const regex1 = new RegExp(`\\b${wordLower.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`, 'gi');
+                if (regex1.test(filteredText)) {
+                    return { filtered: true, reason: 'inappropriate_language' };
+                }
+                
+                // Check in normalized text (catches bypass attempts like "f u c k", "f.u.c.k", etc.)
+                // Only check if the normalized word is at least 4 characters to avoid false matches
+                if (wordNormalized.length >= 4 && normalizedText.includes(wordNormalized)) {
+                    return { filtered: true, reason: 'inappropriate_language' };
+                }
+            }
+
+            // That's it - only block bad words, nothing else
+            return { filtered: false, text: originalText };
+        }
+
+        // Review Stream Ticker System
+        let availableReviews = [];
+        let streamTrack = null;
+
+        // Load reviews and populate stream ticker
+        async function loadReviewBubbles() {
+            // If Firebase isn't ready yet, wait a bit and try again
+            if (!firebaseInitialized || !database) {
+                setTimeout(() => loadReviewBubbles(), 2000);
+                return;
+            }
+
+            try {
+                const snapshot = await database.ref(RATINGS_PATH).once('value');
+                if (!snapshot.exists()) {
+                    availableReviews = [];
+                    updateReviewStream();
+                    return;
+                }
+
+                const ratings = snapshot.val();
+                const allReviews = Object.values(ratings)
+                    .filter(r => {
+                        // Filter out reviews with inappropriate content
+                        if (!r.review || r.review.trim().length === 0) return false;
+                        const filterResult = filterText(r.review);
+                        return !filterResult.filtered; // Only include non-filtered reviews
+                    })
+                    .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0)); // Most recent first
+
+                // Remove duplicates from database - keep only the most recent version of each unique review text
+                const seenReviewTexts = new Map(); // Map of normalized text -> review object
+                
+                allReviews.forEach(review => {
+                    // Normalize review text: trim, lowercase, and normalize whitespace
+                    const normalizedText = review.review.trim().toLowerCase().replace(/\s+/g, ' ');
+                    
+                    // If we haven't seen this review text, or this one is more recent, keep it
+                    if (!seenReviewTexts.has(normalizedText)) {
+                        seenReviewTexts.set(normalizedText, review);
+                    } else {
+                        // Compare timestamps - keep the more recent one
+                        const existingReview = seenReviewTexts.get(normalizedText);
+                        const existingTimestamp = existingReview.timestamp || 0;
+                        const currentTimestamp = review.timestamp || 0;
+                        
+                        if (currentTimestamp > existingTimestamp) {
+                            seenReviewTexts.set(normalizedText, review);
+                        }
+                    }
+                });
+
+                // Convert map values to array - these are the unique reviews
+                const newReviews = Array.from(seenReviewTexts.values())
+                    .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0)); // Sort by timestamp again
+
+                // Update available reviews with deduplicated list
+                availableReviews = newReviews;
+                
+                // Update the stream ticker
+                updateReviewStream();
+
+            } catch (error) {
+                console.error('Error loading review stream:', error);
+            }
+        }
+
+        // Update the review stream ticker
+        function updateReviewStream() {
+            const track = document.getElementById('reviewStreamTrack');
+            if (!track) return;
+
+            // Clear existing content
+            track.innerHTML = '';
+
+            if (availableReviews.length === 0) {
+                // Show placeholder if no reviews
+                const placeholder = document.createElement('div');
+                placeholder.className = 'review-stream-item';
+                placeholder.innerHTML = '<span class="review-stream-text" style="color: #666;">No reviews yet. Be the first to leave one!</span>';
+                track.appendChild(placeholder);
+                // Duplicate for seamless loop
+                track.appendChild(placeholder.cloneNode(true));
+                return;
+            }
+
+            // Remove duplicates - track unique reviews by their text content only
+            const seenReviews = new Set();
+            const uniqueReviews = [];
+
+            availableReviews.forEach(review => {
+                // Normalize review text: trim, lowercase, and normalize whitespace
+                const reviewText = review.review.trim().toLowerCase().replace(/\s+/g, ' ');
+                // Use only the review text for uniqueness (not rating)
+                // This ensures the same review text only appears once regardless of rating
+                const uniqueKey = reviewText;
+                
+                if (!seenReviews.has(uniqueKey)) {
+                    seenReviews.add(uniqueKey);
+                    uniqueReviews.push(review);
+                }
+            });
+
+            // Create review items from unique reviews only
+            uniqueReviews.forEach(review => {
+                const item = document.createElement('div');
+                item.className = 'review-stream-item';
+
+                const rating = review.rating || 5;
+                const stars = '★'.repeat(rating);
+                let reviewText = review.review.trim();
+                
+                // Truncate if too long
+                if (reviewText.length > 100) {
+                    reviewText = reviewText.substring(0, 100) + '...';
+                }
+
+                item.innerHTML = `
+                    <span class="review-stream-stars">${stars}</span>
+                    <span class="review-stream-text">${escapeHtml(reviewText)}</span>
+                `;
+
+                track.appendChild(item);
+            });
+
+            // Duplicate all items for seamless infinite scroll
+            // We need to duplicate the entire set to ensure smooth looping
+            const items = track.querySelectorAll('.review-stream-item');
+            const itemsArray = Array.from(items);
+            
+            // Clone each item to create the duplicate set (exact copies)
+            itemsArray.forEach(item => {
+                const clone = item.cloneNode(true);
+                // Ensure clone has same styles
+                clone.style.cssText = item.style.cssText;
+                track.appendChild(clone);
+            });
+            
+            // Add a small delay to ensure DOM is updated before animation starts
+            requestAnimationFrame(() => {
+                // Reset animation to ensure smooth start
+                track.style.animation = 'none';
+                requestAnimationFrame(() => {
+                    track.style.animation = '';
+                });
+            });
+        }
+
+        // Escape HTML to prevent XSS
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Load reviews for login page
+        async function loadLoginReviews() {
+            const reviewsList = document.getElementById('loginReviewsList');
+            if (!reviewsList) return;
+
+            // If Firebase isn't ready yet, wait a bit and try again
+            if (!firebaseInitialized || !database) {
+                setTimeout(() => loadLoginReviews(), 2000);
+                return;
+            }
+
+            try {
+                const snapshot = await database.ref(RATINGS_PATH).once('value');
+                if (!snapshot.exists()) {
+                    reviewsList.innerHTML = '<div class="login-reviews-empty">No reviews yet. Be the first to leave one!</div>';
+                    return;
+                }
+
+                const ratings = snapshot.val();
+                const allReviews = Object.values(ratings)
+                    .filter(r => {
+                        // Filter out reviews with inappropriate content
+                        if (!r.review || r.review.trim().length === 0) return false;
+                        const filterResult = filterText(r.review);
+                        return !filterResult.filtered; // Only include non-filtered reviews
+                    })
+                    .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0)) // Most recent first
+                    .slice(0, 5); // Show only top 5 reviews
+
+                if (allReviews.length === 0) {
+                    reviewsList.innerHTML = '<div class="login-reviews-empty">No reviews yet. Be the first to leave one!</div>';
+                    return;
+                }
+
+                // Clear existing content
+                reviewsList.innerHTML = '';
+
+                // Create review items
+                allReviews.forEach(review => {
+                    const item = document.createElement('div');
+                    item.className = 'login-review-item';
+
+                    const rating = review.rating || 5;
+                    const stars = '★'.repeat(rating);
+                    let reviewText = review.review.trim();
+                    
+                    // Truncate if too long
+                    if (reviewText.length > 120) {
+                        reviewText = reviewText.substring(0, 120) + '...';
+                    }
+
+                    item.innerHTML = `
+                        <div class="login-review-header">
+                            <span class="login-review-stars">${stars}</span>
+                        </div>
+                        <div class="login-review-text">${escapeHtml(reviewText)}</div>
+                    `;
+
+                    reviewsList.appendChild(item);
+                });
+
+            } catch (error) {
+                console.error('Error loading login reviews:', error);
+                reviewsList.innerHTML = '<div class="login-reviews-empty">Unable to load reviews</div>';
+            }
+        }
+        
+        // Handle download button click
+        async function handleDownload(event) {
+            event.preventDefault();
+            
+            const counterElement = document.getElementById('downloadCount');
+            const oldCount = parseInt(counterElement?.getAttribute('data-count') || '0', 10);
+            
+            // Increment download count in Firebase
+            const newCount = await incrementDownloadCount();
+            
+            // Update the counter display with animation
+            if (counterElement) {
+                counterElement.setAttribute('data-count', newCount);
+                animateCounterFromTo(counterElement, oldCount, newCount);
+            }
+            
+            // Trigger actual download
+            // TODO: Replace 'your-installer.exe' with the actual file path/URL
+            // Example: const downloadUrl = 'https://yourdomain.com/downloads/Recon-Spoofer-Installer.exe';
+            const downloadUrl = 'https://github.com/venaticlol/loader/raw/refs/heads/main/Recon-Bootstrapper.exe'; // Update this with your actual file URL
+            
+            // Create download link
+            const link = document.createElement('a');
+            link.href = downloadUrl;
+            link.download = 'Recon-Spoofer-Installer.exe';
+            link.style.display = 'none';
+            document.body.appendChild(link);
+            link.click();
+            
+            // Clean up after a short delay
+            setTimeout(() => {
+                document.body.removeChild(link);
+            }, 100);
+        }
+        
+        // Animate counter from one value to another
+        function animateCounterFromTo(element, from, to) {
+            const duration = 1000;
+            const startTime = performance.now();
+            const difference = to - from;
+            
+            const updateCounter = (currentTime) => {
+                const elapsed = currentTime - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                
+                // Easing function for smooth animation
+                const easeOut = 1 - Math.pow(1 - progress, 3);
+                const current = Math.floor(from + (difference * easeOut));
+                
+                element.textContent = current.toLocaleString();
+                
+                if (progress < 1) {
+                    requestAnimationFrame(updateCounter);
+                } else {
+                    element.textContent = to.toLocaleString();
+                }
+            };
+            
+            requestAnimationFrame(updateCounter);
+        }
+
+        // Animated counter for stats
+        function animateCounter(element) {
+            const target = parseFloat(element.getAttribute('data-count'));
+            const duration = 2000;
+            const increment = target / (duration / 16);
+            let current = 0;
+
+            const updateCounter = () => {
+                current += increment;
+                if (current < target) {
+                    if (target % 1 === 0) {
+                        element.textContent = Math.floor(current).toLocaleString();
+                    } else {
+                        element.textContent = current.toFixed(1);
+                    }
+                    requestAnimationFrame(updateCounter);
+                } else {
+                    if (target % 1 === 0) {
+                        element.textContent = Math.floor(target).toLocaleString();
+                    } else {
+                        element.textContent = target.toFixed(1);
+                    }
+                }
+            };
+
+            updateCounter();
+        }
+
+        // Trigger counter animation when stats bar is visible
+        const statsObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.querySelectorAll('.stat-number').forEach(async (stat) => {
+                        // For download count, use the actual count from Firebase
+                        if (stat.id === 'downloadCount') {
+                            const count = await getDownloadCount();
+                            stat.setAttribute('data-count', count);
+                            animateCounter(stat);
+                        } else {
+                            // Other stats (uptime, rating)
+                            animateCounter(stat);
+                        }
+                    });
+                    statsObserver.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.5 });
+
+        const statsBar = document.querySelector('.stats-bar');
+        if (statsBar) {
+            statsObserver.observe(statsBar.parentElement);
+        }
+        
+        // Initialize download count on page load
+        updateDownloadCounterDisplay().then(() => {
+            // Set up real-time listener after initial load
+            setupDownloadCountListener();
+        });
+
+        // Initialize rating system when DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => {
+                setupRatingSystem();
+                loadReviewBubbles();
+            });
+        } else {
+            setupRatingSystem();
+            loadReviewBubbles();
+        }
+
+        // Particles will be initialized after authentication
+
+        // Parallax effect on scroll
+        let lastScroll = 0;
+        window.addEventListener('scroll', () => {
+            const scrolled = window.pageYOffset;
+            const hero = document.querySelector('.hero');
+            if (hero) {
+                hero.style.transform = `translateY(${scrolled * 0.3}px)`;
+            }
+        });
+    </script>
+</body>
+</html>
