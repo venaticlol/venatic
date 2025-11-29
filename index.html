@@ -4608,60 +4608,148 @@
         }
 
         // ============================================
-        // SUPPORT TICKETS FUNCTIONS
+        // SUPPORT TICKETS SYSTEM (REWORKED)
         // ============================================
+        
+        // Ticket system state
+        const TicketSystem = {
+            currentTicketId: null,
+            messageListener: null,
+            elements: {
+                creationModal: null,
+                viewModal: null,
+                subjectInput: null,
+                messageInput: null,
+                errorDiv: null,
+                ticketsContent: null,
+                viewTitle: null,
+                viewId: null,
+                messagesContainer: null,
+                replyInput: null
+            },
+            
+            // Initialize and cache all elements
+            init: function() {
+                this.elements.creationModal = document.getElementById('ticketCreationModal');
+                this.elements.viewModal = document.getElementById('ticketViewModal');
+                this.elements.subjectInput = document.getElementById('ticketSubjectInput');
+                this.elements.messageInput = document.getElementById('ticketMessageInput');
+                this.elements.errorDiv = document.getElementById('ticketError');
+                this.elements.ticketsContent = document.getElementById('userTicketsContent');
+                this.elements.viewTitle = document.getElementById('ticketViewTitle');
+                this.elements.viewId = document.getElementById('ticketViewId');
+                this.elements.messagesContainer = document.getElementById('ticketMessagesContainer');
+                this.elements.replyInput = document.getElementById('ticketReplyInput');
+                
+                // Validate critical elements
+                if (!this.elements.creationModal || !this.elements.viewModal) {
+                    console.error('Ticket modals not found in DOM');
+                }
+            },
+            
+            // Show creation modal
+            openCreationModal: function() {
+                if (!this.elements.creationModal) {
+                    this.init();
+                }
+                if (!this.elements.creationModal) {
+                    alert('Error: Ticket system not initialized. Please refresh the page.');
+                    return;
+                }
+                
+                this.elements.creationModal.classList.add('active');
+                if (this.elements.subjectInput) this.elements.subjectInput.value = '';
+                if (this.elements.messageInput) this.elements.messageInput.value = '';
+                if (this.elements.errorDiv) {
+                    this.elements.errorDiv.style.display = 'none';
+                    this.elements.errorDiv.textContent = '';
+                }
+            },
+            
+            // Close creation modal
+            closeCreationModal: function() {
+                if (this.elements.creationModal) {
+                    this.elements.creationModal.classList.remove('active');
+                }
+            },
+            
+            // Show error message
+            showError: function(message) {
+                if (this.elements.errorDiv) {
+                    this.elements.errorDiv.textContent = message;
+                    this.elements.errorDiv.style.display = 'block';
+                } else {
+                    alert(message);
+                }
+            },
+            
+            // Hide error message
+            hideError: function() {
+                if (this.elements.errorDiv) {
+                    this.elements.errorDiv.style.display = 'none';
+                    this.elements.errorDiv.textContent = '';
+                }
+            }
+        };
+        
+        // Initialize ticket system on page load
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => TicketSystem.init());
+        } else {
+            TicketSystem.init();
+        }
+        
+        // Global functions for onclick handlers
         window.openTicketModal = function() {
-            const modal = document.getElementById('ticketCreationModal');
-            if (!modal) {
-                console.error('Ticket creation modal not found');
-                alert('Error: Ticket modal not found. Please refresh the page.');
-                return;
-            }
-            modal.classList.add('active');
-            const subjectInput = document.getElementById('ticketSubjectInput');
-            const messageInput = document.getElementById('ticketMessageInput');
-            const errorDiv = document.getElementById('ticketError');
-            if (subjectInput) subjectInput.value = '';
-            if (messageInput) messageInput.value = '';
-            if (errorDiv) errorDiv.style.display = 'none';
-        }
-
+            TicketSystem.openCreationModal();
+        };
+        
         window.closeTicketModal = function() {
-            const modal = document.getElementById('ticketCreationModal');
-            if (modal) {
-                modal.classList.remove('active');
-            }
-        }
+            TicketSystem.closeCreationModal();
+        };
 
         window.createTicket = async function() {
-            const subjectInput = document.getElementById('ticketSubjectInput');
-            const messageInput = document.getElementById('ticketMessageInput');
-            const errorDiv = document.getElementById('ticketError');
+            // Ensure elements are initialized
+            if (!TicketSystem.elements.subjectInput || !TicketSystem.elements.messageInput) {
+                TicketSystem.init();
+            }
+            
+            const subject = TicketSystem.elements.subjectInput ? TicketSystem.elements.subjectInput.value.trim() : '';
+            const message = TicketSystem.elements.messageInput ? TicketSystem.elements.messageInput.value.trim() : '';
 
-            const subject = subjectInput.value.trim();
-            const message = messageInput.value.trim();
-
+            // Validation
             if (!subject) {
-                errorDiv.textContent = 'Subject is required';
-                errorDiv.style.display = 'block';
+                TicketSystem.showError('Subject is required');
                 return;
             }
 
             if (!message) {
-                errorDiv.textContent = 'Message is required';
-                errorDiv.style.display = 'block';
+                TicketSystem.showError('Message is required');
                 return;
             }
 
             if (!firebaseInitialized || !database) {
-                errorDiv.textContent = 'Firebase not initialized';
-                errorDiv.style.display = 'block';
+                TicketSystem.showError('Firebase not initialized. Please refresh the page.');
                 return;
             }
 
             try {
+                TicketSystem.hideError();
+                
+                // Disable button during creation
+                const createBtn = document.querySelector('#ticketCreationModal .ticket-send-btn');
+                if (createBtn) {
+                    createBtn.disabled = true;
+                    createBtn.textContent = 'Creating...';
+                }
+                
                 const ticketId = 'ticket-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
-                const ip = await getClientIP();
+                let ip = 'unknown';
+                try {
+                    ip = await getClientIP();
+                } catch (e) {
+                    console.warn('Could not get IP:', e);
+                }
                 
                 const ticketData = {
                     id: ticketId,
@@ -4670,7 +4758,7 @@
                     createdAt: Date.now(),
                     updatedAt: Date.now(),
                     userIp: ip,
-                    userAgent: navigator.userAgent
+                    userAgent: navigator.userAgent || 'unknown'
                 };
 
                 await database.ref(`tickets/${ticketId}`).set(ticketData);
@@ -4692,19 +4780,34 @@
                     localStorage.setItem('user_ticket_ids', JSON.stringify(storedTickets));
                 }
 
-                alert('✅ Ticket created successfully! Your ticket ID is: ' + ticketId);
-                closeTicketModal();
-                loadUserTickets();
+                // Success
+                TicketSystem.closeCreationModal();
+                await loadUserTickets();
+                alert('✅ Ticket created successfully!\nTicket ID: ' + ticketId);
             } catch (error) {
                 console.error('Error creating ticket:', error);
-                errorDiv.textContent = 'Failed to create ticket: ' + error.message;
-                errorDiv.style.display = 'block';
+                TicketSystem.showError('Failed to create ticket: ' + (error.message || 'Unknown error'));
+            } finally {
+                // Re-enable button
+                const createBtn = document.querySelector('#ticketCreationModal .ticket-send-btn');
+                if (createBtn) {
+                    createBtn.disabled = false;
+                    createBtn.textContent = 'Create Ticket';
+                }
             }
         }
 
         function setupUserTicketsListener() {
-            if (!firebaseInitialized || !database) return;
-
+            if (!firebaseInitialized || !database) {
+                // Retry after a delay if Firebase isn't ready
+                setTimeout(setupUserTicketsListener, 1000);
+                return;
+            }
+            
+            // Initialize ticket system
+            TicketSystem.init();
+            
+            // Load tickets
             loadUserTickets();
         }
 
@@ -4782,24 +4885,44 @@
         }
 
         window.viewUserTicket = async function(ticketId) {
-            const modal = document.getElementById('ticketViewModal');
-            const titleEl = document.getElementById('ticketViewTitle');
-            const idEl = document.getElementById('ticketViewId');
-            const messagesContainer = document.getElementById('ticketMessagesContainer');
+            if (!ticketId) {
+                alert('Invalid ticket ID');
+                return;
+            }
+            
+            // Ensure elements are initialized
+            if (!TicketSystem.elements.viewModal) {
+                TicketSystem.init();
+            }
+            
+            const modal = TicketSystem.elements.viewModal;
+            const titleEl = TicketSystem.elements.viewTitle;
+            const idEl = TicketSystem.elements.viewId;
+            const messagesContainer = TicketSystem.elements.messagesContainer;
 
-            if (!modal) {
-                console.error('Ticket view modal not found');
-                alert('Error: Ticket view modal not found. Please refresh the page.');
+            if (!modal || !titleEl || !idEl || !messagesContainer) {
+                console.error('Ticket view modal elements missing', {
+                    modal: !!modal,
+                    titleEl: !!titleEl,
+                    idEl: !!idEl,
+                    messagesContainer: !!messagesContainer
+                });
+                alert('Error: Ticket view not available. Please refresh the page.');
                 return;
             }
 
-            if (!titleEl || !idEl || !messagesContainer) {
-                console.error('Ticket view modal elements not found', { titleEl, idEl, messagesContainer });
-                alert('Error: Ticket view modal elements not found. Please refresh the page.');
+            if (!firebaseInitialized || !database) {
+                alert('Firebase not initialized. Please refresh the page.');
                 return;
             }
 
             try {
+                // Show loading state
+                if (messagesContainer) {
+                    messagesContainer.innerHTML = '<div style="color: #888; text-align: center; padding: 40px;">Loading ticket...</div>';
+                }
+                
+                // Load ticket data
                 const ticketSnapshot = await database.ref(`tickets/${ticketId}`).once('value');
                 if (!ticketSnapshot.exists()) {
                     alert('Ticket not found');
@@ -4807,109 +4930,197 @@
                 }
 
                 const ticket = ticketSnapshot.val();
-                
-                // Re-query elements to ensure they still exist (defensive check)
-                const titleElement = document.getElementById('ticketViewTitle');
-                const idElement = document.getElementById('ticketViewId');
-                const messagesContainerElement = document.getElementById('ticketMessagesContainer');
-                
-                if (!titleElement || !idElement || !messagesContainerElement) {
-                    console.error('Modal elements not found when setting content', { 
-                        titleElement: !!titleElement, 
-                        idElement: !!idElement, 
-                        messagesContainerElement: !!messagesContainerElement 
-                    });
-                    alert('Error: Modal elements not available. Please refresh the page and try again.');
+                if (!ticket) {
+                    alert('Invalid ticket data');
                     return;
                 }
                 
-                // Safely set textContent with error handling
-                try {
-                    titleElement.textContent = (ticket && ticket.subject) ? ticket.subject : 'No Subject';
-                } catch (e) {
-                    console.error('Error setting title textContent:', e);
+                // Set ticket info (with safety checks)
+                if (titleEl) {
+                    titleEl.textContent = ticket.subject || 'No Subject';
                 }
-                
-                try {
-                    idElement.textContent = (ticket && ticket.id) ? ticket.id : ticketId;
-                } catch (e) {
-                    console.error('Error setting id textContent:', e);
+                if (idEl) {
+                    idEl.textContent = ticket.id || ticketId;
                 }
 
                 // Load messages
                 const messagesSnapshot = await database.ref(`ticketMessages/${ticketId}`).once('value');
                 const messages = messagesSnapshot.exists() ? messagesSnapshot.val() : {};
                 const messagesArray = Object.entries(messages)
-                    .map(([timestamp, msg]) => ({ timestamp: parseInt(timestamp), ...msg }))
+                    .map(([timestamp, msg]) => {
+                        try {
+                            return { 
+                                timestamp: parseInt(timestamp) || Date.now(), 
+                                message: msg.message || '',
+                                sender: msg.sender || 'user'
+                            };
+                        } catch (e) {
+                            console.warn('Invalid message format:', msg);
+                            return null;
+                        }
+                    })
+                    .filter(msg => msg !== null)
                     .sort((a, b) => a.timestamp - b.timestamp);
 
-                renderTicketMessages(messagesArray, messagesContainerElement);
+                renderTicketMessages(messagesArray, messagesContainer);
+                
+                // Clean up previous listener
+                if (TicketSystem.messageListener) {
+                    database.ref(`ticketMessages/${TicketSystem.currentTicketId}`).off('value', TicketSystem.messageListener);
+                }
                 
                 // Set up real-time listener
-                database.ref(`ticketMessages/${ticketId}`).on('value', (snapshot) => {
+                TicketSystem.currentTicketId = ticketId;
+                TicketSystem.messageListener = (snapshot) => {
                     const msgs = snapshot.exists() ? snapshot.val() : {};
                     const msgsArray = Object.entries(msgs)
-                        .map(([timestamp, msg]) => ({ timestamp: parseInt(timestamp), ...msg }))
+                        .map(([timestamp, msg]) => {
+                            try {
+                                return { 
+                                    timestamp: parseInt(timestamp) || Date.now(), 
+                                    message: msg.message || '',
+                                    sender: msg.sender || 'user'
+                                };
+                            } catch (e) {
+                                return null;
+                            }
+                        })
+                        .filter(msg => msg !== null)
                         .sort((a, b) => a.timestamp - b.timestamp);
-                    const container = document.getElementById('ticketMessagesContainer');
+                    
+                    const container = TicketSystem.elements.messagesContainer;
                     if (container) {
                         renderTicketMessages(msgsArray, container);
                     }
-                });
+                };
+                
+                database.ref(`ticketMessages/${ticketId}`).on('value', TicketSystem.messageListener);
 
-                window.currentViewingTicketId = ticketId;
+                // Show modal
                 modal.classList.add('active');
+                
+                // Focus reply input
+                if (TicketSystem.elements.replyInput) {
+                    setTimeout(() => TicketSystem.elements.replyInput.focus(), 100);
+                }
             } catch (error) {
                 console.error('Error loading ticket:', error);
-                alert('Error loading ticket: ' + error.message);
+                alert('Error loading ticket: ' + (error.message || 'Unknown error'));
+                if (messagesContainer) {
+                    messagesContainer.innerHTML = '<div style="color: #ef4444; text-align: center; padding: 40px;">Error loading ticket</div>';
+                }
             }
         }
 
         window.renderTicketMessages = function(messages, container) {
-            if (!container) return;
-
-            if (messages.length === 0) {
+            if (!container) {
+                console.warn('renderTicketMessages: container is null');
+                return;
+            }
+            
+            if (!Array.isArray(messages) || messages.length === 0) {
                 container.innerHTML = '<div style="color: #888; text-align: center; padding: 40px;">No messages yet</div>';
                 return;
             }
 
-            const html = messages.map(msg => {
-                const date = new Date(msg.timestamp);
-                const isUser = msg.sender === 'user';
-                return `
-                    <div class="ticket-message ${isUser ? 'user' : 'admin'}">
-                        <div class="ticket-message-header">${isUser ? 'You' : 'Admin'} • ${date.toLocaleString()}</div>
-                        <div class="ticket-message-text">${escapeHtml(msg.message)}</div>
-                    </div>
-                `;
-            }).join('');
+            try {
+                const html = messages.map(msg => {
+                    if (!msg || !msg.message) {
+                        return '';
+                    }
+                    
+                    try {
+                        const date = new Date(msg.timestamp || Date.now());
+                        const isUser = msg.sender === 'user';
+                        const senderName = isUser ? 'You' : 'Admin';
+                        const messageText = escapeHtml(msg.message || '');
+                        
+                        return `
+                            <div class="ticket-message ${isUser ? 'user' : 'admin'}">
+                                <div class="ticket-message-header">${senderName} • ${date.toLocaleString()}</div>
+                                <div class="ticket-message-text">${messageText}</div>
+                            </div>
+                        `;
+                    } catch (e) {
+                        console.warn('Error rendering message:', msg, e);
+                        return '';
+                    }
+                }).filter(html => html !== '').join('');
 
-            container.innerHTML = html;
-            container.scrollTop = container.scrollHeight;
+                container.innerHTML = html || '<div style="color: #888; text-align: center; padding: 40px;">No valid messages</div>';
+                
+                // Scroll to bottom
+                setTimeout(() => {
+                    container.scrollTop = container.scrollHeight;
+                }, 50);
+            } catch (error) {
+                console.error('Error rendering messages:', error);
+                container.innerHTML = '<div style="color: #ef4444; text-align: center; padding: 40px;">Error displaying messages</div>';
+            }
         }
 
         window.closeTicketViewModal = function() {
-            const modal = document.getElementById('ticketViewModal');
-            if (window.currentViewingTicketId) {
-                database.ref(`ticketMessages/${window.currentViewingTicketId}`).off();
+            // Clean up listener
+            if (TicketSystem.currentTicketId && TicketSystem.messageListener && database) {
+                try {
+                    database.ref(`ticketMessages/${TicketSystem.currentTicketId}`).off('value', TicketSystem.messageListener);
+                } catch (e) {
+                    console.warn('Error removing listener:', e);
+                }
             }
-            window.currentViewingTicketId = null;
-            modal.classList.remove('active');
+            
+            TicketSystem.currentTicketId = null;
+            TicketSystem.messageListener = null;
+            
+            // Close modal
+            if (TicketSystem.elements.viewModal) {
+                TicketSystem.elements.viewModal.classList.remove('active');
+            }
+            
+            // Clear reply input
+            if (TicketSystem.elements.replyInput) {
+                TicketSystem.elements.replyInput.value = '';
+            }
         }
 
         window.sendTicketMessage = async function() {
-            const input = document.getElementById('ticketReplyInput');
+            if (!TicketSystem.elements.replyInput) {
+                TicketSystem.init();
+            }
+            
+            const input = TicketSystem.elements.replyInput;
+            if (!input) {
+                alert('Reply input not found');
+                return;
+            }
+            
             const message = input.value.trim();
-            const ticketId = window.currentViewingTicketId;
+            const ticketId = TicketSystem.currentTicketId;
 
-            if (!message || !ticketId) return;
+            if (!message) {
+                alert('Please enter a message');
+                return;
+            }
+            
+            if (!ticketId) {
+                alert('No ticket selected');
+                return;
+            }
 
             if (!firebaseInitialized || !database) {
-                alert('Firebase not initialized');
+                alert('Firebase not initialized. Please refresh the page.');
                 return;
             }
 
             try {
+                // Disable input during send
+                input.disabled = true;
+                const sendBtn = document.getElementById('ticketSendBtn');
+                if (sendBtn) {
+                    sendBtn.disabled = true;
+                    sendBtn.textContent = 'Sending...';
+                }
+                
                 const messageData = {
                     ticketId,
                     message,
@@ -4920,10 +5131,22 @@
                 await database.ref(`ticketMessages/${ticketId}/${Date.now()}`).set(messageData);
                 await database.ref(`tickets/${ticketId}/updatedAt`).set(Date.now());
 
+                // Clear input
                 input.value = '';
+                
+                // Refresh ticket list to show updated timestamp
+                await loadUserTickets();
             } catch (error) {
                 console.error('Error sending message:', error);
-                alert('Failed to send message: ' + error.message);
+                alert('Failed to send message: ' + (error.message || 'Unknown error'));
+            } finally {
+                // Re-enable input
+                input.disabled = false;
+                const sendBtn = document.getElementById('ticketSendBtn');
+                if (sendBtn) {
+                    sendBtn.disabled = false;
+                    sendBtn.textContent = 'Send';
+                }
             }
         }
 
