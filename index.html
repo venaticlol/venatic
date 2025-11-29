@@ -1018,12 +1018,19 @@
             right: 0;
             bottom: 0;
             background: rgba(0, 0, 0, 0.95);
+            backdrop-filter: blur(10px);
             z-index: 10000;
             display: none;
             align-items: center;
             justify-content: center;
             padding: 20px;
             overflow-y: auto;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
         }
 
         .ticket-modal.active {
@@ -1031,112 +1038,342 @@
         }
 
         .ticket-modal-content {
-            background: #0a0a0a;
-            border: 1px solid #1a1a1a;
-            border-radius: 4px;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
             width: 100%;
             max-width: 700px;
             max-height: 90vh;
             display: flex;
             flex-direction: column;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            animation: slideUp 0.3s ease;
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(20px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
         }
 
         .ticket-modal-header {
-            padding: 24px;
-            border-bottom: 1px solid #1a1a1a;
+            padding: 28px 32px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
             display: flex;
             justify-content: space-between;
             align-items: center;
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(34, 197, 94, 0.1) 100%);
+        }
+
+        .ticket-modal-header h3 {
+            background: linear-gradient(135deg, #3b82f6 0%, #22c55e 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-size: 24px;
+            font-weight: 700;
+            margin: 0;
+        }
+
+        .ticket-modal-header button {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            color: #e5e5e5;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 8px 12px;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .ticket-modal-header button:hover {
+            background: rgba(239, 68, 68, 0.2);
+            border-color: rgba(239, 68, 68, 0.4);
+            transform: rotate(90deg);
         }
 
         .ticket-modal-body {
-            padding: 24px;
+            padding: 32px;
             flex: 1;
             overflow-y: auto;
         }
 
+        .ticket-form-group {
+            margin-bottom: 24px;
+        }
+
+        .ticket-form-label {
+            display: block;
+            color: #e5e5e5;
+            margin-bottom: 10px;
+            font-weight: 600;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .ticket-input, .ticket-textarea {
+            width: 100%;
+            padding: 14px 18px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            color: #e5e5e5;
+            font-size: 15px;
+            font-family: inherit;
+            transition: all 0.3s ease;
+        }
+
+        .ticket-input:focus, .ticket-textarea:focus {
+            outline: none;
+            border-color: #3b82f6;
+            background: rgba(59, 130, 246, 0.1);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .ticket-textarea {
+            resize: vertical;
+            min-height: 120px;
+        }
+
         .ticket-messages {
-            min-height: 300px;
-            max-height: 400px;
+            min-height: 350px;
+            max-height: 450px;
             overflow-y: auto;
-            margin-bottom: 20px;
-            padding: 16px;
-            background: #000;
-            border: 1px solid #1a1a1a;
-            border-radius: 4px;
+            margin-bottom: 24px;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+        }
+
+        .ticket-messages::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .ticket-messages::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .ticket-messages::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 3px;
         }
 
         .ticket-message {
             margin-bottom: 16px;
-            padding: 12px;
-            border-radius: 4px;
-            max-width: 80%;
+            padding: 16px;
+            border-radius: 12px;
+            max-width: 75%;
+            animation: messageSlide 0.3s ease;
+            position: relative;
+        }
+
+        @keyframes messageSlide {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         .ticket-message.user {
-            background: rgba(59, 130, 246, 0.2);
-            border: 1px solid rgba(59, 130, 246, 0.3);
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.25) 0%, rgba(59, 130, 246, 0.15) 100%);
+            border: 1px solid rgba(59, 130, 246, 0.4);
             margin-left: auto;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
         }
 
         .ticket-message.admin {
-            background: rgba(34, 197, 94, 0.2);
-            border: 1px solid rgba(34, 197, 94, 0.3);
+            background: linear-gradient(135deg, rgba(34, 197, 94, 0.25) 0%, rgba(34, 197, 94, 0.15) 100%);
+            border: 1px solid rgba(34, 197, 94, 0.4);
+            box-shadow: 0 4px 12px rgba(34, 197, 94, 0.2);
         }
 
         .ticket-message-header {
-            font-size: 11px;
-            color: #888;
-            margin-bottom: 4px;
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: 8px;
             font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         .ticket-message-text {
             color: #e5e5e5;
-            font-size: 14px;
-            line-height: 1.5;
+            font-size: 15px;
+            line-height: 1.6;
+            word-wrap: break-word;
+        }
+
+        .ticket-message-image {
+            margin-top: 12px;
+            border-radius: 8px;
+            overflow: hidden;
+            max-width: 100%;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+
+        .ticket-message-image:hover {
+            transform: scale(1.02);
+        }
+
+        .ticket-message-image img {
+            width: 100%;
+            height: auto;
+            display: block;
+            max-width: 400px;
         }
 
         .ticket-input-area {
             display: flex;
             gap: 12px;
+            align-items: flex-end;
         }
 
-        .ticket-input {
+        .ticket-input-wrapper {
             flex: 1;
-            padding: 12px;
-            background: #1a1a1a;
-            border: 1px solid #4a4a4a;
-            border-radius: 4px;
-            color: #e5e5e5;
+            position: relative;
+        }
+
+        .ticket-image-preview {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+        }
+
+        .ticket-image-preview-item {
+            position: relative;
+            width: 80px;
+            height: 80px;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 2px solid rgba(59, 130, 246, 0.4);
+        }
+
+        .ticket-image-preview-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .ticket-image-preview-item button {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: rgba(239, 68, 68, 0.9);
+            border: none;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            color: white;
+            cursor: pointer;
             font-size: 14px;
-            font-family: inherit;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
         }
 
-        .ticket-input:focus {
-            outline: none;
-            border-color: #6a6a6a;
+        .ticket-image-preview-item button:hover {
+            background: rgba(239, 68, 68, 1);
+            transform: scale(1.1);
         }
 
-        .ticket-send-btn {
-            padding: 12px 24px;
-            background: #1a1a1a;
-            border: 1px solid #4a4a4a;
-            border-radius: 4px;
-            color: #e5e5e5;
+        .ticket-attach-btn {
+            padding: 14px 18px;
+            background: rgba(59, 130, 246, 0.2);
+            border: 1px solid rgba(59, 130, 246, 0.4);
+            border-radius: 12px;
+            color: #3b82f6;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            white-space: nowrap;
+        }
+
+        .ticket-attach-btn:hover {
+            background: rgba(59, 130, 246, 0.3);
+            border-color: rgba(59, 130, 246, 0.6);
+            transform: translateY(-2px);
+        }
+
+        .ticket-attach-btn svg {
+            width: 18px;
+            height: 18px;
+        }
+
+        .ticket-send-btn {
+            padding: 14px 28px;
+            background: linear-gradient(135deg, #3b82f6 0%, #22c55e 100%);
+            border: none;
+            border-radius: 12px;
+            color: white;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
         }
 
         .ticket-send-btn:hover:not(:disabled) {
-            background: #222222;
-            border-color: #6a6a6a;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+        }
+
+        .ticket-send-btn:active:not(:disabled) {
+            transform: translateY(0);
         }
 
         .ticket-send-btn:disabled {
             opacity: 0.5;
             cursor: not-allowed;
+            transform: none;
+        }
+
+        .ticket-btn-secondary {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #e5e5e5;
+        }
+
+        .ticket-btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .ticket-error {
+            color: #ef4444;
+            font-size: 13px;
+            margin-bottom: 16px;
+            padding: 12px;
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            border-radius: 8px;
+            display: none;
+        }
+
+        input[type="file"] {
+            display: none;
         }
 
         .changelog-list li {
@@ -3916,22 +4153,33 @@
     <div class="ticket-modal" id="ticketCreationModal">
         <div class="ticket-modal-content">
             <div class="ticket-modal-header">
-                <h3 style="color: #e5e5e5; margin: 0;">Create Support Ticket</h3>
-                <button onclick="closeTicketModal()" style="background: none; border: none; color: #888; font-size: 24px; cursor: pointer; padding: 0; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;">×</button>
+                <h3>Create Support Ticket</h3>
+                <button onclick="closeTicketModal()">×</button>
             </div>
             <div class="ticket-modal-body">
-                <div class="form-group" style="margin-bottom: 20px;">
-                    <label style="display: block; color: #e5e5e5; margin-bottom: 8px; font-weight: 600;">Subject *</label>
+                <div class="ticket-form-group">
+                    <label class="ticket-form-label">Subject *</label>
                     <input type="text" id="ticketSubjectInput" class="ticket-input" placeholder="What do you need help with?" maxlength="200">
                 </div>
-                <div class="form-group" style="margin-bottom: 20px;">
-                    <label style="display: block; color: #e5e5e5; margin-bottom: 8px; font-weight: 600;">Message *</label>
-                    <textarea id="ticketMessageInput" class="ticket-input" rows="6" placeholder="Describe your issue in detail..." maxlength="2000"></textarea>
+                <div class="ticket-form-group">
+                    <label class="ticket-form-label">Message *</label>
+                    <textarea id="ticketMessageInput" class="ticket-textarea" rows="6" placeholder="Describe your issue in detail..." maxlength="2000"></textarea>
                 </div>
-                <div id="ticketError" style="color: #ef4444; font-size: 13px; margin-bottom: 16px; display: none;"></div>
-                <div style="display: flex; gap: 12px;">
+                <div class="ticket-form-group">
+                    <label class="ticket-form-label">Attachments</label>
+                    <div class="ticket-image-preview" id="ticketImagePreview"></div>
+                    <input type="file" id="ticketImageInput" accept="image/*" multiple>
+                    <button class="ticket-attach-btn" onclick="document.getElementById('ticketImageInput').click()">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                        </svg>
+                        Attach Images
+                    </button>
+                </div>
+                <div id="ticketError" class="ticket-error"></div>
+                <div style="display: flex; gap: 12px; margin-top: 24px;">
                     <button class="ticket-send-btn" onclick="createTicket()" style="flex: 1;">Create Ticket</button>
-                    <button class="ticket-send-btn" onclick="closeTicketModal()" style="flex: 1; background: rgba(74, 74, 74, 0.3);">Cancel</button>
+                    <button class="ticket-send-btn ticket-btn-secondary" onclick="closeTicketModal()" style="flex: 1;">Cancel</button>
                 </div>
             </div>
         </div>
@@ -3942,18 +4190,29 @@
         <div class="ticket-modal-content" style="max-width: 800px;">
             <div class="ticket-modal-header">
                 <div>
-                    <h3 style="color: #e5e5e5; margin: 0 0 4px 0;" id="ticketViewTitle">Ticket</h3>
-                    <div style="font-size: 12px; color: #888;" id="ticketViewId"></div>
+                    <h3 id="ticketViewTitle" style="margin: 0 0 4px 0;">Ticket</h3>
+                    <div style="font-size: 12px; color: rgba(255, 255, 255, 0.6); margin-top: 4px;" id="ticketViewId"></div>
                 </div>
-                <button onclick="closeTicketViewModal()" style="background: none; border: none; color: #888; font-size: 24px; cursor: pointer; padding: 0; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;">×</button>
+                <button onclick="closeTicketViewModal()">×</button>
             </div>
             <div class="ticket-modal-body">
                 <div class="ticket-messages" id="ticketMessagesContainer">
                     <div style="color: #888; text-align: center; padding: 40px;">Loading messages...</div>
                 </div>
-                <div class="ticket-input-area">
-                    <input type="text" id="ticketReplyInput" class="ticket-input" placeholder="Type your message..." maxlength="1000" onkeypress="if(event.key === 'Enter') sendTicketMessage()">
-                    <button class="ticket-send-btn" onclick="sendTicketMessage()" id="ticketSendBtn">Send</button>
+                <div class="ticket-form-group" style="margin-bottom: 0;">
+                    <div class="ticket-image-preview" id="ticketReplyImagePreview"></div>
+                    <div class="ticket-input-area">
+                        <div class="ticket-input-wrapper">
+                            <input type="text" id="ticketReplyInput" class="ticket-input" placeholder="Type your message..." maxlength="1000" onkeypress="if(event.key === 'Enter') sendTicketMessage()">
+                        </div>
+                        <input type="file" id="ticketReplyImageInput" accept="image/*" multiple>
+                        <button class="ticket-attach-btn" onclick="document.getElementById('ticketReplyImageInput').click()" title="Attach Images">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                            </svg>
+                        </button>
+                        <button class="ticket-send-btn" onclick="sendTicketMessage()" id="ticketSendBtn">Send</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -4707,6 +4966,7 @@
                 this.elements.creationModal.classList.add('active');
                 if (this.elements.subjectInput) this.elements.subjectInput.value = '';
                 if (this.elements.messageInput) this.elements.messageInput.value = '';
+                this.clearImages('creation');
                 if (this.elements.errorDiv) {
                     this.elements.errorDiv.style.display = 'none';
                     this.elements.errorDiv.textContent = '';
@@ -4741,9 +5001,37 @@
         
         // Initialize ticket system on page load
         if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', () => TicketSystem.init());
+            document.addEventListener('DOMContentLoaded', () => {
+                TicketSystem.init();
+                setupTicketImageHandlers();
+            });
         } else {
             TicketSystem.init();
+            setupTicketImageHandlers();
+        }
+        
+        function setupTicketImageHandlers() {
+            // Creation modal image input
+            const creationImageInput = document.getElementById('ticketImageInput');
+            if (creationImageInput) {
+                creationImageInput.addEventListener('change', (e) => {
+                    if (e.target.files && e.target.files.length > 0) {
+                        TicketSystem.handleImageUpload('creation', e.target.files);
+                        e.target.value = ''; // Reset input
+                    }
+                });
+            }
+            
+            // Reply image input
+            const replyImageInput = document.getElementById('ticketReplyImageInput');
+            if (replyImageInput) {
+                replyImageInput.addEventListener('change', (e) => {
+                    if (e.target.files && e.target.files.length > 0) {
+                        TicketSystem.handleImageUpload('reply', e.target.files);
+                        e.target.value = ''; // Reset input
+                    }
+                });
+            }
         }
         
         // Global functions for onclick handlers
@@ -4753,6 +5041,82 @@
         
         window.closeTicketModal = function() {
             TicketSystem.closeCreationModal();
+        };
+
+        // Image handling functions
+        TicketSystem.attachedImages = {
+            creation: [],
+            reply: []
+        };
+
+        TicketSystem.handleImageUpload = function(type, files) {
+            const maxSize = 5 * 1024 * 1024; // 5MB
+            const maxImages = 5;
+            const imageArray = type === 'creation' ? this.attachedImages.creation : this.attachedImages.reply;
+            const previewId = type === 'creation' ? 'ticketImagePreview' : 'ticketReplyImagePreview';
+            
+            if (imageArray.length + files.length > maxImages) {
+                alert(`Maximum ${maxImages} images allowed`);
+                return;
+            }
+            
+            Array.from(files).forEach(file => {
+                if (!file.type.startsWith('image/')) {
+                    alert('Only image files are allowed');
+                    return;
+                }
+                
+                if (file.size > maxSize) {
+                    alert(`Image ${file.name} is too large. Maximum size is 5MB`);
+                    return;
+                }
+                
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    imageArray.push({
+                        name: file.name,
+                        data: e.target.result,
+                        size: file.size
+                    });
+                    this.updateImagePreview(type);
+                };
+                reader.readAsDataURL(file);
+            });
+        };
+
+        TicketSystem.updateImagePreview = function(type) {
+            const previewId = type === 'creation' ? 'ticketImagePreview' : 'ticketReplyImagePreview';
+            const preview = document.getElementById(previewId);
+            if (!preview) return;
+            
+            const imageArray = type === 'creation' ? this.attachedImages.creation : this.attachedImages.reply;
+            
+            if (imageArray.length === 0) {
+                preview.innerHTML = '';
+                return;
+            }
+            
+            preview.innerHTML = imageArray.map((img, index) => `
+                <div class="ticket-image-preview-item">
+                    <img src="${img.data}" alt="${escapeHtml(img.name)}">
+                    <button onclick="TicketSystem.removeImage('${type}', ${index})">×</button>
+                </div>
+            `).join('');
+        };
+
+        TicketSystem.removeImage = function(type, index) {
+            const imageArray = type === 'creation' ? this.attachedImages.creation : this.attachedImages.reply;
+            imageArray.splice(index, 1);
+            this.updateImagePreview(type);
+        };
+
+        TicketSystem.clearImages = function(type) {
+            if (type === 'creation') {
+                this.attachedImages.creation = [];
+            } else {
+                this.attachedImages.reply = [];
+            }
+            this.updateImagePreview(type);
         };
 
         window.createTicket = async function() {
@@ -4770,8 +5134,8 @@
                 return;
             }
 
-            if (!message) {
-                TicketSystem.showError('Message is required');
+            if (!message && TicketSystem.attachedImages.creation.length === 0) {
+                TicketSystem.showError('Message or at least one image is required');
                 return;
             }
 
@@ -4813,9 +5177,13 @@
                 // Create initial message
                 const messageData = {
                     ticketId,
-                    message,
+                    message: message || '',
                     sender: 'user',
-                    timestamp: Date.now()
+                    timestamp: Date.now(),
+                    images: TicketSystem.attachedImages.creation.map(img => ({
+                        name: img.name,
+                        data: img.data
+                    }))
                 };
 
                 await database.ref(`ticketMessages/${ticketId}/${Date.now()}`).set(messageData);
@@ -4826,6 +5194,11 @@
                     storedTickets.push(ticketId);
                     localStorage.setItem('user_ticket_ids', JSON.stringify(storedTickets));
                 }
+
+                // Clear images and form
+                TicketSystem.clearImages('creation');
+                if (TicketSystem.elements.subjectInput) TicketSystem.elements.subjectInput.value = '';
+                if (TicketSystem.elements.messageInput) TicketSystem.elements.messageInput.value = '';
 
                 // Success
                 TicketSystem.closeCreationModal();
@@ -5070,11 +5443,22 @@
                         const date = new Date(msg.timestamp || Date.now());
                         const isUser = msg.sender === 'user';
                         const messageText = escapeHtml(String(msg.message || ''));
+                        const images = Array.isArray(msg.images) ? msg.images : [];
+                        
+                        let imagesHtml = '';
+                        if (images.length > 0) {
+                            imagesHtml = images.map(img => `
+                                <div class="ticket-message-image">
+                                    <img src="${escapeHtml(img.data)}" alt="${escapeHtml(img.name || 'Image')}" onclick="window.openImageModal('${escapeHtml(img.data)}')">
+                                </div>
+                            `).join('');
+                        }
                         
                         return `
                             <div class="ticket-message ${isUser ? 'user' : 'admin'}">
                                 <div class="ticket-message-header">${isUser ? 'You' : 'Admin'} • ${date.toLocaleString()}</div>
-                                <div class="ticket-message-text">${messageText}</div>
+                                ${messageText ? `<div class="ticket-message-text">${messageText}</div>` : ''}
+                                ${imagesHtml}
                             </div>
                         `;
                     } catch (e) {
@@ -5090,6 +5474,14 @@
                 console.error('Error rendering messages:', error);
                 container.innerHTML = '<div style="color: #ef4444; text-align: center; padding: 40px;">Error displaying messages</div>';
             }
+        };
+        
+        window.openImageModal = function(imageSrc) {
+            const modal = document.createElement('div');
+            modal.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.95); z-index: 20000; display: flex; align-items: center; justify-content: center; cursor: pointer;';
+            modal.onclick = () => document.body.removeChild(modal);
+            modal.innerHTML = `<img src="${escapeHtml(imageSrc)}" style="max-width: 90%; max-height: 90%; border-radius: 8px; box-shadow: 0 20px 60px rgba(0,0,0,0.5);">`;
+            document.body.appendChild(modal);
         };
         
         // Setup listener
@@ -5224,8 +5616,10 @@
             if (!input) return;
             
             const message = String(input.value || '').trim();
-            if (!message) {
-                alert('Please enter a message');
+            const images = this.attachedImages.reply;
+            
+            if (!message && images.length === 0) {
+                alert('Please enter a message or attach an image');
                 return;
             }
             
@@ -5248,15 +5642,20 @@
                 
                 const messageData = {
                     ticketId: this.currentTicketId,
-                    message: message,
+                    message: message || '',
                     sender: 'user',
-                    timestamp: Date.now()
+                    timestamp: Date.now(),
+                    images: images.map(img => ({
+                        name: img.name,
+                        data: img.data
+                    }))
                 };
                 
                 await database.ref(`ticketMessages/${this.currentTicketId}/${Date.now()}`).set(messageData);
                 await database.ref(`tickets/${this.currentTicketId}/updatedAt`).set(Date.now());
                 
                 input.value = '';
+                this.clearImages('reply');
                 await loadUserTickets();
             } catch (error) {
                 console.error('Error sending message:', error);

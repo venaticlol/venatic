@@ -509,6 +509,63 @@
             resize: vertical;
             min-height: 80px;
         }
+        
+        /* Ticket Image Preview Styles */
+        .ticket-image-preview {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+        }
+        
+        .ticket-image-preview-item {
+            position: relative;
+            width: 80px;
+            height: 80px;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 2px solid rgba(59, 130, 246, 0.4);
+        }
+        
+        .ticket-image-preview-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .ticket-image-preview-item button {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: rgba(239, 68, 68, 0.9);
+            border: none;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            color: white;
+            cursor: pointer;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+        
+        .ticket-image-preview-item button:hover {
+            background: rgba(239, 68, 68, 1);
+            transform: scale(1.1);
+        }
+        
+        @keyframes messageSlide {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
 
         /* Changelog Changes List */
         .changelog-change-item {
@@ -1008,20 +1065,31 @@
         <div class="modal-content" style="max-width: 900px; max-height: 90vh; display: flex; flex-direction: column;">
             <div class="modal-header">
                 <div>
-                    <h3 id="adminTicketTitle">Ticket</h3>
-                    <div style="font-size: 12px; color: #888; margin-top: 4px;" id="adminTicketId"></div>
+                    <h3 id="adminTicketTitle" style="background: linear-gradient(135deg, #3b82f6 0%, #22c55e 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">Ticket</h3>
+                    <div style="font-size: 12px; color: rgba(255, 255, 255, 0.6); margin-top: 4px;" id="adminTicketId"></div>
                 </div>
                 <button class="modal-close" onclick="closeAdminTicketModal()">×</button>
             </div>
             <div class="modal-body" style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
-                <div id="adminTicketMessages" style="flex: 1; overflow-y: auto; padding: 16px; background: #0a0a0a; border: 1px solid #1a1a1a; border-radius: 4px; margin-bottom: 16px; min-height: 300px; max-height: 500px;">
+                <div id="adminTicketMessages" style="flex: 1; overflow-y: auto; padding: 20px; background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; margin-bottom: 16px; min-height: 350px; max-height: 500px; scrollbar-width: thin; scrollbar-color: rgba(255, 255, 255, 0.2) transparent;">
                     <div style="color: #888; text-align: center; padding: 40px;">Loading messages...</div>
                 </div>
-                <div style="display: flex; gap: 8px;">
-                    <input type="text" id="adminTicketReplyInput" class="form-input" placeholder="Type your message..." maxlength="1000" style="flex: 1;" onkeypress="if(event.key === 'Enter') sendAdminTicketMessage()">
-                    <button class="btn-action btn-view" onclick="sendAdminTicketMessage()" id="adminTicketSendBtn">Send</button>
+                <div style="margin-bottom: 12px;">
+                    <div class="ticket-image-preview" id="adminTicketImagePreview"></div>
+                    <div style="display: flex; gap: 8px; align-items: flex-end;">
+                        <div style="flex: 1; position: relative;">
+                            <input type="text" id="adminTicketReplyInput" class="form-input" placeholder="Type your message..." maxlength="1000" style="width: 100%; padding: 14px 18px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; color: #e5e5e5; font-size: 15px;" onkeypress="if(event.key === 'Enter') sendAdminTicketMessage()">
+                        </div>
+                        <input type="file" id="adminTicketImageInput" accept="image/*" multiple style="display: none;">
+                        <button class="ticket-attach-btn" onclick="document.getElementById('adminTicketImageInput').click()" title="Attach Images" style="padding: 14px 18px; background: rgba(59, 130, 246, 0.2); border: 1px solid rgba(59, 130, 246, 0.4); border-radius: 12px; color: #3b82f6; font-weight: 600; cursor: pointer; transition: all 0.3s ease; display: flex; align-items: center; gap: 8px; white-space: nowrap;">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 18px; height: 18px;">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                            </svg>
+                        </button>
+                        <button class="ticket-send-btn" onclick="sendAdminTicketMessage()" id="adminTicketSendBtn" style="padding: 14px 28px; background: linear-gradient(135deg, #3b82f6 0%, #22c55e 100%); border: none; border-radius: 12px; color: white; font-weight: 700; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);">Send</button>
+                    </div>
                 </div>
-                <div style="display: flex; gap: 8px; margin-top: 12px;">
+                <div style="display: flex; gap: 8px;">
                     <button class="admin-btn" onclick="closeAdminTicket()" id="closeTicketBtn" style="flex: 1;">Close Ticket</button>
                     <button class="admin-btn" onclick="saveTicketTranscript()" style="flex: 1; background: rgba(74, 74, 74, 0.3);">Save Transcript</button>
                     <button class="admin-btn admin-btn-danger" onclick="deleteAdminTicketFromModal()" style="flex: 1;">Delete Ticket</button>
@@ -3285,10 +3353,21 @@
                             const isUser = msg.sender === 'user';
                             const messageText = escapeHtml(String(msg.message || ''));
                             
+                            const images = Array.isArray(msg.images) ? msg.images : [];
+                            let imagesHtml = '';
+                            if (images.length > 0) {
+                                imagesHtml = images.map(img => `
+                                    <div style="margin-top: 12px; border-radius: 8px; overflow: hidden; max-width: 100%; cursor: pointer; transition: transform 0.3s ease;" onmouseover="this.style.transform='scale(1.02)'" onmouseout="this.style.transform='scale(1)'" onclick="window.openImageModal('${escapeHtml(img.data)}')">
+                                        <img src="${escapeHtml(img.data)}" alt="${escapeHtml(img.name || 'Image')}" style="width: 100%; height: auto; display: block; max-width: 400px;">
+                                    </div>
+                                `).join('');
+                            }
+                            
                             return `
-                                <div style="margin-bottom: 16px; padding: 12px; border-radius: 4px; max-width: 80%; ${isUser ? 'background: rgba(59, 130, 246, 0.2); border: 1px solid rgba(59, 130, 246, 0.3); margin-left: auto;' : 'background: rgba(34, 197, 94, 0.2); border: 1px solid rgba(34, 197, 94, 0.3);'}">
-                                    <div style="font-size: 11px; color: #888; margin-bottom: 4px; font-weight: 600;">${isUser ? 'User' : 'Admin'} • ${date.toLocaleString()}</div>
-                                    <div style="color: #e5e5e5; font-size: 14px; line-height: 1.5;">${messageText}</div>
+                                <div style="margin-bottom: 16px; padding: 16px; border-radius: 12px; max-width: 75%; animation: messageSlide 0.3s ease; ${isUser ? 'background: linear-gradient(135deg, rgba(59, 130, 246, 0.25) 0%, rgba(59, 130, 246, 0.15) 100%); border: 1px solid rgba(59, 130, 246, 0.4); margin-left: auto; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);' : 'background: linear-gradient(135deg, rgba(34, 197, 94, 0.25) 0%, rgba(34, 197, 94, 0.15) 100%); border: 1px solid rgba(34, 197, 94, 0.4); box-shadow: 0 4px 12px rgba(34, 197, 94, 0.2);'}">
+                                    <div style="font-size: 12px; color: rgba(255, 255, 255, 0.7); margin-bottom: 8px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">${isUser ? 'User' : 'Admin'} • ${date.toLocaleString()}</div>
+                                    ${messageText ? `<div style="color: #e5e5e5; font-size: 15px; line-height: 1.6; word-wrap: break-word;">${messageText}</div>` : ''}
+                                    ${imagesHtml}
                                 </div>
                             `;
                         } catch (e) {
@@ -3329,13 +3408,14 @@
                                     return {
                                         timestamp: parseInt(ts) || Date.now(),
                                         message: (msg && msg.message) ? String(msg.message) : '',
-                                        sender: (msg && msg.sender) ? String(msg.sender) : 'user'
+                                        sender: (msg && msg.sender) ? String(msg.sender) : 'user',
+                                        images: Array.isArray(msg.images) ? msg.images : []
                                     };
                                 } catch (e) {
                                     return null;
                                 }
                             })
-                            .filter(m => m !== null && m.message)
+                            .filter(m => m !== null && (m.message || (Array.isArray(m.images) && m.images.length > 0)))
                             .sort((a, b) => a.timestamp - b.timestamp);
                         
                         this.renderMessages(msgsArray, container);
@@ -3351,14 +3431,79 @@
                 }
             },
             
+            // Image handling
+            attachedImages: [],
+            
+            handleImageUpload: function(files) {
+                const maxSize = 5 * 1024 * 1024; // 5MB
+                const maxImages = 5;
+                
+                if (this.attachedImages.length + files.length > maxImages) {
+                    alert(`Maximum ${maxImages} images allowed`);
+                    return;
+                }
+                
+                Array.from(files).forEach(file => {
+                    if (!file.type.startsWith('image/')) {
+                        alert('Only image files are allowed');
+                        return;
+                    }
+                    
+                    if (file.size > maxSize) {
+                        alert(`Image ${file.name} is too large. Maximum size is 5MB`);
+                        return;
+                    }
+                    
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        this.attachedImages.push({
+                            name: file.name,
+                            data: e.target.result,
+                            size: file.size
+                        });
+                        this.updateImagePreview();
+                    };
+                    reader.readAsDataURL(file);
+                });
+            },
+            
+            updateImagePreview: function() {
+                const preview = document.getElementById('adminTicketImagePreview');
+                if (!preview) return;
+                
+                if (this.attachedImages.length === 0) {
+                    preview.innerHTML = '';
+                    return;
+                }
+                
+                preview.innerHTML = this.attachedImages.map((img, index) => `
+                    <div class="ticket-image-preview-item">
+                        <img src="${img.data}" alt="${escapeHtml(img.name)}">
+                        <button onclick="TicketSystemAdmin.removeImage(${index})">×</button>
+                    </div>
+                `).join('');
+            },
+            
+            removeImage: function(index) {
+                this.attachedImages.splice(index, 1);
+                this.updateImagePreview();
+            },
+            
+            clearImages: function() {
+                this.attachedImages = [];
+                this.updateImagePreview();
+            },
+            
             // Send message
             sendMessage: async function() {
                 const input = this.getElement('adminTicketReplyInput');
                 if (!input) return;
                 
                 const message = String(input.value || '').trim();
-                if (!message) {
-                    alert('Please enter a message');
+                const images = this.attachedImages;
+                
+                if (!message && images.length === 0) {
+                    alert('Please enter a message or attach an image');
                     return;
                 }
                 
@@ -3381,15 +3526,20 @@
                     
                     const messageData = {
                         ticketId: this.currentTicketId,
-                        message: message,
+                        message: message || '',
                         sender: 'admin',
-                        timestamp: Date.now()
+                        timestamp: Date.now(),
+                        images: images.map(img => ({
+                            name: img.name,
+                            data: img.data
+                        }))
                     };
                     
                     await window.database.ref(`ticketMessages/${this.currentTicketId}/${Date.now()}`).set(messageData);
                     await window.database.ref(`tickets/${this.currentTicketId}/updatedAt`).set(Date.now());
                     
                     input.value = '';
+                    this.clearImages();
                     await loadTickets(); // Refresh list
                 } catch (error) {
                     console.error('Error sending message:', error);
@@ -3636,8 +3786,39 @@
         
         window.deleteAdminTicketFromModal = function() {
             if (window.TicketSystemAdmin) {
-                window.TicketSystemAdmin.deleteTicket();
+                window.TicketSystemAdmin.delete(window.TicketSystemAdmin.currentTicketId);
             }
+        };
+        
+        // Setup image upload handler for admin
+        function setupAdminImageHandler() {
+            const adminImageInput = document.getElementById('adminTicketImageInput');
+            if (adminImageInput) {
+                adminImageInput.addEventListener('change', (e) => {
+                    if (e.target.files && e.target.files.length > 0) {
+                        if (window.TicketSystemAdmin) {
+                            window.TicketSystemAdmin.handleImageUpload(e.target.files);
+                            e.target.value = ''; // Reset input
+                        }
+                    }
+                });
+            }
+        }
+        
+        // Initialize image handler
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', setupAdminImageHandler);
+        } else {
+            setupAdminImageHandler();
+        }
+        
+        // Image modal viewer
+        window.openImageModal = function(imageSrc) {
+            const modal = document.createElement('div');
+            modal.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.95); z-index: 20000; display: flex; align-items: center; justify-content: center; cursor: pointer;';
+            modal.onclick = () => document.body.removeChild(modal);
+            modal.innerHTML = `<img src="${escapeHtml(imageSrc)}" style="max-width: 90%; max-height: 90%; border-radius: 8px; box-shadow: 0 20px 60px rgba(0,0,0,0.5);">`;
+            document.body.appendChild(modal);
         };
         
         // Old ticket functions removed - using TicketSystemAdmin class above
