@@ -1004,27 +1004,27 @@
     </div>
 
     <!-- Admin Ticket View Modal -->
-    <div class="modal" id="adminTicketModal" style="display: none;">
+    <div class="modal" id="adminTicketModal">
         <div class="modal-content" style="max-width: 900px; max-height: 90vh; display: flex; flex-direction: column;">
             <div class="modal-header">
                 <div>
                     <h3 id="adminTicketTitle">Ticket</h3>
                     <div style="font-size: 12px; color: #888; margin-top: 4px;" id="adminTicketId"></div>
                 </div>
-                <button class="modal-close" onclick="TicketSystemAdmin.closeModal()">×</button>
+                <button class="modal-close" onclick="closeAdminTicketModal()">×</button>
             </div>
             <div class="modal-body" style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
                 <div id="adminTicketMessages" style="flex: 1; overflow-y: auto; padding: 16px; background: #0a0a0a; border: 1px solid #1a1a1a; border-radius: 4px; margin-bottom: 16px; min-height: 300px; max-height: 500px;">
                     <div style="color: #888; text-align: center; padding: 40px;">Loading messages...</div>
                 </div>
                 <div style="display: flex; gap: 8px;">
-                    <input type="text" id="adminTicketReplyInput" class="form-input" placeholder="Type your message..." maxlength="1000" style="flex: 1;" onkeypress="if(event.key === 'Enter') TicketSystemAdmin.sendMessage()">
-                    <button class="btn-action btn-view" onclick="TicketSystemAdmin.sendMessage()" id="adminTicketSendBtn">Send</button>
+                    <input type="text" id="adminTicketReplyInput" class="form-input" placeholder="Type your message..." maxlength="1000" style="flex: 1;" onkeypress="if(event.key === 'Enter') sendAdminTicketMessage()">
+                    <button class="btn-action btn-view" onclick="sendAdminTicketMessage()" id="adminTicketSendBtn">Send</button>
                 </div>
                 <div style="display: flex; gap: 8px; margin-top: 12px;">
-                    <button class="admin-btn" onclick="TicketSystemAdmin.toggleStatus()" id="closeTicketBtn" style="flex: 1;">Close Ticket</button>
-                    <button class="admin-btn" onclick="TicketSystemAdmin.saveTranscript()" style="flex: 1; background: rgba(74, 74, 74, 0.3);">Save Transcript</button>
-                    <button class="admin-btn admin-btn-danger" onclick="TicketSystemAdmin.deleteTicket()" style="flex: 1;">Delete Ticket</button>
+                    <button class="admin-btn" onclick="closeAdminTicket()" id="closeTicketBtn" style="flex: 1;">Close Ticket</button>
+                    <button class="admin-btn" onclick="saveTicketTranscript()" style="flex: 1; background: rgba(74, 74, 74, 0.3);">Save Transcript</button>
+                    <button class="admin-btn admin-btn-danger" onclick="deleteAdminTicketFromModal()" style="flex: 1;">Delete Ticket</button>
                 </div>
             </div>
         </div>
@@ -1056,33 +1056,6 @@
                 <div style="display: flex; gap: 12px; margin-top: 20px;">
                     <button class="admin-btn admin-btn-primary" onclick="saveMaintenanceSettings()" style="flex: 1;">Save Settings</button>
                     <button class="admin-btn" onclick="closeMaintenanceModal()" style="flex: 1; background: rgba(74, 74, 74, 0.3);">Cancel</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Admin Ticket View Modal -->
-    <div class="modal" id="adminTicketModal" style="display: none;">
-        <div class="modal-content" style="max-width: 900px; max-height: 90vh; display: flex; flex-direction: column;">
-            <div class="modal-header">
-                <div>
-                    <h3 id="adminTicketTitle">Ticket</h3>
-                    <div style="font-size: 12px; color: #888; margin-top: 4px;" id="adminTicketId"></div>
-                </div>
-                <button class="modal-close" onclick="closeAdminTicketModal()">×</button>
-            </div>
-            <div class="modal-body" style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
-                <div id="adminTicketMessages" style="flex: 1; overflow-y: auto; padding: 16px; background: #0a0a0a; border: 1px solid #1a1a1a; border-radius: 4px; margin-bottom: 16px; min-height: 300px; max-height: 500px;">
-                    <div style="color: #888; text-align: center; padding: 40px;">Loading messages...</div>
-                </div>
-                <div style="display: flex; gap: 8px;">
-                    <input type="text" id="adminTicketReplyInput" class="form-input" placeholder="Type your message..." maxlength="1000" style="flex: 1;" onkeypress="if(event.key === 'Enter') sendAdminTicketMessage()">
-                    <button class="btn-action btn-view" onclick="sendAdminTicketMessage()" id="adminTicketSendBtn">Send</button>
-                </div>
-                <div style="display: flex; gap: 8px; margin-top: 12px;">
-                    <button class="admin-btn" onclick="closeAdminTicket()" id="closeTicketBtn" style="flex: 1;">Close Ticket</button>
-                    <button class="admin-btn" onclick="saveTicketTranscript()" style="flex: 1; background: rgba(74, 74, 74, 0.3);">Save Transcript</button>
-                    <button class="admin-btn admin-btn-danger" onclick="deleteAdminTicketFromModal()" style="flex: 1;">Delete Ticket</button>
                 </div>
             </div>
         </div>
@@ -3159,8 +3132,8 @@
                             <td>${updatedDate.toLocaleString()}</td>
                             <td>
                                 <div class="action-buttons">
-                                    <button class="btn-action btn-view" onclick="TicketSystemAdmin.view('${ticket.id}')">View</button>
-                                    <button class="btn-action btn-delete" onclick="TicketSystemAdmin.delete('${ticket.id}')" style="background: rgba(239, 68, 68, 0.2); border-color: rgba(239, 68, 68, 0.3); color: #ef4444;">Delete</button>
+                                    <button class="btn-action btn-view" onclick="viewAdminTicket('${ticket.id}')">View</button>
+                                    <button class="btn-action btn-delete" onclick="deleteAdminTicket('${ticket.id}')" style="background: rgba(239, 68, 68, 0.2); border-color: rgba(239, 68, 68, 0.3); color: #ef4444;">Delete</button>
                                 </div>
                             </td>
                         </tr>
@@ -3178,7 +3151,7 @@
         // ============================================
         // NEW TICKET SYSTEM (ADMIN) - GUARANTEED 0 ERRORS
         // ============================================
-        const TicketSystemAdmin = {
+        window.TicketSystemAdmin = {
             currentTicketId: null,
             messageListener: null,
             
@@ -3211,8 +3184,7 @@
                 
                 try {
                     // Show modal and loading state
-                    modal.style.display = 'flex';
-                modal.classList.add('active');
+                    modal.classList.add('active');
                     const messagesContainer = this.getElement('adminTicketMessages');
                     if (messagesContainer) {
                         messagesContainer.innerHTML = '<div style="color: #888; text-align: center; padding: 40px;">Loading ticket...</div>';
@@ -3571,7 +3543,7 @@
             // Close modal
             closeModal: function() {
                 // Clean up listener
-                if (this.messageListener && this.currentTicketId) {
+                if (this.messageListener && this.currentTicketId && database) {
                     try {
                         database.ref(`ticketMessages/${this.currentTicketId}`).off('value', this.messageListener);
                     } catch (e) {
@@ -3584,7 +3556,7 @@
                 
                 const modal = this.getElement('adminTicketModal');
                 if (modal) {
-                    modal.style.display = 'none';
+                    modal.classList.remove('active');
                 }
                 
                 const input = this.getElement('adminTicketReplyInput');
@@ -3594,33 +3566,69 @@
             }
         };
         
-        // Legacy function for backward compatibility
+        // Global wrapper functions for onclick handlers
         window.viewAdminTicket = function(ticketId) {
-            TicketSystemAdmin.view(ticketId);
+            try {
+                if (!ticketId) {
+                    alert('Invalid ticket ID');
+                    return;
+                }
+                if (!window.TicketSystemAdmin) {
+                    alert('Ticket system not initialized. Please refresh the page.');
+                    return;
+                }
+                window.TicketSystemAdmin.view(ticketId);
+            } catch (error) {
+                console.error('Error in viewAdminTicket:', error);
+                alert('Error opening ticket: ' + (error.message || 'Unknown error'));
+            }
         };
         
         window.deleteAdminTicket = function(ticketId) {
-            TicketSystemAdmin.delete(ticketId);
+            try {
+                if (!ticketId) {
+                    alert('Invalid ticket ID');
+                    return;
+                }
+                if (!window.TicketSystemAdmin) {
+                    alert('Ticket system not initialized. Please refresh the page.');
+                    return;
+                }
+                window.TicketSystemAdmin.delete(ticketId);
+            } catch (error) {
+                console.error('Error in deleteAdminTicket:', error);
+                alert('Error deleting ticket: ' + (error.message || 'Unknown error'));
+            }
         };
         
         window.closeAdminTicketModal = function() {
-            TicketSystemAdmin.closeModal();
+            if (window.TicketSystemAdmin) {
+                window.TicketSystemAdmin.closeModal();
+            }
         };
         
         window.sendAdminTicketMessage = function() {
-            TicketSystemAdmin.sendMessage();
+            if (window.TicketSystemAdmin) {
+                window.TicketSystemAdmin.sendMessage();
+            }
         };
         
         window.closeAdminTicket = function() {
-            TicketSystemAdmin.toggleStatus();
+            if (window.TicketSystemAdmin) {
+                window.TicketSystemAdmin.toggleStatus();
+            }
         };
         
         window.saveTicketTranscript = function() {
-            TicketSystemAdmin.saveTranscript();
+            if (window.TicketSystemAdmin) {
+                window.TicketSystemAdmin.saveTranscript();
+            }
         };
         
         window.deleteAdminTicketFromModal = function() {
-            TicketSystemAdmin.deleteTicket();
+            if (window.TicketSystemAdmin) {
+                window.TicketSystemAdmin.deleteTicket();
+            }
         };
         
         // Old ticket functions removed - using TicketSystemAdmin class above
