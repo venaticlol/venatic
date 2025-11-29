@@ -3865,6 +3865,53 @@
         </div>
     </section>
 
+    <!-- Ticket Creation Modal -->
+    <div class="ticket-modal" id="ticketCreationModal">
+        <div class="ticket-modal-content">
+            <div class="ticket-modal-header">
+                <h3 style="color: #e5e5e5; margin: 0;">Create Support Ticket</h3>
+                <button onclick="closeTicketModal()" style="background: none; border: none; color: #888; font-size: 24px; cursor: pointer; padding: 0; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;">×</button>
+            </div>
+            <div class="ticket-modal-body">
+                <div class="form-group" style="margin-bottom: 20px;">
+                    <label style="display: block; color: #e5e5e5; margin-bottom: 8px; font-weight: 600;">Subject *</label>
+                    <input type="text" id="ticketSubjectInput" class="ticket-input" placeholder="What do you need help with?" maxlength="200">
+                </div>
+                <div class="form-group" style="margin-bottom: 20px;">
+                    <label style="display: block; color: #e5e5e5; margin-bottom: 8px; font-weight: 600;">Message *</label>
+                    <textarea id="ticketMessageInput" class="ticket-input" rows="6" placeholder="Describe your issue in detail..." maxlength="2000"></textarea>
+                </div>
+                <div id="ticketError" style="color: #ef4444; font-size: 13px; margin-bottom: 16px; display: none;"></div>
+                <div style="display: flex; gap: 12px;">
+                    <button class="ticket-send-btn" onclick="createTicket()" style="flex: 1;">Create Ticket</button>
+                    <button class="ticket-send-btn" onclick="closeTicketModal()" style="flex: 1; background: rgba(74, 74, 74, 0.3);">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ticket View Modal -->
+    <div class="ticket-modal" id="ticketViewModal">
+        <div class="ticket-modal-content" style="max-width: 800px;">
+            <div class="ticket-modal-header">
+                <div>
+                    <h3 style="color: #e5e5e5; margin: 0 0 4px 0;" id="ticketViewTitle">Ticket</h3>
+                    <div style="font-size: 12px; color: #888;" id="ticketViewId"></div>
+                </div>
+                <button onclick="closeTicketViewModal()" style="background: none; border: none; color: #888; font-size: 24px; cursor: pointer; padding: 0; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;">×</button>
+            </div>
+            <div class="ticket-modal-body">
+                <div class="ticket-messages" id="ticketMessagesContainer">
+                    <div style="color: #888; text-align: center; padding: 40px;">Loading messages...</div>
+                </div>
+                <div class="ticket-input-area">
+                    <input type="text" id="ticketReplyInput" class="ticket-input" placeholder="Type your message..." maxlength="1000" onkeypress="if(event.key === 'Enter') sendTicketMessage()">
+                    <button class="ticket-send-btn" onclick="sendTicketMessage()" id="ticketSendBtn">Send</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Rating Section -->
     <section class="rating-section">
         <div class="container">
@@ -4564,17 +4611,29 @@
         // SUPPORT TICKETS FUNCTIONS
         // ============================================
         window.openTicketModal = function() {
-            document.getElementById('ticketCreationModal').classList.add('active');
-            document.getElementById('ticketSubjectInput').value = '';
-            document.getElementById('ticketMessageInput').value = '';
-            document.getElementById('ticketError').style.display = 'none';
+            const modal = document.getElementById('ticketCreationModal');
+            if (!modal) {
+                console.error('Ticket creation modal not found');
+                alert('Error: Ticket modal not found. Please refresh the page.');
+                return;
+            }
+            modal.classList.add('active');
+            const subjectInput = document.getElementById('ticketSubjectInput');
+            const messageInput = document.getElementById('ticketMessageInput');
+            const errorDiv = document.getElementById('ticketError');
+            if (subjectInput) subjectInput.value = '';
+            if (messageInput) messageInput.value = '';
+            if (errorDiv) errorDiv.style.display = 'none';
         }
 
-        function closeTicketModal() {
-            document.getElementById('ticketCreationModal').classList.remove('active');
+        window.closeTicketModal = function() {
+            const modal = document.getElementById('ticketCreationModal');
+            if (modal) {
+                modal.classList.remove('active');
+            }
         }
 
-        async function createTicket() {
+        window.createTicket = async function() {
             const subjectInput = document.getElementById('ticketSubjectInput');
             const messageInput = document.getElementById('ticketMessageInput');
             const errorDiv = document.getElementById('ticketError');
