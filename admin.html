@@ -600,6 +600,8 @@
             <button class="admin-tab" data-tab="blacklisted">🚫 Blacklisted</button>
             <button class="admin-tab" data-tab="maintenance">🔧 Maintenance</button>
             <button class="admin-tab" data-tab="backup">💾 Backup & Restore</button>
+            <button class="admin-tab" data-tab="surveys">📊 Surveys & Polls</button>
+            <button class="admin-tab" data-tab="webhooks">🔗 Discord Webhooks</button>
         </div>
 
         <!-- Announcements Tab -->
@@ -657,6 +659,24 @@
             <h2>Backup & Restore</h2>
             <div id="backupContent">
                 <div class="loading">Loading backup tools...</div>
+            </div>
+        </div>
+
+        <!-- Surveys & Polls Tab -->
+        <div class="admin-content-card" id="tabSurveys" style="display: none;">
+            <h2>Surveys & Polls Management</h2>
+            <button class="admin-btn admin-btn-primary" style="margin-bottom: 20px;" onclick="editSurvey(null)">+ Create Survey/Poll</button>
+            <div id="surveysContent">
+                <div class="loading">Loading surveys...</div>
+            </div>
+        </div>
+
+        <!-- Discord Webhooks Tab -->
+        <div class="admin-content-card" id="tabWebhooks" style="display: none;">
+            <h2>Discord Webhook Integration</h2>
+            <button class="admin-btn admin-btn-primary" style="margin-bottom: 20px;" onclick="createWebhook()">+ Create Webhook</button>
+            <div id="webhooksContent">
+                <div class="loading">Loading webhooks...</div>
             </div>
         </div>
     </div>
@@ -811,6 +831,156 @@
                 <div style="display: flex; gap: 12px; margin-top: 20px;">
                     <button class="admin-btn admin-btn-danger" onclick="saveBlacklist()" style="flex: 1;">Blacklist User</button>
                     <button class="admin-btn" onclick="closeBlacklistModal()" style="flex: 1; background: rgba(74, 74, 74, 0.3);">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Survey Editor Modal -->
+    <div class="modal" id="surveyEditorModal">
+        <div class="modal-content" style="max-width: 800px;">
+            <div class="modal-header">
+                <h3 id="surveyEditorTitle">Create Survey/Poll</h3>
+                <button class="modal-close" onclick="hideSurveyEditor()">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Title *</label>
+                    <input type="text" id="surveyTitleInput" class="form-input" placeholder="What do you think about our new feature?" maxlength="200">
+                </div>
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea id="surveyDescriptionInput" class="form-input" rows="3" placeholder="Share your thoughts..." maxlength="500"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Type *</label>
+                    <select id="surveyTypeInput" class="form-input">
+                        <option value="poll">Poll (Single Choice)</option>
+                        <option value="survey">Survey (Multiple Choice)</option>
+                        <option value="rating">Rating (1-5 Stars)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Options *</label>
+                    <div id="surveyOptionsList" style="margin-bottom: 12px;"></div>
+                    <div style="display: flex; gap: 8px;">
+                        <input type="text" id="surveyOptionInput" class="form-input" placeholder="Enter option..." style="flex: 1;" maxlength="100">
+                        <button type="button" class="btn-action btn-view" onclick="addSurveyOption()" style="white-space: nowrap;">+ Add</button>
+                    </div>
+                    <div style="font-size: 12px; color: #888; margin-top: 4px;">Add at least 2 options</div>
+                </div>
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="surveyActiveInput" checked> Active (visible on site)
+                    </label>
+                </div>
+                <div id="surveyEditorError" style="color: #ef4444; font-size: 13px; margin-bottom: 16px; display: none;"></div>
+                <div style="display: flex; gap: 12px; margin-top: 20px;">
+                    <button class="admin-btn admin-btn-primary" onclick="saveSurvey()" style="flex: 1;">Save Survey</button>
+                    <button class="admin-btn" onclick="hideSurveyEditor()" style="flex: 1; background: rgba(74, 74, 74, 0.3);">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Discord Webhook Editor Modal -->
+    <div class="modal" id="webhookEditorModal">
+        <div class="modal-content" style="max-width: 900px; max-height: 90vh; overflow-y: auto;">
+            <div class="modal-header">
+                <h3 id="webhookEditorTitle">Create Discord Webhook</h3>
+                <button class="modal-close" onclick="hideWebhookEditor()">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Webhook Name *</label>
+                    <input type="text" id="webhookNameInput" class="form-input" placeholder="My Webhook" maxlength="100">
+                </div>
+                <div class="form-group">
+                    <label>Webhook URL *</label>
+                    <input type="url" id="webhookUrlInput" class="form-input" placeholder="https://discord.com/api/webhooks/..." maxlength="500">
+                    <div style="font-size: 12px; color: #888; margin-top: 4px;">Get your webhook URL from Discord channel settings</div>
+                </div>
+                
+                <div style="border-top: 1px solid #2a2a2a; margin: 20px 0; padding-top: 20px;">
+                    <h4 style="color: #e5e5e5; margin-bottom: 16px;">Embed Builder</h4>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+                        <div>
+                            <div class="form-group">
+                                <label>Title</label>
+                                <input type="text" id="embedTitleInput" class="form-input" placeholder="Embed Title" maxlength="256">
+                            </div>
+                            <div class="form-group">
+                                <label>Description</label>
+                                <textarea id="embedDescriptionInput" class="form-input" rows="4" placeholder="Embed description..." maxlength="4096"></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label>URL (makes title clickable)</label>
+                                <input type="url" id="embedUrlInput" class="form-input" placeholder="https://..." maxlength="500">
+                            </div>
+                            <div class="form-group">
+                                <label>Color</label>
+                                <input type="color" id="embedColorInput" class="form-input" value="#5865F2" style="height: 40px;">
+                            </div>
+                        </div>
+                        <div>
+                            <div class="form-group">
+                                <label>Author Name</label>
+                                <input type="text" id="embedAuthorNameInput" class="form-input" placeholder="Author" maxlength="256">
+                            </div>
+                            <div class="form-group">
+                                <label>Author Icon URL</label>
+                                <input type="url" id="embedAuthorIconInput" class="form-input" placeholder="https://..." maxlength="500">
+                            </div>
+                            <div class="form-group">
+                                <label>Footer Text</label>
+                                <input type="text" id="embedFooterInput" class="form-input" placeholder="Footer" maxlength="2048">
+                            </div>
+                            <div class="form-group">
+                                <label>Footer Icon URL</label>
+                                <input type="url" id="embedFooterIconInput" class="form-input" placeholder="https://..." maxlength="500">
+                            </div>
+                            <div class="form-group">
+                                <label>Thumbnail URL</label>
+                                <input type="url" id="embedThumbnailInput" class="form-input" placeholder="https://..." maxlength="500">
+                            </div>
+                            <div class="form-group">
+                                <label>Image URL</label>
+                                <input type="url" id="embedImageInput" class="form-input" placeholder="https://..." maxlength="500">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Fields</label>
+                        <div id="embedFieldsList" style="margin-bottom: 12px;"></div>
+                        <button type="button" class="btn-action btn-view" onclick="addEmbedField()" style="margin-bottom: 12px;">+ Add Field</button>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Timestamp</label>
+                        <select id="embedTimestampInput" class="form-input">
+                            <option value="none">None</option>
+                            <option value="now" selected>Current Time</option>
+                            <option value="custom">Custom</option>
+                        </select>
+                        <input type="datetime-local" id="embedTimestampCustomInput" class="form-input" style="margin-top: 8px; display: none;">
+                    </div>
+                </div>
+                
+                <div style="border-top: 1px solid #2a2a2a; margin: 20px 0; padding-top: 20px;">
+                    <h4 style="color: #e5e5e5; margin-bottom: 16px;">Preview</h4>
+                    <div id="embedPreview" style="background: #2f3136; border-left: 4px solid #5865F2; padding: 16px; border-radius: 4px; margin-bottom: 20px; min-height: 100px;">
+                        <div style="color: #dcddde; font-size: 14px;">Preview will appear here...</div>
+                    </div>
+                    <button type="button" class="admin-btn" onclick="updateEmbedPreview()" style="margin-bottom: 12px;">🔄 Update Preview</button>
+                    <button type="button" class="admin-btn admin-btn-primary" onclick="testWebhook()" style="margin-bottom: 12px;">📤 Send Test Message</button>
+                </div>
+                
+                <div id="webhookEditorError" style="color: #ef4444; font-size: 13px; margin-bottom: 16px; display: none;"></div>
+                <div style="display: flex; gap: 12px; margin-top: 20px;">
+                    <button class="admin-btn admin-btn-primary" onclick="saveWebhook()" style="flex: 1;">Save Webhook</button>
+                    <button class="admin-btn" onclick="hideWebhookEditor()" style="flex: 1; background: rgba(74, 74, 74, 0.3);">Cancel</button>
                 </div>
             </div>
         </div>
@@ -1779,8 +1949,14 @@
                     loadUsers();
                 } else if (tabName === 'maintenance') {
                     loadMaintenanceSettings();
-                } else if (tabName === 'backup') {
+                } else                 if (tabName === 'backup') {
                     loadBackupTools();
+                }
+                if (tabName === 'surveys') {
+                    loadSurveys();
+                }
+                if (tabName === 'webhooks') {
+                    loadWebhooks();
                 }
             });
         });
@@ -2180,6 +2356,668 @@
             if (e.target.id === 'userInfoModal') {
                 closeModal('userInfoModal');
             }
+        });
+
+        // ============================================
+        // SURVEYS & POLLS FUNCTIONS
+        // ============================================
+        let surveyOptions = [];
+
+        async function loadSurveys() {
+            const content = document.getElementById('surveysContent');
+            try {
+                const snapshot = await database.ref('surveys').once('value');
+                if (!snapshot.exists()) {
+                    content.innerHTML = '<div class="empty-state"><div class="empty-state-text">No surveys created yet</div></div>';
+                    return;
+                }
+
+                const surveys = snapshot.val();
+                const entries = Object.entries(surveys);
+
+                if (entries.length === 0) {
+                    content.innerHTML = '<div class="empty-state"><div class="empty-state-text">No surveys created yet</div></div>';
+                    return;
+                }
+
+                let html = `
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>Title</th>
+                                <th>Type</th>
+                                <th>Options</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+
+                entries.forEach(([id, survey]) => {
+                    html += `
+                        <tr>
+                            <td>${escapeHtml(survey.title || 'Untitled')}</td>
+                            <td><span class="status-badge ${survey.type === 'poll' ? 'status-active' : survey.type === 'survey' ? 'status-warning' : 'status-info'}">${survey.type || 'poll'}</span></td>
+                            <td>${survey.options ? survey.options.length : 0} options</td>
+                            <td><span class="status-badge ${survey.active ? 'status-active' : 'status-inactive'}">${survey.active ? 'Active' : 'Inactive'}</span></td>
+                            <td>
+                                <div class="action-buttons">
+                                    <button class="btn-action btn-view" onclick="editSurvey('${id}')">Edit</button>
+                                    <button class="btn-action btn-delete" onclick="deleteSurvey('${id}')">Delete</button>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                });
+
+                html += '</tbody></table>';
+                content.innerHTML = html;
+            } catch (error) {
+                console.error('Error loading surveys:', error);
+                content.innerHTML = '<div class="empty-state"><div class="empty-state-text">Error loading surveys</div></div>';
+            }
+        }
+
+        window.editSurvey = async function(id) {
+            const modal = document.getElementById('surveyEditorModal');
+            const title = document.getElementById('surveyEditorTitle');
+            const titleInput = document.getElementById('surveyTitleInput');
+            const descriptionInput = document.getElementById('surveyDescriptionInput');
+            const typeInput = document.getElementById('surveyTypeInput');
+            const activeInput = document.getElementById('surveyActiveInput');
+            const errorDiv = document.getElementById('surveyEditorError');
+
+            if (!modal) return;
+
+            surveyOptions = [];
+            titleInput.value = '';
+            descriptionInput.value = '';
+            typeInput.value = 'poll';
+            activeInput.checked = true;
+            errorDiv.style.display = 'none';
+            renderSurveyOptions();
+
+            if (id) {
+                title.textContent = 'Edit Survey/Poll';
+                try {
+                    const snapshot = await database.ref(`surveys/${id}`).once('value');
+                    if (snapshot.exists()) {
+                        const survey = snapshot.val();
+                        titleInput.value = survey.title || '';
+                        descriptionInput.value = survey.description || '';
+                        typeInput.value = survey.type || 'poll';
+                        activeInput.checked = survey.active !== false;
+                        surveyOptions = survey.options || [];
+                        renderSurveyOptions();
+                    }
+                } catch (error) {
+                    console.error('Error loading survey:', error);
+                    alert('Error loading survey: ' + error.message);
+                }
+            } else {
+                title.textContent = 'Create Survey/Poll';
+            }
+
+            modal.classList.add('active');
+            window.currentEditingSurveyId = id || null;
+        };
+
+        window.hideSurveyEditor = function() {
+            const modal = document.getElementById('surveyEditorModal');
+            if (modal) {
+                modal.classList.remove('active');
+            }
+            window.currentEditingSurveyId = null;
+        };
+
+        window.addSurveyOption = function() {
+            const input = document.getElementById('surveyOptionInput');
+            const option = input.value.trim();
+            if (option && !surveyOptions.includes(option)) {
+                surveyOptions.push(option);
+                input.value = '';
+                renderSurveyOptions();
+            }
+        };
+
+        function removeSurveyOption(index) {
+            surveyOptions.splice(index, 1);
+            renderSurveyOptions();
+        }
+
+        function renderSurveyOptions() {
+            const list = document.getElementById('surveyOptionsList');
+            if (!list) return;
+
+            if (surveyOptions.length === 0) {
+                list.innerHTML = '<div style="color: #888; font-size: 13px; padding: 12px; background: rgba(26, 26, 26, 0.5); border-radius: 4px;">No options added yet</div>';
+                return;
+            }
+
+            list.innerHTML = surveyOptions.map((option, index) => `
+                <div style="display: flex; align-items: center; gap: 8px; padding: 8px; background: rgba(26, 26, 26, 0.5); border-radius: 4px; margin-bottom: 8px;">
+                    <span style="flex: 1; color: #e5e5e5;">${escapeHtml(option)}</span>
+                    <button type="button" class="btn-action btn-delete" onclick="removeSurveyOption(${index})" style="padding: 4px 8px;">Remove</button>
+                </div>
+            `).join('');
+        }
+
+        window.saveSurvey = async function() {
+            const titleInput = document.getElementById('surveyTitleInput');
+            const descriptionInput = document.getElementById('surveyDescriptionInput');
+            const typeInput = document.getElementById('surveyTypeInput');
+            const activeInput = document.getElementById('surveyActiveInput');
+            const errorDiv = document.getElementById('surveyEditorError');
+
+            const title = titleInput.value.trim();
+            const description = descriptionInput.value.trim();
+            const type = typeInput.value;
+            const active = activeInput.checked;
+
+            if (!title) {
+                errorDiv.textContent = 'Title is required';
+                errorDiv.style.display = 'block';
+                return;
+            }
+
+            if (surveyOptions.length < 2) {
+                errorDiv.textContent = 'At least 2 options are required';
+                errorDiv.style.display = 'block';
+                return;
+            }
+
+            try {
+                const surveyData = {
+                    title,
+                    description: description || null,
+                    type,
+                    options: surveyOptions,
+                    active,
+                    createdAt: Date.now(),
+                    updatedAt: Date.now()
+                };
+
+                const id = window.currentEditingSurveyId || 'survey_' + Date.now();
+                await database.ref(`surveys/${id}`).set(surveyData);
+                alert('✅ Survey saved successfully!');
+                hideSurveyEditor();
+                loadSurveys();
+            } catch (error) {
+                console.error('Error saving survey:', error);
+                errorDiv.textContent = 'Failed to save: ' + error.message;
+                errorDiv.style.display = 'block';
+            }
+        };
+
+        window.deleteSurvey = async function(id) {
+            if (!confirm('Are you sure you want to delete this survey?')) return;
+            try {
+                await database.ref(`surveys/${id}`).remove();
+                alert('✅ Survey deleted!');
+                loadSurveys();
+            } catch (error) {
+                console.error('Error deleting survey:', error);
+                alert('❌ Failed to delete: ' + error.message);
+            }
+        };
+
+        // ============================================
+        // DISCORD WEBHOOK FUNCTIONS
+        // ============================================
+        let embedFields = [];
+
+        async function loadWebhooks() {
+            const content = document.getElementById('webhooksContent');
+            try {
+                const snapshot = await database.ref('webhooks').once('value');
+                if (!snapshot.exists()) {
+                    content.innerHTML = '<div class="empty-state"><div class="empty-state-text">No webhooks created yet</div></div>';
+                    return;
+                }
+
+                const webhooks = snapshot.val();
+                const entries = Object.entries(webhooks);
+
+                if (entries.length === 0) {
+                    content.innerHTML = '<div class="empty-state"><div class="empty-state-text">No webhooks created yet</div></div>';
+                    return;
+                }
+
+                let html = `
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>URL</th>
+                                <th>Last Sent</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+
+                entries.forEach(([id, webhook]) => {
+                    const lastSent = webhook.lastSent ? new Date(webhook.lastSent).toLocaleString() : 'Never';
+                    html += `
+                        <tr>
+                            <td>${escapeHtml(webhook.name || 'Unnamed')}</td>
+                            <td style="max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(webhook.url || '')}</td>
+                            <td>${lastSent}</td>
+                            <td>
+                                <div class="action-buttons">
+                                    <button class="btn-action btn-view" onclick="editWebhook('${id}')">Edit</button>
+                                    <button class="btn-action btn-view" onclick="testWebhookById('${id}')">Test</button>
+                                    <button class="btn-action btn-delete" onclick="deleteWebhook('${id}')">Delete</button>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                });
+
+                html += '</tbody></table>';
+                content.innerHTML = html;
+            } catch (error) {
+                console.error('Error loading webhooks:', error);
+                content.innerHTML = '<div class="empty-state"><div class="empty-state-text">Error loading webhooks</div></div>';
+            }
+        }
+
+        window.createWebhook = function() {
+            editWebhook(null);
+        };
+
+        window.editWebhook = async function(id) {
+            const modal = document.getElementById('webhookEditorModal');
+            const title = document.getElementById('webhookEditorTitle');
+            const nameInput = document.getElementById('webhookNameInput');
+            const urlInput = document.getElementById('webhookUrlInput');
+            const errorDiv = document.getElementById('webhookEditorError');
+
+            if (!modal) return;
+
+            // Reset all fields
+            nameInput.value = '';
+            urlInput.value = '';
+            document.getElementById('embedTitleInput').value = '';
+            document.getElementById('embedDescriptionInput').value = '';
+            document.getElementById('embedUrlInput').value = '';
+            document.getElementById('embedColorInput').value = '#5865F2';
+            document.getElementById('embedAuthorNameInput').value = '';
+            document.getElementById('embedAuthorIconInput').value = '';
+            document.getElementById('embedFooterInput').value = '';
+            document.getElementById('embedFooterIconInput').value = '';
+            document.getElementById('embedThumbnailInput').value = '';
+            document.getElementById('embedImageInput').value = '';
+            document.getElementById('embedTimestampInput').value = 'now';
+            document.getElementById('embedTimestampCustomInput').style.display = 'none';
+            embedFields = [];
+            renderEmbedFields();
+            errorDiv.style.display = 'none';
+            updateEmbedPreview();
+
+            if (id) {
+                title.textContent = 'Edit Discord Webhook';
+                try {
+                    const snapshot = await database.ref(`webhooks/${id}`).once('value');
+                    if (snapshot.exists()) {
+                        const webhook = snapshot.val();
+                        nameInput.value = webhook.name || '';
+                        urlInput.value = webhook.url || '';
+                        if (webhook.embed) {
+                            document.getElementById('embedTitleInput').value = webhook.embed.title || '';
+                            document.getElementById('embedDescriptionInput').value = webhook.embed.description || '';
+                            document.getElementById('embedUrlInput').value = webhook.embed.url || '';
+                            document.getElementById('embedColorInput').value = webhook.embed.color || '#5865F2';
+                            document.getElementById('embedAuthorNameInput').value = webhook.embed.author?.name || '';
+                            document.getElementById('embedAuthorIconInput').value = webhook.embed.author?.icon_url || '';
+                            document.getElementById('embedFooterInput').value = webhook.embed.footer?.text || '';
+                            document.getElementById('embedFooterIconInput').value = webhook.embed.footer?.icon_url || '';
+                            document.getElementById('embedThumbnailInput').value = webhook.embed.thumbnail?.url || '';
+                            document.getElementById('embedImageInput').value = webhook.embed.image?.url || '';
+                            if (webhook.embed.timestamp) {
+                                document.getElementById('embedTimestampInput').value = 'custom';
+                                const date = new Date(webhook.embed.timestamp);
+                                document.getElementById('embedTimestampCustomInput').value = date.toISOString().slice(0, 16);
+                                document.getElementById('embedTimestampCustomInput').style.display = 'block';
+                            } else {
+                                document.getElementById('embedTimestampInput').value = 'now';
+                            }
+                            embedFields = webhook.embed.fields || [];
+                            renderEmbedFields();
+                        }
+                        updateEmbedPreview();
+                    }
+                } catch (error) {
+                    console.error('Error loading webhook:', error);
+                    alert('Error loading webhook: ' + error.message);
+                }
+            } else {
+                title.textContent = 'Create Discord Webhook';
+            }
+
+            modal.classList.add('active');
+            window.currentEditingWebhookId = id || null;
+        };
+
+        window.hideWebhookEditor = function() {
+            const modal = document.getElementById('webhookEditorModal');
+            if (modal) {
+                modal.classList.remove('active');
+            }
+            window.currentEditingWebhookId = null;
+        };
+
+        window.addEmbedField = function() {
+            embedFields.push({ name: '', value: '', inline: false });
+            renderEmbedFields();
+        };
+
+        function removeEmbedField(index) {
+            embedFields.splice(index, 1);
+            renderEmbedFields();
+            updateEmbedPreview();
+        }
+
+        function renderEmbedFields() {
+            const list = document.getElementById('embedFieldsList');
+            if (!list) return;
+
+            if (embedFields.length === 0) {
+                list.innerHTML = '<div style="color: #888; font-size: 13px; padding: 12px; background: rgba(26, 26, 26, 0.5); border-radius: 4px;">No fields added yet</div>';
+                return;
+            }
+
+            list.innerHTML = embedFields.map((field, index) => `
+                <div style="background: rgba(26, 26, 26, 0.5); border-radius: 4px; padding: 12px; margin-bottom: 8px;">
+                    <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+                        <input type="text" class="form-input" placeholder="Field Name" value="${escapeHtml(field.name || '')}" onchange="embedFields[${index}].name = this.value; updateEmbedPreview();" style="flex: 1;" maxlength="256">
+                        <label style="display: flex; align-items: center; gap: 4px; color: #888; font-size: 12px;">
+                            <input type="checkbox" ${field.inline ? 'checked' : ''} onchange="embedFields[${index}].inline = this.checked; updateEmbedPreview();"> Inline
+                        </label>
+                        <button type="button" class="btn-action btn-delete" onclick="removeEmbedField(${index})" style="padding: 4px 8px;">Remove</button>
+                    </div>
+                    <textarea class="form-input" placeholder="Field Value" rows="2" onchange="embedFields[${index}].value = this.value; updateEmbedPreview();" maxlength="1024">${escapeHtml(field.value || '')}</textarea>
+                </div>
+            `).join('');
+        }
+
+        window.updateEmbedPreview = function() {
+            const preview = document.getElementById('embedPreview');
+            if (!preview) return;
+
+            const embed = buildEmbedObject();
+            preview.innerHTML = renderEmbedPreview(embed);
+        };
+
+        function buildEmbedObject() {
+            const timestampValue = document.getElementById('embedTimestampInput').value;
+            let timestamp = null;
+            if (timestampValue === 'now') {
+                timestamp = new Date().toISOString();
+            } else if (timestampValue === 'custom') {
+                const customDate = document.getElementById('embedTimestampCustomInput').value;
+                if (customDate) {
+                    timestamp = new Date(customDate).toISOString();
+                }
+            }
+
+            const colorHex = document.getElementById('embedColorInput').value;
+            const color = parseInt(colorHex.replace('#', ''), 16);
+
+            const embed = {
+                title: document.getElementById('embedTitleInput').value || null,
+                description: document.getElementById('embedDescriptionInput').value || null,
+                url: document.getElementById('embedUrlInput').value || null,
+                color: color,
+                timestamp: timestamp,
+                author: null,
+                footer: null,
+                thumbnail: null,
+                image: null,
+                fields: embedFields.filter(f => f.name && f.value).length > 0 ? embedFields.filter(f => f.name && f.value) : null
+            };
+
+            const authorName = document.getElementById('embedAuthorNameInput').value;
+            const authorIcon = document.getElementById('embedAuthorIconInput').value;
+            if (authorName || authorIcon) {
+                embed.author = {
+                    name: authorName || null,
+                    icon_url: authorIcon || null
+                };
+            }
+
+            const footerText = document.getElementById('embedFooterInput').value;
+            const footerIcon = document.getElementById('embedFooterIconInput').value;
+            if (footerText || footerIcon) {
+                embed.footer = {
+                    text: footerText || null,
+                    icon_url: footerIcon || null
+                };
+            }
+
+            const thumbnail = document.getElementById('embedThumbnailInput').value;
+            if (thumbnail) {
+                embed.thumbnail = { url: thumbnail };
+            }
+
+            const image = document.getElementById('embedImageInput').value;
+            if (image) {
+                embed.image = { url: image };
+            }
+
+            // Remove null values
+            Object.keys(embed).forEach(key => {
+                if (embed[key] === null) delete embed[key];
+            });
+
+            return embed;
+        }
+
+        function renderEmbedPreview(embed) {
+            if (!embed.title && !embed.description && !embed.fields && !embed.author && !embed.footer) {
+                return '<div style="color: #dcddde; font-size: 14px;">Preview will appear here...</div>';
+            }
+
+            const colorHex = embed.color ? '#' + embed.color.toString(16).padStart(6, '0') : '#5865F2';
+            let html = `<div style="border-left: 4px solid ${colorHex}; padding-left: 12px;">`;
+
+            if (embed.author) {
+                html += `<div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">`;
+                if (embed.author.icon_url) {
+                    html += `<img src="${escapeHtml(embed.author.icon_url)}" style="width: 20px; height: 20px; border-radius: 50%;" onerror="this.style.display='none';">`;
+                }
+                if (embed.author.name) {
+                    html += `<span style="color: #fff; font-weight: 600; font-size: 14px;">${escapeHtml(embed.author.name)}</span>`;
+                }
+                html += `</div>`;
+            }
+
+            if (embed.title) {
+                const titleStyle = embed.url ? 'color: #00aff4; text-decoration: none;' : 'color: #fff;';
+                html += `<div style="${titleStyle} font-weight: 600; font-size: 16px; margin-bottom: 8px;">${escapeHtml(embed.title)}</div>`;
+            }
+
+            if (embed.description) {
+                html += `<div style="color: #dcddde; font-size: 14px; margin-bottom: 8px; white-space: pre-wrap;">${escapeHtml(embed.description)}</div>`;
+            }
+
+            if (embed.fields && embed.fields.length > 0) {
+                html += `<div style="margin-top: 12px;">`;
+                embed.fields.forEach(field => {
+                    html += `<div style="margin-bottom: 8px; ${field.inline ? 'display: inline-block; width: 48%; vertical-align: top; margin-right: 2%;' : ''}">`;
+                    html += `<div style="color: #fff; font-weight: 600; font-size: 14px; margin-bottom: 4px;">${escapeHtml(field.name)}</div>`;
+                    html += `<div style="color: #dcddde; font-size: 14px; white-space: pre-wrap;">${escapeHtml(field.value)}</div>`;
+                    html += `</div>`;
+                });
+                html += `</div>`;
+            }
+
+            if (embed.thumbnail) {
+                html += `<div style="margin-top: 12px;"><img src="${escapeHtml(embed.thumbnail.url)}" style="max-width: 80px; max-height: 80px; border-radius: 4px;" onerror="this.style.display='none';"></div>`;
+            }
+
+            if (embed.image) {
+                html += `<div style="margin-top: 12px;"><img src="${escapeHtml(embed.image.url)}" style="max-width: 100%; border-radius: 4px;" onerror="this.style.display='none';"></div>`;
+            }
+
+            if (embed.footer || embed.timestamp) {
+                html += `<div style="display: flex; align-items: center; gap: 8px; margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.1);">`;
+                if (embed.footer?.icon_url) {
+                    html += `<img src="${escapeHtml(embed.footer.icon_url)}" style="width: 20px; height: 20px; border-radius: 50%;" onerror="this.style.display='none';">`;
+                }
+                html += `<span style="color: #72767d; font-size: 12px;">`;
+                if (embed.footer?.text) {
+                    html += escapeHtml(embed.footer.text);
+                }
+                if (embed.timestamp) {
+                    if (embed.footer?.text) html += ' • ';
+                    html += new Date(embed.timestamp).toLocaleString();
+                }
+                html += `</span></div>`;
+            }
+
+            html += `</div>`;
+            return html;
+        }
+
+        window.testWebhook = async function() {
+            const urlInput = document.getElementById('webhookUrlInput');
+            const url = urlInput.value.trim();
+
+            if (!url) {
+                alert('Please enter a webhook URL first');
+                return;
+            }
+
+            const embed = buildEmbedObject();
+            await sendWebhook(url, embed, true);
+        };
+
+        window.testWebhookById = async function(id) {
+            try {
+                const snapshot = await database.ref(`webhooks/${id}`).once('value');
+                if (snapshot.exists()) {
+                    const webhook = snapshot.val();
+                    await sendWebhook(webhook.url, webhook.embed, true);
+                }
+            } catch (error) {
+                console.error('Error testing webhook:', error);
+                alert('Error testing webhook: ' + error.message);
+            }
+        };
+
+        async function sendWebhook(url, embed, isTest = false) {
+            try {
+                const payload = {
+                    embeds: embed && Object.keys(embed).length > 0 ? [embed] : []
+                };
+
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                if (response.ok) {
+                    if (isTest) {
+                        alert('✅ Test message sent successfully!');
+                    }
+                    return true;
+                } else {
+                    const errorText = await response.text();
+                    throw new Error(`HTTP ${response.status}: ${errorText}`);
+                }
+            } catch (error) {
+                console.error('Error sending webhook:', error);
+                alert('❌ Failed to send webhook: ' + error.message);
+                return false;
+            }
+        }
+
+        window.saveWebhook = async function() {
+            const nameInput = document.getElementById('webhookNameInput');
+            const urlInput = document.getElementById('webhookUrlInput');
+            const errorDiv = document.getElementById('webhookEditorError');
+
+            const name = nameInput.value.trim();
+            const url = urlInput.value.trim();
+
+            if (!name) {
+                errorDiv.textContent = 'Webhook name is required';
+                errorDiv.style.display = 'block';
+                return;
+            }
+
+            if (!url) {
+                errorDiv.textContent = 'Webhook URL is required';
+                errorDiv.style.display = 'block';
+                return;
+            }
+
+            if (!url.includes('discord.com/api/webhooks/')) {
+                errorDiv.textContent = 'Invalid Discord webhook URL';
+                errorDiv.style.display = 'block';
+                return;
+            }
+
+            try {
+                const embed = buildEmbedObject();
+                const webhookData = {
+                    name,
+                    url,
+                    embed: embed && Object.keys(embed).length > 0 ? embed : null,
+                    createdAt: Date.now(),
+                    updatedAt: Date.now()
+                };
+
+                const id = window.currentEditingWebhookId || 'webhook_' + Date.now();
+                await database.ref(`webhooks/${id}`).set(webhookData);
+                alert('✅ Webhook saved successfully!');
+                hideWebhookEditor();
+                loadWebhooks();
+            } catch (error) {
+                console.error('Error saving webhook:', error);
+                errorDiv.textContent = 'Failed to save: ' + error.message;
+                errorDiv.style.display = 'block';
+            }
+        };
+
+        window.deleteWebhook = async function(id) {
+            if (!confirm('Are you sure you want to delete this webhook?')) return;
+            try {
+                await database.ref(`webhooks/${id}`).remove();
+                alert('✅ Webhook deleted!');
+                loadWebhooks();
+            } catch (error) {
+                console.error('Error deleting webhook:', error);
+                alert('❌ Failed to delete: ' + error.message);
+            }
+        };
+
+        // Update preview when inputs change
+        document.addEventListener('DOMContentLoaded', () => {
+            const embedInputs = ['embedTitleInput', 'embedDescriptionInput', 'embedUrlInput', 'embedColorInput', 
+                                'embedAuthorNameInput', 'embedAuthorIconInput', 'embedFooterInput', 'embedFooterIconInput',
+                                'embedThumbnailInput', 'embedImageInput', 'embedTimestampInput'];
+            embedInputs.forEach(id => {
+                const input = document.getElementById(id);
+                if (input) {
+                    input.addEventListener('input', updateEmbedPreview);
+                    if (id === 'embedTimestampInput') {
+                        input.addEventListener('change', function() {
+                            if (this.value === 'custom') {
+                                document.getElementById('embedTimestampCustomInput').style.display = 'block';
+                            } else {
+                                document.getElementById('embedTimestampCustomInput').style.display = 'none';
+                            }
+                            updateEmbedPreview();
+                        });
+                    }
+                }
+            });
         });
     </script>
 </body>

@@ -745,6 +745,102 @@
             font-size: 14px;
         }
 
+        /* Surveys Section */
+        .surveys {
+            padding: 120px 24px;
+            background: linear-gradient(to bottom, #0a0a0a 0%, #000000 100%);
+        }
+
+        .surveys-content {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .survey-item {
+            background: #0a0a0a;
+            border: 1px solid #1a1a1a;
+            border-radius: 4px;
+            padding: 40px;
+            margin-bottom: 32px;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .survey-item:hover {
+            border-color: #2a2a2a;
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        .survey-title {
+            font-size: 24px;
+            font-weight: 600;
+            color: #e5e5e5;
+            margin-bottom: 12px;
+        }
+
+        .survey-description {
+            font-size: 14px;
+            color: #888888;
+            line-height: 1.7;
+            margin-bottom: 24px;
+        }
+
+        .survey-options {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .survey-option-btn {
+            padding: 16px 24px;
+            background: #1a1a1a;
+            border: 1px solid #4a4a4a;
+            border-radius: 4px;
+            color: #e5e5e5;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: left;
+        }
+
+        .survey-option-btn:hover:not(:disabled) {
+            background: #222222;
+            border-color: #6a6a6a;
+            transform: translateX(4px);
+        }
+
+        .survey-option-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .survey-rating {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+        }
+
+        .rating-btn {
+            background: #1a1a1a;
+            border: 1px solid #4a4a4a;
+            border-radius: 4px;
+            padding: 12px 16px;
+            font-size: 24px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .rating-btn:hover:not(:disabled) {
+            background: #222222;
+            border-color: #6a6a6a;
+            transform: scale(1.1);
+        }
+
+        .rating-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
         .changelog-list li {
             padding: 6px 0;
             padding-left: 24px;
@@ -3466,6 +3562,17 @@
             <p class="section-subtitle reveal" data-i18n="changelog.subtitle">Latest updates and improvements</p>
             <div class="changelog-content reveal" id="changelogContent">
                 <div class="changelog-loading" data-i18n="changelog.loading">Loading changelog...</div>
+                </div>
+        </div>
+    </section>
+
+    <!-- Surveys Section -->
+    <section class="surveys" id="surveys" style="display: none;">
+        <div class="container">
+            <h2 class="section-title reveal">Surveys & Polls</h2>
+            <p class="section-subtitle reveal">Share your feedback with us</p>
+            <div class="surveys-content reveal" id="surveysContent">
+                <div class="changelog-loading">Loading surveys...</div>
             </div>
         </div>
     </section>
@@ -3570,6 +3677,7 @@
             setupAnnouncementListener(); // Listen for announcement updates
             loadChangelog(); // FEATURE #5: Dynamic Changelog
             setupChangelogListener(); // Listen for changelog updates
+            setupSurveysListener(); // Listen for survey updates
         });
 
         // Original page scripts
@@ -4067,6 +4175,117 @@
             database.ref(CHANGELOG_PATH).on('value', () => {
                 loadChangelog();
             });
+        }
+
+        // Listen for real-time survey updates
+        function setupSurveysListener() {
+            if (!firebaseInitialized || !database) return;
+
+            const content = document.getElementById('surveysContent');
+            const section = document.getElementById('surveys');
+
+            database.ref('surveys').on('value', (snapshot) => {
+                if (!snapshot.exists()) {
+                    section.style.display = 'none';
+                    return;
+                }
+
+                const surveys = snapshot.val();
+                const activeSurveys = Object.entries(surveys)
+                    .map(([id, survey]) => ({ id, ...survey }))
+                    .filter(survey => survey.active !== false)
+                    .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+
+                if (activeSurveys.length === 0) {
+                    section.style.display = 'none';
+                    return;
+                }
+
+                section.style.display = 'block';
+                renderSurveys(activeSurveys, content);
+            }, (error) => {
+                console.error('Error listening to surveys:', error);
+                section.style.display = 'none';
+            });
+        }
+
+        function renderSurveys(surveys, content) {
+            if (!content) return;
+
+            const html = surveys.map(survey => {
+                const isPoll = survey.type === 'poll';
+                const isRating = survey.type === 'rating';
+                let optionsHtml = '';
+
+                if (isRating) {
+                    optionsHtml = `
+                        <div class="survey-rating">
+                            ${[1, 2, 3, 4, 5].map(rating => `
+                                <button class="rating-btn" onclick="submitSurveyResponse('${survey.id}', ${rating})" data-rating="${rating}">
+                                    ⭐
+                                </button>
+                            `).join('')}
+                        </div>
+                    `;
+                } else {
+                    optionsHtml = `
+                        <div class="survey-options">
+                            ${survey.options.map((option, index) => `
+                                <button class="survey-option-btn" onclick="submitSurveyResponse('${survey.id}', ${index})">
+                                    ${escapeHtml(option)}
+                                </button>
+                            `).join('')}
+                        </div>
+                    `;
+                }
+
+                return `
+                    <div class="survey-item">
+                        <h3 class="survey-title">${escapeHtml(survey.title)}</h3>
+                        ${survey.description ? `<p class="survey-description">${escapeHtml(survey.description)}</p>` : ''}
+                        ${optionsHtml}
+                        <div class="survey-response" id="surveyResponse_${survey.id}" style="display: none; margin-top: 16px; padding: 12px; background: rgba(34, 197, 94, 0.1); border: 1px solid rgba(34, 197, 94, 0.3); border-radius: 4px; color: #22c55e;">
+                            ✅ Thank you for your response!
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            content.innerHTML = html;
+        }
+
+        async function submitSurveyResponse(surveyId, response) {
+            if (!firebaseInitialized || !database) return;
+
+            try {
+                const responseKey = `response_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+                const responseData = {
+                    surveyId,
+                    response,
+                    timestamp: Date.now(),
+                    ip: await getClientIP()
+                };
+
+                await database.ref(`surveyResponses/${responseKey}`).set(responseData);
+
+                // Show success message
+                const responseDiv = document.getElementById(`surveyResponse_${surveyId}`);
+                if (responseDiv) {
+                    responseDiv.style.display = 'block';
+                }
+
+                // Disable buttons
+                const surveyItem = document.querySelector(`#surveyResponse_${surveyId}`).closest('.survey-item');
+                if (surveyItem) {
+                    surveyItem.querySelectorAll('button').forEach(btn => {
+                        btn.disabled = true;
+                        btn.style.opacity = '0.5';
+                    });
+                }
+            } catch (error) {
+                console.error('Error submitting survey response:', error);
+                alert('Failed to submit response. Please try again.');
+            }
         }
 
         // Utility function to escape HTML
