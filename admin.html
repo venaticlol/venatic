@@ -19,45 +19,32 @@
 
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #0a0a0a 100%);
+            background: #000000;
+            background-image: 
+                linear-gradient(rgba(42, 42, 42, 0.1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(42, 42, 42, 0.1) 1px, transparent 1px);
+            background-size: 50px 50px;
+            background-position: 0 0, 0 0;
             color: #e5e5e5;
             min-height: 100vh;
             overflow-x: hidden;
+            position: relative;
         }
 
-        /* Animated Background */
-        .bg-animation {
+        body::before {
+            content: '';
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            z-index: 0;
-            background: 
-                radial-gradient(circle at 20% 50%, rgba(59, 130, 246, 0.1) 0%, transparent 50%),
-                radial-gradient(circle at 80% 80%, rgba(139, 92, 246, 0.1) 0%, transparent 50%),
-                radial-gradient(circle at 40% 20%, rgba(236, 72, 153, 0.1) 0%, transparent 50%);
-            animation: bgShift 20s ease infinite;
-        }
-
-        @keyframes bgShift {
-            0%, 100% { transform: translate(0, 0) scale(1); }
-            50% { transform: translate(-20px, -20px) scale(1.1); }
-        }
-
-        /* Grid Pattern */
-        .grid-pattern {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 1;
             background-image: 
-                linear-gradient(rgba(59, 130, 246, 0.03) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(59, 130, 246, 0.03) 1px, transparent 1px);
+                linear-gradient(rgba(42, 42, 42, 0.1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(42, 42, 42, 0.1) 1px, transparent 1px);
             background-size: 50px 50px;
+            background-position: 0 0, 0 0;
             pointer-events: none;
+            z-index: 0;
         }
 
         /* Container */
@@ -71,16 +58,22 @@
 
         /* Header */
         .admin-header {
-            background: linear-gradient(135deg, rgba(26, 26, 26, 0.95) 0%, rgba(37, 37, 37, 0.95) 100%);
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(59, 130, 246, 0.2);
-            border-radius: 20px;
+            background: #0a0a0a;
+            border: 1px solid #1a1a1a;
+            border-radius: 4px;
             padding: 25px 35px;
             margin-bottom: 30px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+            position: relative;
+            z-index: 1;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .admin-header:hover {
+            border-color: #2a2a2a;
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
         }
 
         .admin-header-left {
@@ -92,19 +85,26 @@
         .admin-logo {
             width: 50px;
             height: 50px;
-            background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
-            border-radius: 12px;
+            background: linear-gradient(135deg, #2a2a2a 0%, #1a1a1a 100%);
+            border: 1px solid #3a3a3a;
+            border-radius: 4px;
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 24px;
             font-weight: 800;
+            transition: all 0.3s ease;
+        }
+
+        .admin-header:hover .admin-logo {
+            border-color: #4a4a4a;
+            transform: scale(1.05);
         }
 
         .admin-header-title {
             font-size: 28px;
-            font-weight: 800;
-            background: linear-gradient(135deg, #ffffff 0%, #a0a0a0 100%);
+            font-weight: 700;
+            background: linear-gradient(135deg, #ffffff 0%, #b0b0b0 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
@@ -130,24 +130,29 @@
         }
 
         .admin-btn-primary {
-            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
-            color: white;
-            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+            background: #1a1a1a;
+            border: 1px solid #4a4a4a;
+            color: #e5e5e5;
         }
 
         .admin-btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(59, 130, 246, 0.5);
+            transform: translateY(-4px) scale(1.02);
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+            border-color: #6a6a6a;
+            background: #222222;
         }
 
         .admin-btn-danger {
-            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-            color: white;
+            background: #1a1a1a;
+            border: 1px solid #4a4a4a;
+            color: #e5e5e5;
         }
 
         .admin-btn-danger:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4);
+            transform: translateY(-4px) scale(1.02);
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+            border-color: #6a6a6a;
+            background: #222222;
         }
 
         /* Tabs */
@@ -155,10 +160,12 @@
             display: flex;
             gap: 10px;
             margin-bottom: 30px;
-            background: rgba(26, 26, 26, 0.5);
+            background: #0a0a0a;
             padding: 8px;
-            border-radius: 12px;
-            border: 1px solid rgba(74, 74, 74, 0.3);
+            border-radius: 4px;
+            border: 1px solid #1a1a1a;
+            position: relative;
+            z-index: 1;
         }
 
         .admin-tab {
@@ -166,35 +173,57 @@
             padding: 14px 24px;
             background: transparent;
             border: none;
-            border-radius: 8px;
+            border-radius: 4px;
             color: #888;
             font-weight: 600;
             font-size: 14px;
             cursor: pointer;
-            transition: all 0.3s;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
             position: relative;
         }
 
         .admin-tab.active {
-            background: linear-gradient(135deg, rgba(59, 130, 246, 0.2) 0%, rgba(59, 130, 246, 0.1) 100%);
-            color: #3b82f6;
-            border: 1px solid rgba(59, 130, 246, 0.3);
+            background: #1a1a1a;
+            color: #e5e5e5;
+            border: 1px solid #3a3a3a;
         }
 
         .admin-tab:hover:not(.active) {
             color: #e5e5e5;
-            background: rgba(74, 74, 74, 0.2);
+            background: rgba(26, 26, 26, 0.5);
         }
 
         /* Content Cards */
         .admin-content-card {
-            background: linear-gradient(135deg, rgba(26, 26, 26, 0.95) 0%, rgba(37, 37, 37, 0.95) 100%);
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(59, 130, 246, 0.2);
-            border-radius: 20px;
+            background: #0a0a0a;
+            border: 1px solid #1a1a1a;
+            border-radius: 4px;
             padding: 30px;
             margin-bottom: 30px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+            position: relative;
+            z-index: 1;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: hidden;
+        }
+
+        .admin-content-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.03), transparent);
+            transition: left 0.6s;
+        }
+
+        .admin-content-card:hover::before {
+            left: 100%;
+        }
+
+        .admin-content-card:hover {
+            border-color: #2a2a2a;
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
         }
 
         .admin-content-card h2 {
@@ -211,7 +240,7 @@
         }
 
         .admin-table thead {
-            background: rgba(59, 130, 246, 0.1);
+            background: #1a1a1a;
         }
 
         .admin-table th {
@@ -222,22 +251,22 @@
             text-transform: uppercase;
             letter-spacing: 0.5px;
             color: #888;
-            border-bottom: 2px solid rgba(59, 130, 246, 0.2);
+            border-bottom: 1px solid #2a2a2a;
         }
 
         .admin-table td {
             padding: 18px 15px;
-            border-bottom: 1px solid rgba(74, 74, 74, 0.3);
+            border-bottom: 1px solid #1a1a1a;
             color: #e5e5e5;
             font-size: 14px;
         }
 
         .admin-table tbody tr {
-            transition: all 0.2s;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         .admin-table tbody tr:hover {
-            background: rgba(59, 130, 246, 0.05);
+            background: rgba(26, 26, 26, 0.5);
         }
 
         .admin-table tbody tr:last-child td {
@@ -261,47 +290,52 @@
         }
 
         .btn-view {
-            background: rgba(59, 130, 246, 0.2);
-            color: #3b82f6;
-            border: 1px solid rgba(59, 130, 246, 0.3);
+            background: #1a1a1a;
+            color: #e5e5e5;
+            border: 1px solid #4a4a4a;
         }
 
         .btn-view:hover {
-            background: rgba(59, 130, 246, 0.3);
+            background: #222222;
+            border-color: #6a6a6a;
+            transform: translateY(-2px);
             transform: translateY(-1px);
         }
 
         .btn-blacklist {
-            background: rgba(239, 68, 68, 0.2);
+            background: #1a1a1a;
             color: #ef4444;
-            border: 1px solid rgba(239, 68, 68, 0.3);
+            border: 1px solid #4a4a4a;
         }
 
         .btn-blacklist:hover {
-            background: rgba(239, 68, 68, 0.3);
-            transform: translateY(-1px);
+            background: #222222;
+            border-color: #6a6a6a;
+            transform: translateY(-2px);
         }
 
         .btn-unblacklist {
-            background: rgba(34, 197, 94, 0.2);
+            background: #1a1a1a;
             color: #22c55e;
-            border: 1px solid rgba(34, 197, 94, 0.3);
+            border: 1px solid #4a4a4a;
         }
 
         .btn-unblacklist:hover {
-            background: rgba(34, 197, 94, 0.3);
-            transform: translateY(-1px);
+            background: #222222;
+            border-color: #6a6a6a;
+            transform: translateY(-2px);
         }
 
         .btn-delete {
-            background: rgba(239, 68, 68, 0.2);
+            background: #1a1a1a;
             color: #ef4444;
-            border: 1px solid rgba(239, 68, 68, 0.3);
+            border: 1px solid #4a4a4a;
         }
 
         .btn-delete:hover {
-            background: rgba(239, 68, 68, 0.3);
-            transform: translateY(-1px);
+            background: #222222;
+            border-color: #6a6a6a;
+            transform: translateY(-2px);
         }
 
         /* Status Badge */
@@ -540,9 +574,6 @@
     </style>
 </head>
 <body>
-    <div class="bg-animation"></div>
-    <div class="grid-pattern"></div>
-
     <div class="admin-container">
         <!-- Header -->
         <div class="admin-header">
@@ -551,7 +582,7 @@
                 <div class="admin-header-title">Admin Control Panel</div>
             </div>
             <div class="admin-header-right">
-                <button class="admin-btn admin-btn-primary" onclick="window.location.href='index.html'">
+                <button class="admin-btn admin-btn-primary" onclick="window.location.href='/'">
                     ← Back to Site
                 </button>
                 <button class="admin-btn admin-btn-danger" onclick="logout()">
@@ -837,7 +868,7 @@
         const isAdminLoggedIn = sessionStorage.getItem(ADMIN_SESSION_KEY) === 'true';
 
         if (!isAdminLoggedIn) {
-            window.location.href = 'index.html';
+            window.location.href = '/';
         }
 
         // Track admin panel visit (optional)
@@ -1307,7 +1338,7 @@
         // Logout
         function logout() {
             sessionStorage.removeItem(ADMIN_SESSION_KEY);
-            window.location.href = 'index.html';
+            window.location.href = '/';
         }
 
         // Escape HTML

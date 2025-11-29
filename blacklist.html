@@ -19,7 +19,12 @@
 
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #0a0a0a 100%);
+            background: #000000;
+            background-image: 
+                linear-gradient(rgba(42, 42, 42, 0.1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(42, 42, 42, 0.1) 1px, transparent 1px);
+            background-size: 50px 50px;
+            background-position: 0 0, 0 0;
             color: #e5e5e5;
             min-height: 100vh;
             display: flex;
@@ -27,58 +32,171 @@
             justify-content: center;
             padding: 20px;
             overflow: hidden;
+            position: relative;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(rgba(42, 42, 42, 0.1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(42, 42, 42, 0.1) 1px, transparent 1px);
+            background-size: 50px 50px;
+            background-position: 0 0, 0 0;
+            pointer-events: none;
+            z-index: 0;
         }
 
         .blocked-container {
             text-align: center;
-            max-width: 600px;
-            background: linear-gradient(135deg, rgba(26, 26, 26, 0.95) 0%, rgba(37, 37, 37, 0.95) 100%);
-            border: 1px solid rgba(239, 68, 68, 0.3);
-            border-radius: 20px;
-            padding: 60px 40px;
-            box-shadow: 0 25px 80px rgba(0, 0, 0, 0.8);
+            max-width: 700px;
+            background: #0a0a0a;
+            border: 1px solid #1a1a1a;
+            border-radius: 4px;
+            padding: 80px 50px;
+            position: relative;
+            z-index: 1;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: hidden;
+        }
+
+        .blocked-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(239, 68, 68, 0.05), transparent);
+            transition: left 0.6s;
+        }
+
+        .blocked-container:hover::before {
+            left: 100%;
+        }
+
+        .blocked-container:hover {
+            border-color: #2a2a2a;
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
         }
 
         .blocked-icon {
-            font-size: 80px;
-            margin-bottom: 30px;
-            animation: shake 0.5s ease infinite;
+            font-size: 100px;
+            margin-bottom: 40px;
+            animation: pulse 2s ease-in-out infinite;
+            filter: drop-shadow(0 0 20px rgba(239, 68, 68, 0.3));
         }
 
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            25% { transform: translateX(-10px); }
-            75% { transform: translateX(10px); }
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+            50% {
+                transform: scale(1.1);
+                opacity: 0.8;
+            }
         }
 
         .blocked-title {
-            font-size: 32px;
-            font-weight: 800;
-            margin-bottom: 20px;
-            color: #ef4444;
+            font-size: clamp(32px, 5vw, 48px);
+            font-weight: 700;
+            margin-bottom: 24px;
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -0.02em;
         }
 
         .blocked-message {
             font-size: 18px;
             color: #888;
-            line-height: 1.6;
+            line-height: 1.7;
+            margin-bottom: 40px;
+            max-width: 500px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .blocked-info {
+            background: #1a1a1a;
+            border: 1px solid #2a2a2a;
+            border-radius: 4px;
+            padding: 30px;
             margin-bottom: 30px;
+            text-align: left;
+        }
+
+        .blocked-info-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 16px;
         }
 
         .blocked-reason {
-            font-size: 14px;
-            color: #666;
-            margin-top: 20px;
-            padding: 15px;
+            font-size: 16px;
+            color: #e5e5e5;
+            margin-bottom: 20px;
+            padding: 16px;
             background: rgba(239, 68, 68, 0.1);
-            border-radius: 8px;
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            border-radius: 4px;
+        }
+
+        .blocked-reason strong {
+            color: #ef4444;
+            font-weight: 600;
+            display: block;
+            margin-bottom: 8px;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+
+        .blocked-notes {
+            font-size: 14px;
+            color: #888;
+            line-height: 1.6;
+            padding: 16px;
+            background: rgba(26, 26, 26, 0.5);
+            border: 1px solid #2a2a2a;
+            border-radius: 4px;
+            margin-top: 16px;
+        }
+
+        .blocked-notes strong {
+            color: #e5e5e5;
+            font-weight: 600;
+            display: block;
+            margin-bottom: 8px;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
         }
 
         .blocked-ip {
             font-size: 12px;
             color: #555;
-            margin-top: 20px;
-            font-family: monospace;
+            margin-top: 30px;
+            font-family: 'Courier New', monospace;
+            padding: 12px;
+            background: #0a0a0a;
+            border: 1px solid #1a1a1a;
+            border-radius: 4px;
+            display: inline-block;
+        }
+
+        .blocked-ip strong {
+            color: #888;
+            font-weight: 600;
         }
     </style>
 </head>
@@ -86,16 +204,21 @@
     <div class="blocked-container">
         <div class="blocked-icon">🚫</div>
         <h1 class="blocked-title">Access Denied</h1>
-        <p class="blocked-message">Your access to this website has been restricted.</p>
-        <div id="blacklistInfo">
+        <p class="blocked-message">Your access to this website has been restricted by an administrator.</p>
+        <div class="blocked-info" id="blacklistInfo">
+            <div class="blocked-info-title">Blacklist Information</div>
             <div class="blocked-reason">
-                <strong>Reason:</strong> <span id="blacklistReason">Loading...</span>
+                <strong>Reason</strong>
+                <span id="blacklistReason">Loading...</span>
             </div>
-            <div id="blacklistNotes" style="display: none; margin-top: 10px; padding: 15px; background: rgba(239, 68, 68, 0.1); border-radius: 8px; font-size: 14px; color: #666;">
-                <strong>Details:</strong> <span id="blacklistNotesText"></span>
+            <div class="blocked-notes" id="blacklistNotes" style="display: none;">
+                <strong>Additional Details</strong>
+                <span id="blacklistNotesText"></span>
             </div>
         </div>
-        <div class="blocked-ip" id="userIp">IP: Loading...</div>
+        <div class="blocked-ip">
+            <strong>Your IP Address:</strong> <span id="userIp">Loading...</span>
+        </div>
     </div>
 
     <script>
@@ -201,7 +324,7 @@
         async function checkBlacklistStatus() {
             try {
                 const ip = await getClientIP();
-                document.getElementById('userIp').textContent = 'IP: ' + ip;
+                document.getElementById('userIp').textContent = ip;
                 
                 const ipKey = ip.replace(/\./g, '_');
                 const snapshot = await database.ref(`blacklist/${ipKey}`).once('value');
@@ -221,7 +344,7 @@
                     // Not blacklisted anymore - allow redirect
                     allowNavigation = true;
                     setTimeout(() => {
-                        window.location.replace('index.html');
+                        window.location.replace('/');
                     }, 100);
                 }
             } catch (error) {
