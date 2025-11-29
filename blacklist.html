@@ -320,44 +320,55 @@
             }
         }
 
-        // Check blacklist status
-        async function checkBlacklistStatus() {
+        // Real-time blacklist listener
+        let blacklistListener = null;
+
+        // Setup real-time blacklist status listener
+        async function setupBlacklistListener() {
             try {
                 const ip = await getClientIP();
                 document.getElementById('userIp').textContent = ip;
                 
                 const ipKey = ip.replace(/\./g, '_');
-                const snapshot = await database.ref(`blacklist/${ipKey}`).once('value');
                 
-                if (snapshot.exists()) {
-                    const entry = snapshot.val();
-                    document.getElementById('blacklistReason').textContent = entry.reason || 'Unknown';
-                    
-                    if (entry.notes) {
-                        document.getElementById('blacklistNotesText').textContent = entry.notes;
-                        document.getElementById('blacklistNotes').style.display = 'block';
-                    }
-                    
-                    // User is still blacklisted - keep navigation blocked
-                    allowNavigation = false;
-                } else {
-                    // Not blacklisted anymore - allow redirect
-                    allowNavigation = true;
-                    setTimeout(() => {
-                        window.location.replace('/');
-                    }, 100);
+                // Remove existing listener if any
+                if (blacklistListener) {
+                    database.ref(`blacklist/${ipKey}`).off('value', blacklistListener);
                 }
+                
+                // Setup real-time listener for instant updates
+                blacklistListener = database.ref(`blacklist/${ipKey}`).on('value', (snapshot) => {
+                    if (snapshot.exists()) {
+                        const entry = snapshot.val();
+                        document.getElementById('blacklistReason').textContent = entry.reason || 'Unknown';
+                        
+                        if (entry.notes) {
+                            document.getElementById('blacklistNotesText').textContent = entry.notes;
+                            document.getElementById('blacklistNotes').style.display = 'block';
+                        } else {
+                            document.getElementById('blacklistNotes').style.display = 'none';
+                        }
+                        
+                        // User is still blacklisted - keep navigation blocked
+                        allowNavigation = false;
+                    } else {
+                        // Not blacklisted anymore - allow redirect instantly
+                        allowNavigation = true;
+                        setTimeout(() => {
+                            window.location.replace('/');
+                        }, 100);
+                    }
+                });
+                
+                console.log('✅ Real-time blacklist listener active');
             } catch (error) {
-                console.error('Error checking blacklist:', error);
+                console.error('Error setting up blacklist listener:', error);
                 allowNavigation = false; // Keep blocked on error
             }
         }
 
-        // Check periodically if still blacklisted
-        setInterval(checkBlacklistStatus, 3000); // Check every 3 seconds
-
-        // Initial check
-        checkBlacklistStatus();
+        // Initial setup
+        setupBlacklistListener();
     </script>
 </body>
 </html>

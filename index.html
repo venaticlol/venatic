@@ -4,6 +4,20 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Recon-Spoofer - Download</title>
+    
+    <!-- Cloudflare DDoS Protection & Security -->
+    <!-- Cloudflare Turnstile (Bot Protection) - Replace YOUR_SITE_KEY with your actual site key -->
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+    
+    <!-- Cloudflare Web Analytics (Optional) - Replace YOUR_TOKEN with your analytics token -->
+    <!-- <script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "YOUR_TOKEN"}'></script> -->
+    
+    <!-- Security Headers -->
+    <meta http-equiv="X-Content-Type-Options" content="nosniff">
+    <meta http-equiv="X-Frame-Options" content="DENY">
+    <meta http-equiv="X-XSS-Protection" content="1; mode=block">
+    <meta name="referrer" content="strict-origin-when-cross-origin">
+    
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -3709,6 +3723,9 @@
         </div>
     </div>
 
+    <!-- Cloudflare Turnstile Container (Invisible) -->
+    <div id="cloudflare-turnstile-container" style="display: none;"></div>
+
     <!-- Admin Login Modal -->
     <div class="admin-modal-overlay" id="adminModalOverlay" style="display: none;">
         <div class="admin-modal">
@@ -4256,7 +4273,83 @@
     </div> <!-- End main-content -->
 
     <script>
-        // Initialize page on load
+        // ============================================
+        // CLOUDFLARE TURNSTILE (DDoS Protection)
+        // ============================================
+        // Replace 'YOUR_SITE_KEY' with your actual Cloudflare Turnstile site key
+        // Get it from: https://dash.cloudflare.com/ → Turnstile → Add Site
+        const CLOUDFLARE_TURNSTILE_SITE_KEY = 'YOUR_SITE_KEY';
+        
+        let turnstileToken = null;
+        let turnstileWidgetId = null;
+        
+        function initCloudflareTurnstile() {
+            if (typeof turnstile === 'undefined' || !CLOUDFLARE_TURNSTILE_SITE_KEY || CLOUDFLARE_TURNSTILE_SITE_KEY === 'YOUR_SITE_KEY') {
+                console.warn('Cloudflare Turnstile not configured. Please add your site key. See CLOUDFLARE_DDOS_SETUP.md for instructions.');
+                return;
+            }
+            
+            const container = document.getElementById('cloudflare-turnstile-container');
+            if (!container) {
+                console.warn('Cloudflare Turnstile container not found');
+                    return;
+                }
+            
+            try {
+                turnstileWidgetId = turnstile.render(container, {
+                    sitekey: CLOUDFLARE_TURNSTILE_SITE_KEY,
+                    theme: 'dark',
+                    size: 'invisible', // Invisible mode - runs in background for DDoS protection
+                    callback: function(token) {
+                        turnstileToken = token;
+                        console.log('Cloudflare Turnstile verified successfully');
+                        // Token is automatically refreshed by Turnstile
+                    },
+                    'error-callback': function() {
+                        console.error('Cloudflare Turnstile verification failed');
+                        turnstileToken = null;
+                    },
+                    'expired-callback': function() {
+                        console.warn('Cloudflare Turnstile token expired, refreshing...');
+                        turnstileToken = null;
+                        if (turnstileWidgetId) {
+                            turnstile.reset(turnstileWidgetId);
+                            turnstile.execute(turnstileWidgetId);
+                        }
+                    }
+                });
+                
+                // Execute Turnstile immediately for protection
+                turnstile.execute(turnstileWidgetId);
+                } catch (error) {
+                console.error('Error initializing Cloudflare Turnstile:', error);
+            }
+        }
+        
+        function refreshTurnstileToken() {
+            if (turnstileWidgetId && typeof turnstile !== 'undefined') {
+                try {
+                    turnstile.reset(turnstileWidgetId);
+                    turnstile.execute(turnstileWidgetId);
+                } catch (error) {
+                    console.error('Error refreshing Turnstile token:', error);
+                }
+            }
+        }
+        
+        // Initialize Cloudflare Turnstile when page loads
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => {
+                // Wait a bit for Turnstile script to load
+                setTimeout(initCloudflareTurnstile, 500);
+            });
+                    } else {
+            setTimeout(initCloudflareTurnstile, 500);
+        }
+        
+        // Refresh Turnstile token every 5 minutes
+        setInterval(refreshTurnstileToken, 5 * 60 * 1000);
+
         document.addEventListener('DOMContentLoaded', () => {
             // Check rate limit on page load
             checkRateLimitOnLoad();
@@ -4354,14 +4447,18 @@
                 firebaseInitialized = true;
                 console.log('Firebase initialized successfully');
                 
-                // Check blacklist first (before anything else) - this will redirect if blacklisted
+                // Setup real-time listeners for instant updates
                 checkBlacklist().then(isBlacklisted => {
                     if (isBlacklisted) {
                         // User is being redirected, don't continue loading
                         return;
                     }
                     
-                    // Check maintenance mode only if not blacklisted
+                    // Setup real-time listeners for instant updates
+                    setupBlacklistListener();
+                    setupMaintenanceListener();
+                    
+                    // Also do initial check for maintenance mode
                     checkMaintenanceMode();
                 });
                 
@@ -5954,8 +6051,13 @@
             }
         }
 
-        // Check if user is blacklisted
-        async function checkBlacklist() {
+        // Real-time listeners for blacklist and maintenance
+        let blacklistListener = null;
+        let maintenanceListener = null;
+        let currentMaintenanceState = null;
+
+        // Setup real-time blacklist listener
+        async function setupBlacklistListener() {
             if (!firebaseInitialized || !database) return;
             
             try {
@@ -5963,31 +6065,115 @@
                 const isAdmin = sessionStorage.getItem('recon_admin_session') === 'true';
                 if (isAdmin) return; // Admins bypass blacklist
                 
-                // Don't redirect if already on blacklist page
+                // Don't setup listener if already on blacklist page
                 if (window.location.pathname.includes('blacklist') || window.location.pathname.includes('/blacklist')) {
                     return;
                 }
                 
                 const ip = await getClientIP();
+                const ipKey = ip.replace(/\./g, '_');
+                
+                // Remove existing listener if any
+                if (blacklistListener) {
+                    database.ref('blacklist').off('value', blacklistListener);
+                }
+                
+                // Setup real-time listener
+                blacklistListener = database.ref('blacklist').on('value', (snapshot) => {
+                    if (snapshot.exists()) {
+                        const blacklist = snapshot.val();
+                        
+                        if (blacklist[ipKey]) {
+                            // User is blacklisted - redirect to blacklist page
+                            window.location.href = '/blacklist';
+                        }
+                    }
+                });
+                
+                console.log('✅ Real-time blacklist listener active');
+            } catch (error) {
+                console.error('Error setting up blacklist listener:', error);
+            }
+        }
+
+        // Setup real-time maintenance mode listener
+        function setupMaintenanceListener() {
+            if (!firebaseInitialized || !database) return;
+            
+            try {
+                // Remove existing listener if any
+                if (maintenanceListener) {
+                    database.ref('maintenance').off('value', maintenanceListener);
+                }
+                
+                // Setup real-time listener
+                maintenanceListener = database.ref('maintenance').on('value', (snapshot) => {
+                    if (snapshot.exists()) {
+                        const maintenance = snapshot.val();
+                        
+                        // Check if user is admin
+                        const isAdmin = sessionStorage.getItem('recon_admin_session') === 'true';
+                        
+                        if (maintenance.enabled && !isAdmin) {
+                            // Maintenance is enabled - show maintenance page
+                            if (!currentMaintenanceState || currentMaintenanceState.enabled !== maintenance.enabled) {
+                                showMaintenancePage(maintenance);
+                                currentMaintenanceState = maintenance;
+                            }
+                        } else {
+                            // Maintenance is disabled or user is admin - hide maintenance page if it was shown
+                            if (currentMaintenanceState && currentMaintenanceState.enabled) {
+                                // Reload page to show normal content
+                                window.location.reload();
+                            }
+                            currentMaintenanceState = maintenance;
+                        }
+                    } else {
+                        // No maintenance data - ensure page is normal
+                        if (currentMaintenanceState && currentMaintenanceState.enabled) {
+                            window.location.reload();
+                        }
+                        currentMaintenanceState = null;
+                    }
+                });
+                
+                console.log('✅ Real-time maintenance listener active');
+            } catch (error) {
+                console.error('Error setting up maintenance listener:', error);
+            }
+        }
+
+        // Legacy function for initial check (kept for compatibility)
+        async function checkBlacklist() {
+            if (!firebaseInitialized || !database) return false;
+            
+            try {
+                const isAdmin = sessionStorage.getItem('recon_admin_session') === 'true';
+                if (isAdmin) return false;
+                
+                if (window.location.pathname.includes('blacklist') || window.location.pathname.includes('/blacklist')) {
+                    return false;
+                }
+                
+                const ip = await getClientIP();
+                const ipKey = ip.replace(/\./g, '_');
                 const blacklistSnapshot = await database.ref('blacklist').once('value');
+                
                 if (blacklistSnapshot.exists()) {
                     const blacklist = blacklistSnapshot.val();
-                    const ipKey = ip.replace(/\./g, '_');
-                    
                     if (blacklist[ipKey]) {
-                        // User is blacklisted - redirect to blacklist page
                         window.location.href = '/blacklist';
-                        return true; // Block access
+                        return true;
                     }
                 }
-                return false; // Not blacklisted
+                return false;
             } catch (error) {
                 console.error('Error checking blacklist:', error);
                 return false;
             }
         }
 
-        // Check maintenance mode
+        // Legacy function for initial check (kept for compatibility)
         async function checkMaintenanceMode() {
             if (!firebaseInitialized || !database) return;
             
@@ -5996,10 +6182,10 @@
                 if (snapshot.exists()) {
                     const maintenance = snapshot.val();
                     if (maintenance.enabled) {
-                        // Check if user is admin
                         const isAdmin = sessionStorage.getItem('recon_admin_session') === 'true';
                         if (!isAdmin) {
                             showMaintenancePage(maintenance);
+                            currentMaintenanceState = maintenance;
                         }
                     }
                 }
