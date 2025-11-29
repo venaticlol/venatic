@@ -276,7 +276,8 @@
         /* Action Buttons */
         .action-buttons {
             display: flex;
-            gap: 8px;
+            gap: 12px;
+            align-items: center;
         }
 
         .btn-action {
@@ -740,6 +741,10 @@
             margin-bottom: 20px;
         }
         
+        .ticket-form-group:last-child {
+            margin-bottom: 0;
+        }
+        
         .ticket-modal-header {
             padding: 24px;
             border-bottom: 1px solid #1a1a1a;
@@ -771,6 +776,7 @@
         .ticket-input-area {
             display: flex;
             gap: 12px;
+            align-items: center;
         }
 
         /* Changelog Changes List */
@@ -1066,7 +1072,7 @@
                 <div class="form-group">
                     <label>Changes *</label>
                     <div id="changelogChangesList" style="margin-bottom: 12px;"></div>
-                    <div style="display: flex; gap: 8px;">
+                    <div style="display: flex; gap: 12px; align-items: center;">
                         <input type="text" id="changelogChangeInput" class="form-input" placeholder="Added new feature..." style="flex: 1;" maxlength="200">
                         <button type="button" class="btn-action btn-view" onclick="addChangelogChange()" style="white-space: nowrap;">+ Add</button>
                     </div>
@@ -1143,7 +1149,7 @@
                 <div class="form-group">
                     <label>Options *</label>
                     <div id="surveyOptionsList" style="margin-bottom: 12px;"></div>
-                    <div style="display: flex; gap: 8px;">
+                    <div style="display: flex; gap: 12px; align-items: center;">
                         <input type="text" id="surveyOptionInput" class="form-input" placeholder="Enter option..." style="flex: 1;" maxlength="100">
                         <button type="button" class="btn-action btn-view" onclick="addSurveyOption()" style="white-space: nowrap;">+ Add</button>
                     </div>
@@ -1298,7 +1304,7 @@
                         <button class="ticket-send-btn" onclick="sendAdminTicketMessage()" id="adminTicketSendBtn">Send</button>
                     </div>
                 </div>
-                <div style="display: flex; gap: 8px;">
+                <div style="display: flex; gap: 12px; margin-top: 16px;">
                     <button class="admin-btn" onclick="closeAdminTicket()" id="closeTicketBtn" style="flex: 1;">Close Ticket</button>
                     <button class="admin-btn" onclick="saveTicketTranscript()" style="flex: 1; background: rgba(74, 74, 74, 0.3);">Save Transcript</button>
                     <button class="admin-btn admin-btn-danger" onclick="deleteAdminTicketFromModal()" style="flex: 1;">Delete Ticket</button>
@@ -2826,7 +2832,7 @@
             }
 
             list.innerHTML = surveyOptions.map((option, index) => `
-                <div style="display: flex; align-items: center; gap: 8px; padding: 8px; background: rgba(26, 26, 26, 0.5); border-radius: 4px; margin-bottom: 8px;">
+                <div style="display: flex; align-items: center; gap: 12px; padding: 8px; background: rgba(26, 26, 26, 0.5); border-radius: 4px; margin-bottom: 8px;">
                     <span style="flex: 1; color: #e5e5e5;">${escapeHtml(option)}</span>
                     <button type="button" class="btn-action btn-delete" onclick="removeSurveyOption(${index})" style="padding: 4px 8px;">Remove</button>
                 </div>
@@ -3060,7 +3066,7 @@
 
             list.innerHTML = embedFields.map((field, index) => `
                 <div style="background: rgba(26, 26, 26, 0.5); border-radius: 4px; padding: 12px; margin-bottom: 8px;">
-                    <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+                    <div style="display: flex; gap: 12px; margin-bottom: 8px; align-items: center;">
                         <input type="text" class="form-input" placeholder="Field Name" value="${escapeHtml(field.name || '')}" onchange="embedFields[${index}].name = this.value; updateEmbedPreview();" style="flex: 1;" maxlength="256">
                         <label style="display: flex; align-items: center; gap: 4px; color: #888; font-size: 12px;">
                             <input type="checkbox" ${field.inline ? 'checked' : ''} onchange="embedFields[${index}].inline = this.checked; updateEmbedPreview();"> Inline
