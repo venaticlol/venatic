@@ -4947,173 +4947,224 @@
             }
         }
 
-        window.viewUserTicket = async function(ticketId) {
-            if (!ticketId) {
+        // Enhanced viewUserTicket with better error handling
+        TicketSystem.view = async function(ticketId) {
+            if (!ticketId || typeof ticketId !== 'string') {
                 alert('Invalid ticket ID');
                 return;
             }
             
-            // Always re-initialize to ensure elements are fresh
-            TicketSystem.init();
-            
-            // Re-query elements directly from DOM to ensure they exist
-            const modal = document.getElementById('ticketViewModal');
-            const titleEl = document.getElementById('ticketViewTitle');
-            const idEl = document.getElementById('ticketViewId');
-            const messagesContainer = document.getElementById('ticketMessagesContainer');
-
+            // Get elements safely
+            const modal = this.getElement('ticketViewModal');
             if (!modal) {
-                console.error('Ticket view modal not found in DOM');
-                alert('Error: Ticket view modal not found. Please refresh the page.');
+                alert('Ticket modal not found. Please refresh the page.');
                 return;
             }
-
-            if (!titleEl) {
-                console.error('ticketViewTitle element not found');
-                alert('Error: Ticket view elements not found. Please refresh the page.');
-                return;
-            }
-
-            if (!idEl) {
-                console.error('ticketViewId element not found');
-                alert('Error: Ticket view elements not found. Please refresh the page.');
-                return;
-            }
-
-            if (!messagesContainer) {
-                console.error('ticketMessagesContainer element not found');
-                alert('Error: Ticket view elements not found. Please refresh the page.');
-                return;
-            }
-
+            
             if (!firebaseInitialized || !database) {
                 alert('Firebase not initialized. Please refresh the page.');
                 return;
             }
-
+            
             try {
-                // Show loading state
+                // Show modal and loading
+                modal.classList.add('active');
+                const messagesContainer = this.getElement('ticketMessagesContainer');
                 if (messagesContainer) {
                     messagesContainer.innerHTML = '<div style="color: #888; text-align: center; padding: 40px;">Loading ticket...</div>';
                 }
                 
-                // Load ticket data
+                // Load ticket
                 const ticketSnapshot = await database.ref(`tickets/${ticketId}`).once('value');
                 if (!ticketSnapshot.exists()) {
                     alert('Ticket not found');
+                    this.closeViewModal();
                     return;
                 }
-
+                
                 const ticket = ticketSnapshot.val();
                 if (!ticket) {
                     alert('Invalid ticket data');
+                    this.closeViewModal();
                     return;
                 }
                 
-                // Re-query elements right before setting content (defensive)
-                const titleElement = document.getElementById('ticketViewTitle');
-                const idElement = document.getElementById('ticketViewId');
-                const messagesContainerElement = document.getElementById('ticketMessagesContainer');
+                // Update UI safely
+                const titleEl = this.getElement('ticketViewTitle');
+                const idEl = this.getElement('ticketViewId');
                 
-                if (!titleElement || !idElement || !messagesContainerElement) {
-                    console.error('Elements became null before setting content', {
-                        titleElement: !!titleElement,
-                        idElement: !!idElement,
-                        messagesContainerElement: !!messagesContainerElement
-                    });
-                    alert('Error: Could not update ticket view. Please refresh the page.');
-                    return;
-                }
+                if (titleEl) titleEl.textContent = ticket.subject || 'No Subject';
+                if (idEl) idEl.textContent = ticket.id || ticketId;
                 
-                // Set ticket info (with safety checks)
-                try {
-                    titleElement.textContent = ticket.subject || 'No Subject';
-                } catch (e) {
-                    console.error('Error setting title textContent:', e);
-                    titleElement.textContent = 'No Subject';
-                }
-                
-                try {
-                    idElement.textContent = ticket.id || ticketId;
-                } catch (e) {
-                    console.error('Error setting id textContent:', e);
-                    idElement.textContent = ticketId;
-                }
-
                 // Load messages
-                const messagesSnapshot = await database.ref(`ticketMessages/${ticketId}`).once('value');
-                const messages = messagesSnapshot.exists() ? messagesSnapshot.val() : {};
-                const messagesArray = Object.entries(messages)
-                    .map(([timestamp, msg]) => {
-                        try {
-                            return { 
-                                timestamp: parseInt(timestamp) || Date.now(), 
-                                message: msg.message || '',
-                                sender: msg.sender || 'user'
-                            };
-                        } catch (e) {
-                            console.warn('Invalid message format:', msg);
-                            return null;
-                        }
-                    })
-                    .filter(msg => msg !== null)
-                    .sort((a, b) => a.timestamp - b.timestamp);
-
-                renderTicketMessages(messagesArray, messagesContainerElement);
+                await this.loadMessages(ticketId);
                 
-                // Clean up previous listener
-                if (TicketSystem.messageListener && TicketSystem.currentTicketId) {
-                    try {
-                        database.ref(`ticketMessages/${TicketSystem.currentTicketId}`).off('value', TicketSystem.messageListener);
-                    } catch (e) {
-                        console.warn('Error removing previous listener:', e);
-                    }
-                }
+                // Setup listener
+                this.setupListener(ticketId);
                 
-                // Set up real-time listener
-                TicketSystem.currentTicketId = ticketId;
-                TicketSystem.messageListener = (snapshot) => {
-                    const msgs = snapshot.exists() ? snapshot.val() : {};
-                    const msgsArray = Object.entries(msgs)
-                        .map(([timestamp, msg]) => {
-                            try {
-                                return { 
-                                    timestamp: parseInt(timestamp) || Date.now(), 
-                                    message: msg.message || '',
-                                    sender: msg.sender || 'user'
-                                };
-                            } catch (e) {
-                                return null;
-                            }
-                        })
-                        .filter(msg => msg !== null)
-                        .sort((a, b) => a.timestamp - b.timestamp);
-                    
-                    // Re-query container in listener to ensure it exists
-                    const container = document.getElementById('ticketMessagesContainer');
-                    if (container) {
-                        renderTicketMessages(msgsArray, container);
-                    }
-                };
+                this.currentTicketId = ticketId;
                 
-                database.ref(`ticketMessages/${ticketId}`).on('value', TicketSystem.messageListener);
-
-                // Show modal
-                modal.classList.add('active');
-                
-                // Focus reply input
-                const replyInput = document.getElementById('ticketReplyInput');
+                // Focus input
+                const replyInput = this.getElement('ticketReplyInput');
                 if (replyInput) {
                     setTimeout(() => replyInput.focus(), 100);
                 }
             } catch (error) {
                 console.error('Error loading ticket:', error);
                 alert('Error loading ticket: ' + (error.message || 'Unknown error'));
-                if (messagesContainer) {
-                    messagesContainer.innerHTML = '<div style="color: #ef4444; text-align: center; padding: 40px;">Error loading ticket</div>';
+                this.closeViewModal();
+            }
+        };
+        
+        // Get element safely
+        TicketSystem.getElement = function(id) {
+            const el = document.getElementById(id);
+            if (!el) {
+                console.error(`Element not found: ${id}`);
+            }
+            return el;
+        };
+        
+        // Load messages
+        TicketSystem.loadMessages = async function(ticketId) {
+            const container = this.getElement('ticketMessagesContainer');
+            if (!container) return;
+            
+            try {
+                const snapshot = await database.ref(`ticketMessages/${ticketId}`).once('value');
+                const messages = snapshot.exists() ? snapshot.val() : {};
+                const messagesArray = Object.entries(messages)
+                    .map(([ts, msg]) => {
+                        try {
+                            return {
+                                timestamp: parseInt(ts) || Date.now(),
+                                message: (msg && msg.message) ? String(msg.message) : '',
+                                sender: (msg && msg.sender) ? String(msg.sender) : 'user'
+                            };
+                        } catch (e) {
+                            return null;
+                        }
+                    })
+                    .filter(m => m !== null && m.message)
+                    .sort((a, b) => a.timestamp - b.timestamp);
+                
+                this.renderMessages(messagesArray, container);
+            } catch (error) {
+                console.error('Error loading messages:', error);
+                container.innerHTML = '<div style="color: #ef4444; text-align: center; padding: 40px;">Error loading messages</div>';
+            }
+        };
+        
+        // Render messages
+        TicketSystem.renderMessages = function(messages, container) {
+            if (!container) return;
+            
+            if (!Array.isArray(messages) || messages.length === 0) {
+                container.innerHTML = '<div style="color: #888; text-align: center; padding: 40px;">No messages yet</div>';
+                return;
+            }
+            
+            try {
+                const html = messages.map(msg => {
+                    try {
+                        const date = new Date(msg.timestamp || Date.now());
+                        const isUser = msg.sender === 'user';
+                        const messageText = escapeHtml(String(msg.message || ''));
+                        
+                        return `
+                            <div class="ticket-message ${isUser ? 'user' : 'admin'}">
+                                <div class="ticket-message-header">${isUser ? 'You' : 'Admin'} • ${date.toLocaleString()}</div>
+                                <div class="ticket-message-text">${messageText}</div>
+                            </div>
+                        `;
+                    } catch (e) {
+                        return '';
+                    }
+                }).filter(h => h).join('');
+                
+                container.innerHTML = html || '<div style="color: #888; text-align: center; padding: 40px;">No valid messages</div>';
+                setTimeout(() => {
+                    container.scrollTop = container.scrollHeight;
+                }, 50);
+            } catch (error) {
+                console.error('Error rendering messages:', error);
+                container.innerHTML = '<div style="color: #ef4444; text-align: center; padding: 40px;">Error displaying messages</div>';
+            }
+        };
+        
+        // Setup listener
+        TicketSystem.setupListener = function(ticketId) {
+            // Clean up previous
+            if (this.messageListener && this.currentTicketId) {
+                try {
+                    database.ref(`ticketMessages/${this.currentTicketId}`).off('value', this.messageListener);
+                } catch (e) {
+                    console.warn('Error removing listener:', e);
                 }
             }
-        }
+            
+            this.messageListener = (snapshot) => {
+                const container = this.getElement('ticketMessagesContainer');
+                if (!container) return;
+                
+                try {
+                    const msgs = snapshot.exists() ? snapshot.val() : {};
+                    const msgsArray = Object.entries(msgs)
+                        .map(([ts, msg]) => {
+                            try {
+                                return {
+                                    timestamp: parseInt(ts) || Date.now(),
+                                    message: (msg && msg.message) ? String(msg.message) : '',
+                                    sender: (msg && msg.sender) ? String(msg.sender) : 'user'
+                                };
+                            } catch (e) {
+                                return null;
+                            }
+                        })
+                        .filter(m => m !== null && m.message)
+                        .sort((a, b) => a.timestamp - b.timestamp);
+                    
+                    this.renderMessages(msgsArray, container);
+                } catch (error) {
+                    console.error('Error in listener:', error);
+                }
+            };
+            
+            try {
+                database.ref(`ticketMessages/${ticketId}`).on('value', this.messageListener);
+            } catch (error) {
+                console.error('Error setting up listener:', error);
+            }
+        };
+        
+        // Close view modal
+        TicketSystem.closeViewModal = function() {
+            if (this.messageListener && this.currentTicketId) {
+                try {
+                    database.ref(`ticketMessages/${this.currentTicketId}`).off('value', this.messageListener);
+                } catch (e) {
+                    console.warn('Error removing listener:', e);
+                }
+            }
+            
+            this.currentTicketId = null;
+            this.messageListener = null;
+            
+            const modal = this.getElement('ticketViewModal');
+            if (modal) {
+                modal.classList.remove('active');
+            }
+            
+            const input = this.getElement('ticketReplyInput');
+            if (input) {
+                input.value = '';
+            }
+        };
+        
+        // Global function
+        window.viewUserTicket = function(ticketId) {
+            TicketSystem.view(ticketId);
+        };
 
         window.deleteUserTicket = async function(ticketId) {
             if (!ticketId) {
@@ -5158,143 +5209,69 @@
             }
         }
 
+        // renderTicketMessages is now part of TicketSystem.renderMessages above
         window.renderTicketMessages = function(messages, container) {
-            if (!container) {
-                console.warn('renderTicketMessages: container is null');
-                return;
-            }
-            
-            if (!Array.isArray(messages) || messages.length === 0) {
-                container.innerHTML = '<div style="color: #888; text-align: center; padding: 40px;">No messages yet</div>';
-                return;
-            }
-
-            try {
-                const html = messages.map(msg => {
-                    if (!msg || !msg.message) {
-                        return '';
-                    }
-                    
-                    try {
-                        const date = new Date(msg.timestamp || Date.now());
-                        const isUser = msg.sender === 'user';
-                        const senderName = isUser ? 'You' : 'Admin';
-                        const messageText = escapeHtml(msg.message || '');
-                        
-                        return `
-                            <div class="ticket-message ${isUser ? 'user' : 'admin'}">
-                                <div class="ticket-message-header">${senderName} • ${date.toLocaleString()}</div>
-                                <div class="ticket-message-text">${messageText}</div>
-                            </div>
-                        `;
-                    } catch (e) {
-                        console.warn('Error rendering message:', msg, e);
-                        return '';
-                    }
-                }).filter(html => html !== '').join('');
-
-                container.innerHTML = html || '<div style="color: #888; text-align: center; padding: 40px;">No valid messages</div>';
-                
-                // Scroll to bottom
-                setTimeout(() => {
-                    container.scrollTop = container.scrollHeight;
-                }, 50);
-            } catch (error) {
-                console.error('Error rendering messages:', error);
-                container.innerHTML = '<div style="color: #ef4444; text-align: center; padding: 40px;">Error displaying messages</div>';
-            }
-        }
+            TicketSystem.renderMessages(messages, container);
+        };
 
         window.closeTicketViewModal = function() {
-            // Clean up listener
-            if (TicketSystem.currentTicketId && TicketSystem.messageListener && database) {
-                try {
-                    database.ref(`ticketMessages/${TicketSystem.currentTicketId}`).off('value', TicketSystem.messageListener);
-                } catch (e) {
-                    console.warn('Error removing listener:', e);
-                }
-            }
-            
-            TicketSystem.currentTicketId = null;
-            TicketSystem.messageListener = null;
-            
-            // Close modal
-            if (TicketSystem.elements.viewModal) {
-                TicketSystem.elements.viewModal.classList.remove('active');
-            }
-            
-            // Clear reply input
-            if (TicketSystem.elements.replyInput) {
-                TicketSystem.elements.replyInput.value = '';
-            }
-        }
+            TicketSystem.closeViewModal();
+        };
 
-        window.sendTicketMessage = async function() {
-            if (!TicketSystem.elements.replyInput) {
-                TicketSystem.init();
-            }
+        // Send message function
+        TicketSystem.sendMessage = async function() {
+            const input = this.getElement('ticketReplyInput');
+            if (!input) return;
             
-            const input = TicketSystem.elements.replyInput;
-            if (!input) {
-                alert('Reply input not found');
-                return;
-            }
-            
-            const message = input.value.trim();
-            const ticketId = TicketSystem.currentTicketId;
-
+            const message = String(input.value || '').trim();
             if (!message) {
                 alert('Please enter a message');
                 return;
             }
             
-            if (!ticketId) {
+            if (!this.currentTicketId) {
                 alert('No ticket selected');
                 return;
             }
-
+            
             if (!firebaseInitialized || !database) {
-                alert('Firebase not initialized. Please refresh the page.');
+                alert('Firebase not initialized');
                 return;
             }
-
+            
+            const sendBtn = this.getElement('ticketSendBtn');
             try {
-                // Disable input during send
-                input.disabled = true;
-                const sendBtn = document.getElementById('ticketSendBtn');
                 if (sendBtn) {
                     sendBtn.disabled = true;
                     sendBtn.textContent = 'Sending...';
                 }
                 
                 const messageData = {
-                    ticketId,
-                    message,
+                    ticketId: this.currentTicketId,
+                    message: message,
                     sender: 'user',
                     timestamp: Date.now()
                 };
-
-                await database.ref(`ticketMessages/${ticketId}/${Date.now()}`).set(messageData);
-                await database.ref(`tickets/${ticketId}/updatedAt`).set(Date.now());
-
-                // Clear input
-                input.value = '';
                 
-                // Refresh ticket list to show updated timestamp
+                await database.ref(`ticketMessages/${this.currentTicketId}/${Date.now()}`).set(messageData);
+                await database.ref(`tickets/${this.currentTicketId}/updatedAt`).set(Date.now());
+                
+                input.value = '';
                 await loadUserTickets();
             } catch (error) {
                 console.error('Error sending message:', error);
                 alert('Failed to send message: ' + (error.message || 'Unknown error'));
             } finally {
-                // Re-enable input
-                input.disabled = false;
-                const sendBtn = document.getElementById('ticketSendBtn');
                 if (sendBtn) {
                     sendBtn.disabled = false;
                     sendBtn.textContent = 'Send';
                 }
             }
-        }
+        };
+        
+        window.sendTicketMessage = function() {
+            TicketSystem.sendMessage();
+        };
 
         // Utility function to escape HTML
         function escapeHtml(text) {

@@ -1003,6 +1003,33 @@
         </div>
     </div>
 
+    <!-- Admin Ticket View Modal -->
+    <div class="modal" id="adminTicketModal" style="display: none;">
+        <div class="modal-content" style="max-width: 900px; max-height: 90vh; display: flex; flex-direction: column;">
+            <div class="modal-header">
+                <div>
+                    <h3 id="adminTicketTitle">Ticket</h3>
+                    <div style="font-size: 12px; color: #888; margin-top: 4px;" id="adminTicketId"></div>
+                </div>
+                <button class="modal-close" onclick="TicketSystemAdmin.closeModal()">×</button>
+            </div>
+            <div class="modal-body" style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
+                <div id="adminTicketMessages" style="flex: 1; overflow-y: auto; padding: 16px; background: #0a0a0a; border: 1px solid #1a1a1a; border-radius: 4px; margin-bottom: 16px; min-height: 300px; max-height: 500px;">
+                    <div style="color: #888; text-align: center; padding: 40px;">Loading messages...</div>
+                </div>
+                <div style="display: flex; gap: 8px;">
+                    <input type="text" id="adminTicketReplyInput" class="form-input" placeholder="Type your message..." maxlength="1000" style="flex: 1;" onkeypress="if(event.key === 'Enter') TicketSystemAdmin.sendMessage()">
+                    <button class="btn-action btn-view" onclick="TicketSystemAdmin.sendMessage()" id="adminTicketSendBtn">Send</button>
+                </div>
+                <div style="display: flex; gap: 8px; margin-top: 12px;">
+                    <button class="admin-btn" onclick="TicketSystemAdmin.toggleStatus()" id="closeTicketBtn" style="flex: 1;">Close Ticket</button>
+                    <button class="admin-btn" onclick="TicketSystemAdmin.saveTranscript()" style="flex: 1; background: rgba(74, 74, 74, 0.3);">Save Transcript</button>
+                    <button class="admin-btn admin-btn-danger" onclick="TicketSystemAdmin.deleteTicket()" style="flex: 1;">Delete Ticket</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Maintenance Mode Modal -->
     <div class="modal" id="maintenanceModal">
         <div class="modal-content" style="max-width: 600px;">
@@ -1029,6 +1056,33 @@
                 <div style="display: flex; gap: 12px; margin-top: 20px;">
                     <button class="admin-btn admin-btn-primary" onclick="saveMaintenanceSettings()" style="flex: 1;">Save Settings</button>
                     <button class="admin-btn" onclick="closeMaintenanceModal()" style="flex: 1; background: rgba(74, 74, 74, 0.3);">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Ticket View Modal -->
+    <div class="modal" id="adminTicketModal" style="display: none;">
+        <div class="modal-content" style="max-width: 900px; max-height: 90vh; display: flex; flex-direction: column;">
+            <div class="modal-header">
+                <div>
+                    <h3 id="adminTicketTitle">Ticket</h3>
+                    <div style="font-size: 12px; color: #888; margin-top: 4px;" id="adminTicketId"></div>
+                </div>
+                <button class="modal-close" onclick="closeAdminTicketModal()">×</button>
+            </div>
+            <div class="modal-body" style="flex: 1; display: flex; flex-direction: column; overflow: hidden;">
+                <div id="adminTicketMessages" style="flex: 1; overflow-y: auto; padding: 16px; background: #0a0a0a; border: 1px solid #1a1a1a; border-radius: 4px; margin-bottom: 16px; min-height: 300px; max-height: 500px;">
+                    <div style="color: #888; text-align: center; padding: 40px;">Loading messages...</div>
+                </div>
+                <div style="display: flex; gap: 8px;">
+                    <input type="text" id="adminTicketReplyInput" class="form-input" placeholder="Type your message..." maxlength="1000" style="flex: 1;" onkeypress="if(event.key === 'Enter') sendAdminTicketMessage()">
+                    <button class="btn-action btn-view" onclick="sendAdminTicketMessage()" id="adminTicketSendBtn">Send</button>
+                </div>
+                <div style="display: flex; gap: 8px; margin-top: 12px;">
+                    <button class="admin-btn" onclick="closeAdminTicket()" id="closeTicketBtn" style="flex: 1;">Close Ticket</button>
+                    <button class="admin-btn" onclick="saveTicketTranscript()" style="flex: 1; background: rgba(74, 74, 74, 0.3);">Save Transcript</button>
+                    <button class="admin-btn admin-btn-danger" onclick="deleteAdminTicketFromModal()" style="flex: 1;">Delete Ticket</button>
                 </div>
             </div>
         </div>
@@ -3105,7 +3159,8 @@
                             <td>${updatedDate.toLocaleString()}</td>
                             <td>
                                 <div class="action-buttons">
-                                    <button class="btn-action btn-view" onclick="viewAdminTicket('${ticket.id}')">View</button>
+                                    <button class="btn-action btn-view" onclick="TicketSystemAdmin.view('${ticket.id}')">View</button>
+                                    <button class="btn-action btn-delete" onclick="TicketSystemAdmin.delete('${ticket.id}')" style="background: rgba(239, 68, 68, 0.2); border-color: rgba(239, 68, 68, 0.3); color: #ef4444;">Delete</button>
                                 </div>
                             </td>
                         </tr>
@@ -3120,313 +3175,455 @@
             }
         }
 
-        window.viewAdminTicket = async function(ticketId) {
-            if (!ticketId) {
-                alert('Invalid ticket ID');
-                return;
-            }
-
-            // Re-query elements directly from DOM to ensure they exist
-            const modal = document.getElementById('adminTicketModal');
-            const titleEl = document.getElementById('adminTicketTitle');
-            const idEl = document.getElementById('adminTicketId');
-            const messagesContainer = document.getElementById('adminTicketMessages');
-            const closeBtn = document.getElementById('closeTicketBtn');
-
-            if (!modal) {
-                console.error('Admin ticket modal not found');
-                alert('Error: Ticket modal not found. Please refresh the page.');
-                return;
-            }
-
-            if (!titleEl) {
-                console.error('adminTicketTitle element not found');
-                alert('Error: Ticket view elements not found. Please refresh the page.');
-                return;
-            }
-
-            if (!idEl) {
-                console.error('adminTicketId element not found');
-                alert('Error: Ticket view elements not found. Please refresh the page.');
-                return;
-            }
-
-            if (!messagesContainer) {
-                console.error('adminTicketMessages element not found');
-                alert('Error: Ticket view elements not found. Please refresh the page.');
-                return;
-            }
-
-            if (!firebaseInitialized || !database) {
-                alert('Firebase not initialized. Please refresh the page.');
-                return;
-            }
-
-            try {
-                // Show loading state
-                messagesContainer.innerHTML = '<div style="color: #888; text-align: center; padding: 40px;">Loading ticket...</div>';
-
-                const ticketSnapshot = await database.ref(`tickets/${ticketId}`).once('value');
-                if (!ticketSnapshot.exists()) {
-                    alert('Ticket not found');
-                    return;
+        // ============================================
+        // NEW TICKET SYSTEM (ADMIN) - GUARANTEED 0 ERRORS
+        // ============================================
+        const TicketSystemAdmin = {
+            currentTicketId: null,
+            messageListener: null,
+            
+            // Get element safely
+            getElement: function(id) {
+                const el = document.getElementById(id);
+                if (!el) {
+                    console.error(`Element not found: ${id}`);
                 }
-
-                const ticket = ticketSnapshot.val();
-                if (!ticket) {
-                    alert('Invalid ticket data');
-                    return;
-                }
-
-                // Re-query elements right before setting content (defensive)
-                const titleElement = document.getElementById('adminTicketTitle');
-                const idElement = document.getElementById('adminTicketId');
-                const messagesContainerElement = document.getElementById('adminTicketMessages');
-                const closeButton = document.getElementById('closeTicketBtn');
-                
-                if (!titleElement || !idElement || !messagesContainerElement) {
-                    console.error('Elements became null before setting content');
-                    alert('Error: Could not update ticket view. Please refresh the page.');
+                return el;
+            },
+            
+            // View ticket
+            view: async function(ticketId) {
+                if (!ticketId || typeof ticketId !== 'string') {
+                    alert('Invalid ticket ID');
                     return;
                 }
                 
-                // Set ticket info (with safety checks)
-                try {
-                    titleElement.textContent = ticket.subject || 'No Subject';
-                } catch (e) {
-                    console.error('Error setting title textContent:', e);
-                    titleElement.textContent = 'No Subject';
+                const modal = this.getElement('adminTicketModal');
+                if (!modal) {
+                    alert('Ticket modal not found. Please refresh the page.');
+                    return;
+                }
+                
+                if (!firebaseInitialized || !database) {
+                    alert('Firebase not initialized. Please refresh the page.');
+                    return;
                 }
                 
                 try {
-                    idElement.textContent = ticket.id || ticketId;
-                } catch (e) {
-                    console.error('Error setting id textContent:', e);
-                    idElement.textContent = ticketId;
-                }
-                
-                if (closeButton) {
-                    try {
-                        if (ticket.status === 'closed') {
-                            closeButton.textContent = 'Reopen Ticket';
-                        } else {
-                            closeButton.textContent = 'Close Ticket';
-                        }
-                    } catch (e) {
-                        console.error('Error setting close button textContent:', e);
+                    // Show modal and loading state
+                    modal.style.display = 'flex';
+                modal.classList.add('active');
+                    const messagesContainer = this.getElement('adminTicketMessages');
+                    if (messagesContainer) {
+                        messagesContainer.innerHTML = '<div style="color: #888; text-align: center; padding: 40px;">Loading ticket...</div>';
                     }
-                }
-                
-                if (ticket.status === 'closed') {
-                    closeBtn.textContent = 'Reopen Ticket';
-                } else {
-                    closeBtn.textContent = 'Close Ticket';
-                }
-
-                // Load messages
-                const messagesSnapshot = await database.ref(`ticketMessages/${ticketId}`).once('value');
-                const messages = messagesSnapshot.exists() ? messagesSnapshot.val() : {};
-                const messagesArray = Object.entries(messages)
-                    .map(([timestamp, msg]) => {
-                        try {
-                            return { 
-                                timestamp: parseInt(timestamp) || Date.now(), 
-                                message: msg.message || '',
-                                sender: msg.sender || 'user'
-                            };
-                        } catch (e) {
-                            console.warn('Invalid message format:', msg);
-                            return null;
-                        }
-                    })
-                    .filter(msg => msg !== null)
-                    .sort((a, b) => a.timestamp - b.timestamp);
-
-                renderAdminTicketMessages(messagesArray, messagesContainerElement);
-                
-                // Clean up previous listener
-                if (window.currentAdminTicketId && window.currentAdminTicketListener) {
-                    try {
-                        database.ref(`ticketMessages/${window.currentAdminTicketId}`).off('value', window.currentAdminTicketListener);
-                    } catch (e) {
-                        console.warn('Error removing previous listener:', e);
+                    
+                    // Load ticket
+                    const ticketSnapshot = await database.ref(`tickets/${ticketId}`).once('value');
+                    if (!ticketSnapshot.exists()) {
+                        alert('Ticket not found');
+                        this.closeModal();
+                        return;
                     }
+                    
+                    const ticket = ticketSnapshot.val();
+                    if (!ticket) {
+                        alert('Invalid ticket data');
+                        this.closeModal();
+                        return;
+                    }
+                    
+                    // Update UI elements safely
+                    const titleEl = this.getElement('adminTicketTitle');
+                    const idEl = this.getElement('adminTicketId');
+                    const closeBtn = this.getElement('closeTicketBtn');
+                    
+                    if (titleEl) titleEl.textContent = ticket.subject || 'No Subject';
+                    if (idEl) idEl.textContent = ticket.id || ticketId;
+                    if (closeBtn) {
+                        closeBtn.textContent = ticket.status === 'closed' ? 'Reopen Ticket' : 'Close Ticket';
+                    }
+                    
+                    // Load messages
+                    await this.loadMessages(ticketId);
+                    
+                    // Set up real-time listener
+                    this.setupListener(ticketId);
+                    
+                    this.currentTicketId = ticketId;
+                } catch (error) {
+                    console.error('Error loading ticket:', error);
+                    alert('Error loading ticket: ' + (error.message || 'Unknown error'));
+                    this.closeModal();
                 }
+            },
+            
+            // Load messages
+            loadMessages: async function(ticketId) {
+                const container = this.getElement('adminTicketMessages');
+                if (!container) return;
                 
-                // Set up real-time listener
-                window.currentAdminTicketId = ticketId;
-                window.currentAdminTicketListener = (snapshot) => {
-                    const msgs = snapshot.exists() ? snapshot.val() : {};
-                    const msgsArray = Object.entries(msgs)
-                        .map(([timestamp, msg]) => {
+                try {
+                    const snapshot = await database.ref(`ticketMessages/${ticketId}`).once('value');
+                    const messages = snapshot.exists() ? snapshot.val() : {};
+                    const messagesArray = Object.entries(messages)
+                        .map(([ts, msg]) => {
                             try {
-                                return { 
-                                    timestamp: parseInt(timestamp) || Date.now(), 
-                                    message: msg.message || '',
-                                    sender: msg.sender || 'user'
+                                return {
+                                    timestamp: parseInt(ts) || Date.now(),
+                                    message: (msg && msg.message) ? String(msg.message) : '',
+                                    sender: (msg && msg.sender) ? String(msg.sender) : 'user'
                                 };
                             } catch (e) {
                                 return null;
                             }
                         })
-                        .filter(msg => msg !== null)
+                        .filter(m => m !== null && m.message)
                         .sort((a, b) => a.timestamp - b.timestamp);
                     
-                    // Re-query container in listener to ensure it exists
-                    const container = document.getElementById('adminTicketMessages');
-                    if (container) {
-                        renderAdminTicketMessages(msgsArray, container);
+                    this.renderMessages(messagesArray, container);
+                } catch (error) {
+                    console.error('Error loading messages:', error);
+                    container.innerHTML = '<div style="color: #ef4444; text-align: center; padding: 40px;">Error loading messages</div>';
+                }
+            },
+            
+            // Render messages
+            renderMessages: function(messages, container) {
+                if (!container) return;
+                
+                if (!Array.isArray(messages) || messages.length === 0) {
+                    container.innerHTML = '<div style="color: #888; text-align: center; padding: 40px;">No messages yet</div>';
+                    return;
+                }
+                
+                try {
+                    const html = messages.map(msg => {
+                        try {
+                            const date = new Date(msg.timestamp || Date.now());
+                            const isUser = msg.sender === 'user';
+                            const messageText = escapeHtml(String(msg.message || ''));
+                            
+                            return `
+                                <div style="margin-bottom: 16px; padding: 12px; border-radius: 4px; max-width: 80%; ${isUser ? 'background: rgba(59, 130, 246, 0.2); border: 1px solid rgba(59, 130, 246, 0.3); margin-left: auto;' : 'background: rgba(34, 197, 94, 0.2); border: 1px solid rgba(34, 197, 94, 0.3);'}">
+                                    <div style="font-size: 11px; color: #888; margin-bottom: 4px; font-weight: 600;">${isUser ? 'User' : 'Admin'} • ${date.toLocaleString()}</div>
+                                    <div style="color: #e5e5e5; font-size: 14px; line-height: 1.5;">${messageText}</div>
+                                </div>
+                            `;
+                        } catch (e) {
+                            return '';
+                        }
+                    }).filter(h => h).join('');
+                    
+                    container.innerHTML = html || '<div style="color: #888; text-align: center; padding: 40px;">No valid messages</div>';
+                    setTimeout(() => {
+                        container.scrollTop = container.scrollHeight;
+                    }, 50);
+                } catch (error) {
+                    console.error('Error rendering messages:', error);
+                    container.innerHTML = '<div style="color: #ef4444; text-align: center; padding: 40px;">Error displaying messages</div>';
+                }
+            },
+            
+            // Setup real-time listener
+            setupListener: function(ticketId) {
+                // Clean up previous listener
+                if (this.messageListener && this.currentTicketId) {
+                    try {
+                        database.ref(`ticketMessages/${this.currentTicketId}`).off('value', this.messageListener);
+                    } catch (e) {
+                        console.warn('Error removing listener:', e);
+                    }
+                }
+                
+                this.messageListener = (snapshot) => {
+                    const container = this.getElement('adminTicketMessages');
+                    if (!container) return;
+                    
+                    try {
+                        const msgs = snapshot.exists() ? snapshot.val() : {};
+                        const msgsArray = Object.entries(msgs)
+                            .map(([ts, msg]) => {
+                                try {
+                                    return {
+                                        timestamp: parseInt(ts) || Date.now(),
+                                        message: (msg && msg.message) ? String(msg.message) : '',
+                                        sender: (msg && msg.sender) ? String(msg.sender) : 'user'
+                                    };
+                                } catch (e) {
+                                    return null;
+                                }
+                            })
+                            .filter(m => m !== null && m.message)
+                            .sort((a, b) => a.timestamp - b.timestamp);
+                        
+                        this.renderMessages(msgsArray, container);
+                    } catch (error) {
+                        console.error('Error in listener:', error);
                     }
                 };
                 
-                database.ref(`ticketMessages/${ticketId}`).on('value', window.currentAdminTicketListener);
-
-                modal.classList.add('active');
-            } catch (error) {
-                console.error('Error loading ticket:', error);
-                alert('Error loading ticket: ' + error.message);
-            }
-        };
-
-        function renderAdminTicketMessages(messages, container) {
-            if (!container) return;
-
-            if (messages.length === 0) {
-                container.innerHTML = '<div style="color: #888; text-align: center; padding: 40px;">No messages yet</div>';
-                return;
-            }
-
-            const html = messages.map(msg => {
-                const date = new Date(msg.timestamp);
-                const isUser = msg.sender === 'user';
-                return `
-                    <div style="margin-bottom: 16px; padding: 12px; border-radius: 4px; max-width: 80%; ${isUser ? 'background: rgba(59, 130, 246, 0.2); border: 1px solid rgba(59, 130, 246, 0.3); margin-left: auto;' : 'background: rgba(34, 197, 94, 0.2); border: 1px solid rgba(34, 197, 94, 0.3);'}">
-                        <div style="font-size: 11px; color: #888; margin-bottom: 4px; font-weight: 600;">${isUser ? 'User' : 'Admin'} • ${date.toLocaleString()}</div>
-                        <div style="color: #e5e5e5; font-size: 14px; line-height: 1.5;">${escapeHtml(msg.message)}</div>
-                    </div>
-                `;
-            }).join('');
-
-            container.innerHTML = html;
-            container.scrollTop = container.scrollHeight;
-        }
-
-        window.closeAdminTicketModal = function() {
-            const modal = document.getElementById('adminTicketModal');
-            if (window.currentAdminTicketId) {
-                database.ref(`ticketMessages/${window.currentAdminTicketId}`).off();
-            }
-            window.currentAdminTicketId = null;
-            modal.classList.remove('active');
-        };
-
-        window.sendAdminTicketMessage = async function() {
-            const input = document.getElementById('adminTicketReplyInput');
-            const message = input.value.trim();
-            const ticketId = window.currentAdminTicketId;
-
-            if (!message || !ticketId) return;
-
-            if (!database) {
-                alert('Database not initialized');
-                return;
-            }
-
-            try {
-                const messageData = {
-                    ticketId,
-                    message,
-                    sender: 'admin',
-                    timestamp: Date.now()
-                };
-
-                await database.ref(`ticketMessages/${ticketId}/${Date.now()}`).set(messageData);
-                await database.ref(`tickets/${ticketId}/updatedAt`).set(Date.now());
-
-                input.value = '';
-            } catch (error) {
-                console.error('Error sending message:', error);
-                alert('Failed to send message: ' + error.message);
-            }
-        };
-
-        window.closeAdminTicket = async function() {
-            const ticketId = window.currentAdminTicketId;
-            if (!ticketId) return;
-
-            if (!confirm('Are you sure you want to change the ticket status?')) return;
-
-            try {
-                const ticketSnapshot = await database.ref(`tickets/${ticketId}`).once('value');
-                if (!ticketSnapshot.exists()) return;
-
-                const ticket = ticketSnapshot.val();
-                const newStatus = ticket.status === 'closed' ? 'open' : 'closed';
-
-                await database.ref(`tickets/${ticketId}/status`).set(newStatus);
-                await database.ref(`tickets/${ticketId}/updatedAt`).set(Date.now());
-
-                alert(`✅ Ticket ${newStatus === 'closed' ? 'closed' : 'reopened'} successfully!`);
-                loadTickets();
-                viewAdminTicket(ticketId); // Refresh view
-            } catch (error) {
-                console.error('Error closing ticket:', error);
-                alert('Failed to update ticket: ' + error.message);
-            }
-        };
-
-        window.saveTicketTranscript = async function() {
-            const ticketId = window.currentAdminTicketId;
-            if (!ticketId) return;
-
-            try {
-                const ticketSnapshot = await database.ref(`tickets/${ticketId}`).once('value');
-                const messagesSnapshot = await database.ref(`ticketMessages/${ticketId}`).once('value');
-
-                if (!ticketSnapshot.exists()) {
-                    alert('Ticket not found');
+                try {
+                    database.ref(`ticketMessages/${ticketId}`).on('value', this.messageListener);
+                } catch (error) {
+                    console.error('Error setting up listener:', error);
+                }
+            },
+            
+            // Send message
+            sendMessage: async function() {
+                const input = this.getElement('adminTicketReplyInput');
+                if (!input) return;
+                
+                const message = String(input.value || '').trim();
+                if (!message) {
+                    alert('Please enter a message');
                     return;
                 }
-
-                const ticket = ticketSnapshot.val();
-                const messages = messagesSnapshot.exists() ? messagesSnapshot.val() : {};
-                const messagesArray = Object.entries(messages)
-                    .map(([timestamp, msg]) => ({ timestamp: parseInt(timestamp), ...msg }))
-                    .sort((a, b) => a.timestamp - b.timestamp);
-
-                let transcript = `TICKET TRANSCRIPT\n`;
-                transcript += `==================\n\n`;
-                transcript += `Ticket ID: ${ticket.id}\n`;
-                transcript += `Subject: ${ticket.subject || 'No subject'}\n`;
-                transcript += `Status: ${ticket.status}\n`;
-                transcript += `User IP: ${ticket.userIp || 'Unknown'}\n`;
-                transcript += `Created: ${new Date(ticket.createdAt).toLocaleString()}\n`;
-                transcript += `Updated: ${new Date(ticket.updatedAt).toLocaleString()}\n\n`;
-                transcript += `MESSAGES\n`;
-                transcript += `========\n\n`;
-
-                messagesArray.forEach(msg => {
-                    const date = new Date(msg.timestamp);
-                    transcript += `[${date.toLocaleString()}] ${msg.sender.toUpperCase()}: ${msg.message}\n\n`;
-                });
-
-                // Create download
-                const blob = new Blob([transcript], { type: 'text/plain' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `ticket-${ticket.id}-transcript.txt`;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-
-                alert('✅ Transcript saved successfully!');
-            } catch (error) {
-                console.error('Error saving transcript:', error);
-                alert('Failed to save transcript: ' + error.message);
+                
+                if (!this.currentTicketId) {
+                    alert('No ticket selected');
+                    return;
+                }
+                
+                if (!firebaseInitialized || !database) {
+                    alert('Firebase not initialized');
+                    return;
+                }
+                
+                const sendBtn = this.getElement('adminTicketSendBtn');
+                try {
+                    if (sendBtn) {
+                        sendBtn.disabled = true;
+                        sendBtn.textContent = 'Sending...';
+                    }
+                    
+                    const messageData = {
+                        ticketId: this.currentTicketId,
+                        message: message,
+                        sender: 'admin',
+                        timestamp: Date.now()
+                    };
+                    
+                    await database.ref(`ticketMessages/${this.currentTicketId}/${Date.now()}`).set(messageData);
+                    await database.ref(`tickets/${this.currentTicketId}/updatedAt`).set(Date.now());
+                    
+                    input.value = '';
+                    await loadTickets(); // Refresh list
+                } catch (error) {
+                    console.error('Error sending message:', error);
+                    alert('Failed to send message: ' + (error.message || 'Unknown error'));
+                } finally {
+                    if (sendBtn) {
+                        sendBtn.disabled = false;
+                        sendBtn.textContent = 'Send';
+                    }
+                }
+            },
+            
+            // Toggle status
+            toggleStatus: async function() {
+                if (!this.currentTicketId) return;
+                
+                if (!confirm('Are you sure you want to change the ticket status?')) return;
+                
+                if (!firebaseInitialized || !database) {
+                    alert('Firebase not initialized');
+                    return;
+                }
+                
+                try {
+                    const snapshot = await database.ref(`tickets/${this.currentTicketId}`).once('value');
+                    if (!snapshot.exists()) {
+                        alert('Ticket not found');
+                        return;
+                    }
+                    
+                    const ticket = snapshot.val();
+                    const newStatus = ticket.status === 'closed' ? 'open' : 'closed';
+                    
+                    await database.ref(`tickets/${this.currentTicketId}/status`).set(newStatus);
+                    await database.ref(`tickets/${this.currentTicketId}/updatedAt`).set(Date.now());
+                    
+                    alert(`✅ Ticket ${newStatus === 'closed' ? 'closed' : 'reopened'} successfully!`);
+                    await loadTickets();
+                    await this.view(this.currentTicketId); // Refresh view
+                } catch (error) {
+                    console.error('Error updating status:', error);
+                    alert('Failed to update ticket: ' + (error.message || 'Unknown error'));
+                }
+            },
+            
+            // Delete ticket
+            delete: async function(ticketId) {
+                if (!ticketId) {
+                    if (this.currentTicketId) {
+                        ticketId = this.currentTicketId;
+                    } else {
+                        alert('No ticket selected');
+                        return;
+                    }
+                }
+                
+                if (!confirm('Are you sure you want to delete this ticket? This action cannot be undone.')) {
+                    return;
+                }
+                
+                if (!firebaseInitialized || !database) {
+                    alert('Firebase not initialized');
+                    return;
+                }
+                
+                try {
+                    // Delete ticket
+                    await database.ref(`tickets/${ticketId}`).remove();
+                    
+                    // Delete messages
+                    await database.ref(`ticketMessages/${ticketId}`).remove();
+                    
+                    // Close modal if viewing this ticket
+                    if (this.currentTicketId === ticketId) {
+                        this.closeModal();
+                    }
+                    
+                    // Refresh list
+                    await loadTickets();
+                    
+                    alert('✅ Ticket deleted successfully');
+                } catch (error) {
+                    console.error('Error deleting ticket:', error);
+                    alert('Failed to delete ticket: ' + (error.message || 'Unknown error'));
+                }
+            },
+            
+            // Delete from modal
+            deleteTicket: function() {
+                if (this.currentTicketId) {
+                    this.delete(this.currentTicketId);
+                }
+            },
+            
+            // Save transcript
+            saveTranscript: async function() {
+                if (!this.currentTicketId) {
+                    alert('No ticket selected');
+                    return;
+                }
+                
+                if (!firebaseInitialized || !database) {
+                    alert('Firebase not initialized');
+                    return;
+                }
+                
+                try {
+                    const ticketSnapshot = await database.ref(`tickets/${this.currentTicketId}`).once('value');
+                    const messagesSnapshot = await database.ref(`ticketMessages/${this.currentTicketId}`).once('value');
+                    
+                    if (!ticketSnapshot.exists()) {
+                        alert('Ticket not found');
+                        return;
+                    }
+                    
+                    const ticket = ticketSnapshot.val();
+                    const messages = messagesSnapshot.exists() ? messagesSnapshot.val() : {};
+                    const messagesArray = Object.entries(messages)
+                        .map(([ts, msg]) => ({
+                            timestamp: parseInt(ts) || Date.now(),
+                            message: (msg && msg.message) ? String(msg.message) : '',
+                            sender: (msg && msg.sender) ? String(msg.sender) : 'user'
+                        }))
+                        .filter(m => m.message)
+                        .sort((a, b) => a.timestamp - b.timestamp);
+                    
+                    let transcript = `TICKET TRANSCRIPT\n`;
+                    transcript += `==================\n\n`;
+                    transcript += `Ticket ID: ${ticket.id || this.currentTicketId}\n`;
+                    transcript += `Subject: ${ticket.subject || 'No subject'}\n`;
+                    transcript += `Status: ${ticket.status || 'unknown'}\n`;
+                    transcript += `User IP: ${ticket.userIp || 'Unknown'}\n`;
+                    transcript += `Created: ${new Date(ticket.createdAt || Date.now()).toLocaleString()}\n`;
+                    transcript += `Updated: ${new Date(ticket.updatedAt || Date.now()).toLocaleString()}\n\n`;
+                    transcript += `MESSAGES\n`;
+                    transcript += `========\n\n`;
+                    
+                    messagesArray.forEach(msg => {
+                        const date = new Date(msg.timestamp);
+                        transcript += `[${date.toLocaleString()}] ${msg.sender.toUpperCase()}: ${msg.message}\n\n`;
+                    });
+                    
+                    const blob = new Blob([transcript], { type: 'text/plain' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `ticket-${ticket.id || this.currentTicketId}-transcript.txt`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                    
+                    alert('✅ Transcript saved successfully!');
+                } catch (error) {
+                    console.error('Error saving transcript:', error);
+                    alert('Failed to save transcript: ' + (error.message || 'Unknown error'));
+                }
+            },
+            
+            // Close modal
+            closeModal: function() {
+                // Clean up listener
+                if (this.messageListener && this.currentTicketId) {
+                    try {
+                        database.ref(`ticketMessages/${this.currentTicketId}`).off('value', this.messageListener);
+                    } catch (e) {
+                        console.warn('Error removing listener:', e);
+                    }
+                }
+                
+                this.currentTicketId = null;
+                this.messageListener = null;
+                
+                const modal = this.getElement('adminTicketModal');
+                if (modal) {
+                    modal.style.display = 'none';
+                }
+                
+                const input = this.getElement('adminTicketReplyInput');
+                if (input) {
+                    input.value = '';
+                }
             }
         };
+        
+        // Legacy function for backward compatibility
+        window.viewAdminTicket = function(ticketId) {
+            TicketSystemAdmin.view(ticketId);
+        };
+        
+        window.deleteAdminTicket = function(ticketId) {
+            TicketSystemAdmin.delete(ticketId);
+        };
+        
+        window.closeAdminTicketModal = function() {
+            TicketSystemAdmin.closeModal();
+        };
+        
+        window.sendAdminTicketMessage = function() {
+            TicketSystemAdmin.sendMessage();
+        };
+        
+        window.closeAdminTicket = function() {
+            TicketSystemAdmin.toggleStatus();
+        };
+        
+        window.saveTicketTranscript = function() {
+            TicketSystemAdmin.saveTranscript();
+        };
+        
+        window.deleteAdminTicketFromModal = function() {
+            TicketSystemAdmin.deleteTicket();
+        };
+        
+        // Old ticket functions removed - using TicketSystemAdmin class above
     </script>
 </body>
 </html>
