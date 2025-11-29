@@ -1048,6 +1048,26 @@
             justify-content: space-between;
             align-items: center;
         }
+        
+        .ticket-modal-header button {
+            background: none;
+            border: none;
+            color: #888;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 0;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+        
+        .ticket-modal-header button:hover {
+            color: #ef4444;
+            transform: rotate(90deg);
+        }
 
         .ticket-modal-body {
             padding: 24px;
@@ -5727,10 +5747,11 @@
             if (!input) return;
             
             const message = String(input.value || '').trim();
-            const images = this.attachedImages.reply;
+            const images = this.attachedImages.reply || [];
+            const voice = this.voiceRecording.reply || null;
             
-            if (!message && images.length === 0) {
-                alert('Please enter a message or attach an image');
+            if (!message && images.length === 0 && !voice) {
+                alert('Please enter a message, attach an image, or record a voice message');
                 return;
             }
             
@@ -5762,7 +5783,7 @@
                     })),
                     voice: voice ? {
                         data: voice.data,
-                        duration: voice.duration
+                        duration: voice.duration || 0
                     } : null
                 };
                 
