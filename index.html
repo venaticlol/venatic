@@ -1106,7 +1106,7 @@
             justify-content: center;
             transition: all 0.3s ease;
         }
-        
+
         .ticket-modal-header button:hover {
             color: #ef4444;
             transform: rotate(90deg);
@@ -4499,7 +4499,7 @@
             <p class="section-subtitle reveal" data-i18n="changelog.subtitle">Latest updates and improvements</p>
             <div class="changelog-content reveal" id="changelogContent">
                 <div class="changelog-loading" data-i18n="changelog.loading">Loading changelog...</div>
-                </div>
+            </div>
         </div>
     </section>
 
@@ -7743,16 +7743,22 @@
                 </div>
             `;
             
-            // Initialize maintenance admin login functions (IP-based)
+            // Initialize maintenance admin login functions (User-based)
             (function() {
-                const ALLOWED_ADMIN_IPS = ['172.56.41.249', '74.14.72.29'];
+                const ALLOWED_ADMIN_USER_IDS = [
+                    'user_1764492219870_1nmahxwjb',
+                    'user_1764533348919_8pq7xrq95'
+                ];
                 
-                async function checkMaintenanceAdminIP() {
+                function checkMaintenanceAdminUser() {
                     try {
-                        const ip = await getClientIP();
-                        return ALLOWED_ADMIN_IPS.includes(ip);
+                        const userProfileId = localStorage.getItem(USER_PROFILE_ID_KEY);
+                        if (!userProfileId) {
+                            return false;
+                        }
+                        return ALLOWED_ADMIN_USER_IDS.includes(userProfileId);
                     } catch (error) {
-                        console.error('Error checking admin IP:', error);
+                        console.error('Error checking admin user:', error);
                         return false;
                     }
                 }
@@ -7777,21 +7783,27 @@
                     if (!errorDiv) return;
                     
                     try {
-                        const isAllowedIP = await checkMaintenanceAdminIP();
+                        const userProfileId = localStorage.getItem(USER_PROFILE_ID_KEY);
                         
-                        if (isAllowedIP) {
-                            sessionStorage.setItem('recon_admin_session', 'true');
+                        if (!userProfileId) {
+                            errorDiv.textContent = 'Please log in to your account first.';
+                            errorDiv.classList.add('show');
+                            return;
+                        }
+                        
+                        const isAllowedUser = checkMaintenanceAdminUser();
+                        
+                        if (isAllowedUser) {
                             window.hideMaintenanceAdminLogin();
                             window.location.reload();
                         } else {
-                            const ip = await getClientIP();
-                            errorDiv.textContent = `Access denied. Your IP (${ip}) is not authorized.`;
+                            errorDiv.textContent = 'Access denied. Your account is not authorized for admin access.';
                             errorDiv.classList.add('show');
-                            console.warn('❌ Maintenance admin login denied - IP not in allowed list:', ip);
+                            console.warn('❌ Maintenance admin login denied - User not in allowed list:', userProfileId);
                         }
                     } catch (error) {
                         console.error('Login error:', error);
-                        errorDiv.textContent = 'Error verifying IP address. Please try again.';
+                        errorDiv.textContent = 'Error verifying user account. Please try again.';
                         errorDiv.classList.add('show');
                     }
                 };
@@ -8927,62 +8939,73 @@
         });
 
         // ============================================
-        // ADMIN PANEL WITH IP-BASED AUTHENTICATION
+        // ADMIN PANEL WITH USER-BASED AUTHENTICATION
         // ============================================
         let isAdminLoggedIn = false;
-        const ADMIN_SESSION_KEY = 'recon_admin_session';
-        const ALLOWED_ADMIN_IPS = ['172.56.41.249', '74.14.72.29'];
+        const ALLOWED_ADMIN_USER_IDS = [
+            'user_1764492219870_1nmahxwjb',
+            'user_1764533348919_8pq7xrq95'
+        ];
 
-        // Check if current IP is allowed for admin access
-        async function checkAdminIP() {
+        // Check if current user is allowed for admin access
+        function checkAdminUser() {
             try {
-                const ip = await getClientIP();
-                return ALLOWED_ADMIN_IPS.includes(ip);
+                const userProfileId = localStorage.getItem(USER_PROFILE_ID_KEY);
+                if (!userProfileId) {
+                    return false;
+                }
+                return ALLOWED_ADMIN_USER_IDS.includes(userProfileId);
             } catch (error) {
-                console.error('Error checking admin IP:', error);
+                console.error('Error checking admin user:', error);
                 return false;
             }
         }
 
         // Check if admin is logged in
         async function checkAdminSession() {
-            const session = sessionStorage.getItem(ADMIN_SESSION_KEY);
-            if (session === 'true') {
-                // Verify IP is still valid
-                const isAllowedIP = await checkAdminIP();
-                if (isAllowedIP) {
+            const userProfileId = localStorage.getItem(USER_PROFILE_ID_KEY);
+            if (userProfileId) {
+                // Verify user is still authorized
+                const isAllowedUser = checkAdminUser();
+                if (isAllowedUser) {
                     isAdminLoggedIn = true;
                     showAdminPanel();
                     updateAdminButton();
                 } else {
-                    // IP changed, logout
+                    // User not authorized, logout
                     adminLogout();
-                    showAdminError('Access denied: IP address not authorized');
+                    showAdminError('Access denied: Your account is not authorized for admin access');
                 }
             }
         }
 
-        // Admin login (IP-based)
+        // Admin login (User-based)
         async function adminLogin() {
             try {
-                const isAllowedIP = await checkAdminIP();
+                const userProfileId = localStorage.getItem(USER_PROFILE_ID_KEY);
                 
-                if (isAllowedIP) {
+                if (!userProfileId) {
+                    showAdminError('Please log in to your account first to access the admin panel.');
+                    console.warn('❌ Admin login denied - User not logged in');
+                    return false;
+                }
+                
+                const isAllowedUser = checkAdminUser();
+                
+                if (isAllowedUser) {
                     isAdminLoggedIn = true;
-                    sessionStorage.setItem(ADMIN_SESSION_KEY, 'true');
                     hideAdminModal();
                     showAdminPanel();
                     updateAdminButton();
-                    console.log('✅ Admin login successful via IP verification');
+                    console.log('✅ Admin login successful via user verification');
                     return true;
                 } else {
-                    const ip = await getClientIP();
-                    showAdminError(`Access denied. Your IP (${ip}) is not authorized.`);
-                    console.warn('❌ Admin login denied - IP not in allowed list:', ip);
+                    showAdminError('Access denied. Your account is not authorized for admin access.');
+                    console.warn('❌ Admin login denied - User not in allowed list:', userProfileId);
                     return false;
                 }
             } catch (error) {
-                showAdminError('Error verifying IP address. Please try again.');
+                showAdminError('Error verifying user account. Please try again.');
                 console.error('Admin login error:', error);
                 return false;
             }
@@ -8991,7 +9014,6 @@
         // Admin logout
         function adminLogout() {
             isAdminLoggedIn = false;
-            sessionStorage.removeItem(ADMIN_SESSION_KEY);
             hideAdminPanel();
             updateAdminButton();
         }
