@@ -3859,24 +3859,48 @@
                         }
                     });
                     
-                    if (!response.ok) {
-                        const errorText = await response.text();
-                        throw new Error(`HTTP ${response.status}: ${errorText || 'Unknown error'}`);
+                    // Read response as text first (can only read once)
+                    const responseText = await response.text();
+                    
+                    console.log('KeyAuth Seller API Response:', {
+                        status: response.status,
+                        statusText: response.statusText,
+                        url: url,
+                        response: responseText
+                    });
+                    
+                    // Check for error messages in the response text (even if HTTP status is 200)
+                    const responseLower = responseText.toLowerCase().trim();
+                    const errorKeywords = ['error', 'invalid', 'no object found', 'failed', 'denied', 'unauthorized', 'forbidden'];
+                    
+                    if (!response.ok || errorKeywords.some(keyword => responseLower.includes(keyword))) {
+                        const errorMsg = responseText.trim() || `HTTP ${response.status}: Unknown error`;
+                        console.error('KeyAuth Seller API Error:', errorMsg);
+                        throw new Error(errorMsg);
                     }
                     
                     // Parse response - seller API can return text or JSON
-                    // Read response as text first to handle both formats
-                    const responseText = await response.text();
                     let responseData;
                     
                     // Try to parse as JSON first
                     try {
                         responseData = JSON.parse(responseText);
+                        // Check if JSON response indicates an error
+                        if (responseData.error || responseData.success === false) {
+                            throw new Error(responseData.message || responseData.error || 'Key generation failed');
+                        }
                     } catch (e) {
-                        // If not JSON, treat as text response
+                        // If JSON parse fails, check if it's an error message
+                        if (e.message && !e.message.includes('JSON')) {
+                            throw e; // Re-throw if it's an actual error, not a parse error
+                        }
+                        // If not JSON, treat as text response (successful key generation)
                         // Text response can be a single key or multiple keys separated by newlines
-                        const keys = responseText.trim().split(/\r?\n/).filter(k => k.trim());
-                        responseData = { keys: keys.length > 0 ? keys : [responseText.trim()] };
+                        const keys = responseText.trim().split(/\r?\n/).filter(k => k.trim() && !k.toLowerCase().includes('error'));
+                        if (keys.length === 0) {
+                            throw new Error("Invalid response from KeyAuth API. Please check your seller key and parameters.");
+                        }
+                        responseData = { keys: keys };
                     }
                     
                     // Handle multiple keys
@@ -3989,8 +4013,7 @@
             
             async getKeys() {
                 try {
-                    // Try to get keys from Firebase first (faster and more reliable)
-                    // Then supplement with KeyAuth API if needed
+                    // Get keys from Firebase (all keys are stored here when generated)
                     const keysFromFirebase = [];
                     try {
                         const keysSnapshot = await database.ref('keyauthKeys').once('value');
@@ -4002,47 +4025,8 @@
                         console.warn('Failed to load keys from Firebase:', e);
                     }
                     
-                    // If we have keys in Firebase, return them
-                    // Otherwise, try to fetch from KeyAuth API (if seller API supports it)
-                    if (keysFromFirebase.length > 0) {
-                        return keysFromFirebase;
-                    }
-                    
-                    // Fallback: Try to use seller API to fetch keys (if supported)
-                    // Note: Seller API might not have a "fetchallkeys" endpoint
-                    // In that case, we'll rely on Firebase storage
-                    const sellerKey = KEYAUTH_CONFIG.sellerKey;
-                    if (sellerKey) {
-                        try {
-                            const params = new URLSearchParams({
-                                sellerkey: sellerKey,
-                                type: "fetchallkeys",
-                                format: "json"
-                            });
-                            
-                            const url = `${KEYAUTH_CONFIG.sellerApiUrl}?${params.toString()}`;
-                            const response = await fetch(url, {
-                                method: "GET",
-                                headers: {
-                                    "Accept": "application/json"
-                                }
-                            });
-                            
-                            if (response.ok) {
-                                const contentType = response.headers.get('content-type');
-                                if (contentType && contentType.includes('application/json')) {
-                                    const responseData = await response.json();
-                                    if (responseData.keys && Array.isArray(responseData.keys)) {
-                                        return responseData.keys;
-                                    }
-                                }
-                            }
-                        } catch (e) {
-                            console.warn('Seller API fetchallkeys not available, using Firebase storage:', e);
-                        }
-                    }
-                    
                     // Return keys from Firebase (even if empty)
+                    // Note: Seller API doesn't support fetchallkeys, so we rely on Firebase storage
                     return keysFromFirebase;
                 } catch (error) {
                     console.error('KeyAuth getKeys error:', error);
@@ -4151,6 +4135,11 @@
                 }
                 
                 const keys = await keyAuthClient.getKeys();
+                
+                if (!keys || keys.length === 0) {
+                    content.innerHTML = '<div class="empty-state"><div class="empty-state-text">No keys found. Generate your first key to get started!</div></div>';
+                    return;
+                }
                 
                 // Get additional data from Firebase
                 const keysWithData = await Promise.all(keys.map(async (key) => {
