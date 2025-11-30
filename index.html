@@ -1402,6 +1402,27 @@
             cursor: not-allowed;
         }
 
+        .profile-logout-btn {
+            margin-top: 12px;
+            width: 100%;
+            padding: 12px;
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            border-radius: 8px;
+            color: #ef4444;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: inherit;
+        }
+
+        .profile-logout-btn:hover {
+            background: rgba(239, 68, 68, 0.2);
+            border-color: rgba(239, 68, 68, 0.5);
+            transform: translateY(-1px);
+        }
+
         .profile-error-message {
             background: rgba(239, 68, 68, 0.1);
             border: 1px solid rgba(239, 68, 68, 0.3);
@@ -4070,8 +4091,8 @@
             <div class="profile-modal-body">
                 <div class="profile-error-message" id="profileErrorMessage"></div>
                 
-                <!-- Tab Switcher -->
-                <div style="display: flex; gap: 8px; margin-bottom: 24px; border-bottom: 1px solid #2a2a2a;">
+                <!-- Tab Switcher (only shown for signup/login) -->
+                <div id="profileTabSwitcher" style="display: flex; gap: 8px; margin-bottom: 24px; border-bottom: 1px solid #2a2a2a;">
                     <button class="profile-tab-btn active" id="profileSignupTab" onclick="switchProfileTab('signup')">Sign Up</button>
                     <button class="profile-tab-btn" id="profileLoginTab" onclick="switchProfileTab('login')">Login</button>
                 </div>
@@ -4127,6 +4148,7 @@
                         <textarea id="editBioInput" class="profile-form-input profile-form-textarea" placeholder="Tell us about yourself..." maxlength="200"></textarea>
                     </div>
                     <button class="profile-submit-btn" id="profileEditBtn" onclick="updateProfile()">Save Changes</button>
+                    <button class="profile-logout-btn" id="profileLogoutBtn" onclick="logoutProfile()" style="margin-top: 12px; width: 100%; padding: 12px; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 8px; color: #ef4444; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; font-family: inherit;">Logout</button>
                 </div>
             </div>
         </div>
@@ -6593,6 +6615,14 @@
                 const signupForm = document.getElementById('profileSignupForm');
                 const loginForm = document.getElementById('profileLoginForm');
                 const editForm = document.getElementById('profileEditForm');
+                const tabSwitcher = document.getElementById('profileTabSwitcher');
+                const signupTab = document.getElementById('profileSignupTab');
+                const loginTab = document.getElementById('profileLoginTab');
+                
+                // Show tabs for signup/login
+                if (tabSwitcher) tabSwitcher.style.display = 'flex';
+                if (signupTab) signupTab.style.display = 'block';
+                if (loginTab) loginTab.style.display = 'block';
                 
                 if (signupForm) signupForm.style.display = 'block';
                 if (loginForm) loginForm.style.display = 'none';
@@ -6661,10 +6691,34 @@
         }
 
         // Show edit profile modal (for logged-in users) (global)
-        window.showEditProfileModal = function() {
-            if (!currentUserProfile) {
-                showProfileModal();
+        window.showEditProfileModal = async function() {
+            // Check if user is logged in by checking auth token and profile ID
+            const authToken = localStorage.getItem(AUTH_TOKEN_KEY);
+            const storedProfileId = localStorage.getItem(USER_PROFILE_ID_KEY);
+            
+            // If not logged in, show signup/login instead
+            if (!authToken || !storedProfileId || !currentUserProfile || !userProfileId) {
+                // User is not logged in, show signup/login
+                showProfileModal(false);
                 return;
+            }
+            
+            // Ensure we have the latest profile data
+            if (!currentUserProfile && userProfileId && firebaseInitialized && database) {
+                try {
+                    const profileSnapshot = await database.ref(`userProfiles/${userProfileId}`).once('value');
+                    if (profileSnapshot.exists()) {
+                        currentUserProfile = profileSnapshot.val();
+                    } else {
+                        // Profile doesn't exist, show signup/login
+                        showProfileModal(false);
+                        return;
+                    }
+                } catch (error) {
+                    console.error('Error loading profile:', error);
+                    showProfileModal(false);
+                    return;
+                }
             }
 
             const modal = document.getElementById('profileModalOverlay');
@@ -6676,7 +6730,14 @@
                 const signupForm = document.getElementById('profileSignupForm');
                 const loginForm = document.getElementById('profileLoginForm');
                 const editForm = document.getElementById('profileEditForm');
+                const signupTab = document.getElementById('profileSignupTab');
+                const loginTab = document.getElementById('profileLoginTab');
                 
+                // Hide tabs
+                if (signupTab) signupTab.style.display = 'none';
+                if (loginTab) loginTab.style.display = 'none';
+                
+                // Hide signup/login forms, show edit form
                 if (signupForm) signupForm.style.display = 'none';
                 if (loginForm) loginForm.style.display = 'none';
                 if (editForm) editForm.style.display = 'block';
@@ -6695,7 +6756,8 @@
                     if (currentUserProfile.avatar) {
                         avatarPreview.src = currentUserProfile.avatar;
                     } else {
-                        avatarPreview.src = 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22120%22 height=%22120%22%3E%3Ccircle cx=%2260%22 cy=%2260%22 r=%2260%22 fill=%22%233a3a3a%22/%3E%3Ctext x=%2260%22 y=%2275%22 font-size=%2240%22 fill=%22%23fff%22 text-anchor=%22middle%22%3E?%3C/text%3E%3C/svg%3E';
+                        const initial = (currentUserProfile.username || '?').charAt(0).toUpperCase();
+                        avatarPreview.src = `data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22120%22 height=%22120%22%3E%3Ccircle cx=%2260%22 cy=%2260%22 r=%2260%22 fill=%22%233a3a3a%22/%3E%3Ctext x=%2260%22 y=%2275%22 font-size=%2240%22 fill=%22%23fff%22 text-anchor=%22middle%22%3E${encodeURIComponent(initial)}%3C/text%3E%3C/svg%3E`;
                     }
                 }
                 
@@ -7056,17 +7118,32 @@
 
         // Logout function (global)
         window.logoutProfile = function() {
+            // Clear auth data
             localStorage.removeItem(AUTH_TOKEN_KEY);
             localStorage.removeItem(USER_PROFILE_ID_KEY);
             currentUserProfile = null;
             userProfileId = null;
+            isFirstTimeProfile = false;
             
             // Hide profile button
             const container = document.getElementById('userProfileContainer');
             if (container) container.style.display = 'none';
             
-            // Show login modal
-            showProfileModal(true);
+            // Close any open modals
+            const modal = document.getElementById('profileModalOverlay');
+            if (modal) {
+                modal.classList.remove('active');
+                // Remove any escape handlers
+                if (modal._escapeHandler) {
+                    document.removeEventListener('keydown', modal._escapeHandler);
+                    modal._escapeHandler = null;
+                }
+            }
+            
+            // Show login/signup modal (not mandatory, user can close it)
+            setTimeout(() => {
+                showProfileModal(false);
+            }, 300);
         }
 
         // Display user profile in header
