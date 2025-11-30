@@ -8541,8 +8541,18 @@
                 
                 allReviews.forEach(review => {
                     // Use userId to identify unique users
-                    // If no userId, use a fallback identifier
-                    const userId = review.userId || review.user || 'anonymous';
+                    // Normalize userId: convert to string, handle null/undefined
+                    let userId = review.userId;
+                    if (!userId || userId === null || userId === undefined || userId === '') {
+                        // For reviews without userId, try to use a combination of review text and rating
+                        // This helps distinguish different anonymous users
+                        const reviewText = (review.review || '').trim().toLowerCase().substring(0, 50);
+                        const rating = review.rating || 0;
+                        userId = `anonymous_${rating}_${reviewText}`;
+                    } else {
+                        // Normalize userId to string
+                        userId = String(userId).trim();
+                    }
                     
                     // If we haven't seen this user, or this review is more recent, keep it
                     if (!seenUserIds.has(userId)) {
@@ -8596,16 +8606,32 @@
             // Remove duplicates - track unique reviews by userId
             // Each user's review should only appear once per cycle
             const seenUserIds = new Set();
+            const seenReviewTexts = new Set(); // Fallback: also track by review text to prevent exact duplicates
             const uniqueReviews = [];
 
             availableReviews.forEach(review => {
                 // Use userId to ensure each user only appears once
-                // If no userId, use a fallback identifier
-                const userId = review.userId || review.user || 'anonymous';
-                const uniqueKey = userId;
+                // Normalize userId: convert to string, handle null/undefined
+                let userId = review.userId;
+                if (!userId || userId === null || userId === undefined || userId === '') {
+                    // For reviews without userId, try to use a combination of review text and rating
+                    // This helps distinguish different anonymous users, but same user's reviews will still be grouped
+                    const reviewText = (review.review || '').trim().toLowerCase().substring(0, 50);
+                    const rating = review.rating || 0;
+                    userId = `anonymous_${rating}_${reviewText}`;
+                } else {
+                    // Normalize userId to string
+                    userId = String(userId).trim();
+                }
                 
-                if (!seenUserIds.has(uniqueKey)) {
-                    seenUserIds.add(uniqueKey);
+                // Also check review text as a fallback to prevent exact duplicate reviews
+                const reviewText = (review.review || '').trim().toLowerCase();
+                const reviewKey = reviewText || `rating_${review.rating || 0}`;
+                
+                // Only add if we haven't seen this userId AND haven't seen this exact review text
+                if (!seenUserIds.has(userId) && !seenReviewTexts.has(reviewKey)) {
+                    seenUserIds.add(userId);
+                    seenReviewTexts.add(reviewKey);
                     uniqueReviews.push(review);
                 }
             });
@@ -8657,17 +8683,25 @@
             }
 
             // Duplicate all items for seamless infinite scroll
-            // We need to duplicate the entire set to ensure smooth looping
-            const items = track.querySelectorAll('.review-stream-item');
-            const itemsArray = Array.from(items);
-            
-            // Clone each item to create the duplicate set (exact copies)
-            itemsArray.forEach(item => {
-                const clone = item.cloneNode(true);
-                // Ensure clone has same styles
-                clone.style.cssText = item.style.cssText;
-                track.appendChild(clone);
-            });
+            // Only duplicate if we have multiple unique reviews (at least 2)
+            // This ensures each user only appears once per cycle
+            if (uniqueReviews.length >= 2) {
+                const items = track.querySelectorAll('.review-stream-item');
+                const itemsArray = Array.from(items);
+                
+                // Clone each item to create the duplicate set (exact copies)
+                // This creates a seamless loop - after showing all unique users, it cycles back
+                itemsArray.forEach(item => {
+                    const clone = item.cloneNode(true);
+                    // Ensure clone has same styles
+                    clone.style.cssText = item.style.cssText;
+                    track.appendChild(clone);
+                });
+            } else if (uniqueReviews.length === 1) {
+                // If only one review, don't duplicate - just show it once
+                // The animation will still work but won't loop seamlessly
+                console.log('Only one unique review - not duplicating for seamless loop');
+            }
             
             // Add a small delay to ensure DOM is updated before animation starts
             requestAnimationFrame(() => {
