@@ -186,8 +186,9 @@
     <!-- Developer Tools Protection -->
     <script>
         // ============================================
-        // DEVELOPER TOOLS PROTECTION
+        // DEVELOPER TOOLS PROTECTION (Non-Blocking)
         // ============================================
+        // This prevents DevTools access but does NOT block users from the page
         
         // Disable right-click context menu
         document.addEventListener('contextmenu', function(e) {
@@ -266,203 +267,38 @@
             return false;
         }, false);
         
-        // Advanced DevTools Detection (multiple methods)
-        let devtools = {
-            open: false,
-            orientation: null,
-            detectionCount: 0,
-            lastCheck: Date.now()
-        };
-        
-        // Block access function (defined first)
-        function blockAccess() {
-            // Only block if confirmed DevTools is open
-            devtools.detectionCount++;
-            if (devtools.detectionCount < 2) {
-                return; // Require 2 confirmations (reduced from 3)
-            }
-            
-            try {
-                // Clear all intervals
-                for (let i = 1; i < 99999; i++) {
-                    try {
-                        clearInterval(i);
-                        clearTimeout(i);
-                    } catch(e) {}
-                }
-                
-                // Redirect to prevent access
-                document.body.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 100vh; background: #0a0a0a; color: #ef4444; font-size: 24px; font-family: Arial, sans-serif; text-align: center; padding: 20px;">Developer Tools Detected.<br><br>Please close DevTools and refresh the page.</div>';
-                
-                // Prevent further execution
-                setTimeout(function() {
-                    window.location.href = '/';
-                }, 2000);
-            } catch(e) {
-                window.location.href = '/';
-            }
-        }
-        
-        // Wait for page to fully load before starting detection (reduced delay)
-        let detectionActive = false;
-        setTimeout(function() {
-            detectionActive = true;
-        }, 1000); // Wait 1 second after page load (reduced from 2)
-        
-        // Method 1: Window size detection (improved)
-        const threshold = 150; // Reduced threshold for better detection
-        let checkInterval1 = setInterval(function() {
-            if (!detectionActive) return;
-            
-            const heightDiff = Math.abs(window.outerHeight - window.innerHeight);
-            const widthDiff = Math.abs(window.outerWidth - window.innerWidth);
-            
-            // Check if DevTools is open (either side or bottom)
-            const isOpen = (heightDiff > threshold && window.innerHeight > 200) || 
-                          (widthDiff > threshold && window.innerWidth > 200);
-            
-            if (isOpen) {
-                if (!devtools.open) {
-                    devtools.open = true;
-                    devtools.lastCheck = Date.now();
-                    blockAccess();
-                }
-            } else {
-                // Reset only if DevTools was closed for a while
-                if (devtools.open && Date.now() - devtools.lastCheck > 2000) {
-                    devtools.open = false;
-                    devtools.detectionCount = 0;
-                }
-            }
-        }, 200); // Check more frequently
-        
-        // Method 2: Console detection (improved)
-        try {
-            let consoleAccessCount = 0;
-            let element = new Image();
-            Object.defineProperty(element, 'id', {
-                get: function() {
-                    consoleAccessCount++;
-                    if (consoleAccessCount > 2 && detectionActive) {
-                        blockAccess();
-                    }
-                    return '';
-                }
-            });
-            // Check console access periodically
-            setTimeout(function() {
-                setInterval(function() {
-                    if (detectionActive) {
-                        try {
-                            console.log(element);
-                            console.clear();
-                        } catch(e) {}
-                    }
-                }, 1500);
-            }, 2000);
-        } catch(e) {}
-        
-        // Method 3: DevTools property detection (improved)
-        try {
-            let devtoolsCheck = /./;
-            let checkCount = 0;
-            devtoolsCheck.toString = function() {
-                checkCount++;
-                if (checkCount > 3 && detectionActive) {
-                    blockAccess();
-                }
-                return '';
-            };
-            // Check periodically
-            setTimeout(function() {
-                setInterval(function() {
-                    if (detectionActive) {
-                        try {
-                            console.log(devtoolsCheck);
-                            console.clear();
-                        } catch(e) {}
-                    }
-                }, 1500);
-            }, 2000);
-        } catch(e) {}
-        
-        // Method 4: Focus detection (improved)
-        let focusCheck = Date.now();
-        let focusChangeCount = 0;
-        window.addEventListener('blur', function() {
-            focusCheck = Date.now();
-        });
-        window.addEventListener('focus', function() {
-            if (detectionActive && Date.now() - focusCheck > 1500) {
-                focusChangeCount++;
-                if (focusChangeCount > 1) {
-                    blockAccess();
-                }
-            }
-        });
-        
-        // Method 5: Continuous window monitoring
-        let lastInnerHeight = window.innerHeight;
-        let lastInnerWidth = window.innerWidth;
-        setInterval(function() {
-            if (!detectionActive) return;
-            
-            const currentHeight = window.innerHeight;
-            const currentWidth = window.innerWidth;
-            
-            // If window size changed significantly, might be DevTools
-            if (Math.abs(currentHeight - lastInnerHeight) > 100 || 
-                Math.abs(currentWidth - lastInnerWidth) > 100) {
-                // Check if it's actually DevTools
-                const heightDiff = Math.abs(window.outerHeight - window.innerHeight);
-                const widthDiff = Math.abs(window.outerWidth - window.innerWidth);
-                if (heightDiff > threshold || widthDiff > threshold) {
-                    blockAccess();
-                }
-            }
-            
-            lastInnerHeight = currentHeight;
-            lastInnerWidth = currentWidth;
-        }, 300);
-        
-        // Advanced Console Protection (less aggressive)
+        // Console Protection (disable console methods)
         (function() {
             const noop = function() {};
             const methods = ['log', 'debug', 'info', 'warn', 'error', 'assert', 'clear', 'count', 'dir', 'dirxml', 'group', 'groupCollapsed', 'groupEnd', 'profile', 'profileEnd', 'table', 'time', 'timeEnd', 'timeStamp', 'trace', 'memory'];
             
-            // Override console methods (only block after detection is active)
+            // Override console methods to prevent logging
             methods.forEach(function(method) {
                 try {
-                    const original = window.console[method];
-                    window.console[method] = function() {
-                        if (detectionActive && devtools.detectionCount > 0) {
-                            blockAccess();
-                        }
-                        return noop;
-                    };
+                    window.console[method] = noop;
                 } catch(e) {
                     try {
-                        window.console[method] = noop;
+                        Object.defineProperty(window.console, method, {
+                            get: function() { return noop; },
+                            set: function() {}
+                        });
                     } catch(e2) {}
                 }
             });
         })();
         
-        // Clear console less frequently to avoid false positives
+        // Clear console periodically
         setTimeout(function() {
             setInterval(function() {
-                if (detectionActive) {
-                    try {
-                        console.clear();
-                    } catch(e) {}
-                }
+                try {
+                    console.clear();
+                } catch(e) {}
             }, 1000);
         }, 3000);
         
-        // Disable common DevTools detection bypasses
+        // Protect source code access (return empty instead of blocking)
         Object.defineProperty(window, 'devtools', {
             get: function() {
-                blockAccess();
                 return { open: false, orientation: null };
             },
             configurable: false
@@ -471,47 +307,9 @@
         // Protect source code access
         Object.defineProperty(document, 'scripts', {
             get: function() {
-                blockAccess();
                 return [];
             },
             configurable: false
-        });
-        
-        // Disable view source
-        document.addEventListener('keydown', function(e) {
-            if (e.ctrlKey && e.shiftKey && e.key === 'I') {
-                e.preventDefault();
-                blockAccess();
-                return false;
-            }
-        }, true);
-        
-        // Prevent opening DevTools via menu and other methods
-        document.addEventListener('keydown', function(e) {
-            // Alt key combinations
-            if (e.altKey) {
-                if (e.key === 'F4' || e.keyCode === 115) {
-                    e.preventDefault();
-                    blockAccess();
-                    return false;
-                }
-            }
-            
-            // Additional shortcuts
-            if (e.key === 'F12' || e.keyCode === 123) {
-                e.preventDefault();
-                blockAccess();
-                return false;
-            }
-        }, true);
-        
-        // Disable source viewing methods
-        window.addEventListener('beforeunload', function(e) {
-            if (devtools.open) {
-                e.preventDefault();
-                e.returnValue = '';
-                blockAccess();
-            }
         });
         
         // Obfuscate source code access
@@ -521,14 +319,12 @@
                 try {
                     Object.defineProperty(scripts[i], 'innerHTML', {
                         get: function() {
-                            blockAccess();
                             return '';
                         },
                         set: function() {}
                     });
                     Object.defineProperty(scripts[i], 'text', {
                         get: function() {
-                            blockAccess();
                             return '';
                         },
                         set: function() {}
@@ -536,15 +332,6 @@
                 } catch(e) {}
             }
         })();
-        
-        // Monitor for source code access attempts
-        const originalQuerySelector = Document.prototype.querySelector;
-        Document.prototype.querySelector = function(selector) {
-            if (selector && (selector.includes('script') || selector.includes('style'))) {
-                blockAccess();
-            }
-            return originalQuerySelector.apply(this, arguments);
-        };
     </script>
     
     <style>
@@ -5182,6 +4969,22 @@
             loadChangelog(); // FEATURE #5: Dynamic Changelog
             setupChangelogListener(); // Listen for changelog updates
             setupSurveysListener(); // Listen for survey updates
+            
+            // Set up Intersection Observer to reload tickets when section becomes visible
+            const ticketsSection = document.getElementById('support');
+            if (ticketsSection && typeof IntersectionObserver !== 'undefined') {
+                const observer = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting && firebaseInitialized && database) {
+                            // Reload tickets when section becomes visible
+                            if (typeof loadUserTickets === 'function') {
+                                loadUserTickets();
+                            }
+                        }
+                    });
+                }, { threshold: 0.1 });
+                observer.observe(ticketsSection);
+            }
         });
 
         // Original page scripts
@@ -5287,10 +5090,17 @@
                 trackUserVisit();
                 
                 // Initialize profile system
-                initializeProfileSystem();
-                
-                // Initialize ticket system and load user tickets
-                setupUserTicketsListener();
+                initializeProfileSystem().then(() => {
+                    // Initialize ticket system and load user tickets after profile system is ready
+                    setTimeout(() => {
+                        setupUserTicketsListener();
+                    }, 500);
+                }).catch(() => {
+                    // Even if profile system fails, still try to load tickets
+                    setTimeout(() => {
+                        setupUserTicketsListener();
+                    }, 500);
+                });
                 
                 // Initialize glitch effect
                 initGlitchEffect();
@@ -6150,7 +5960,8 @@
                     createdAt: Date.now(),
                     updatedAt: Date.now(),
                     userIp: ip,
-                    userAgent: navigator.userAgent || 'unknown'
+                    userAgent: navigator.userAgent || 'unknown',
+                    userId: userProfileId || null  // Link ticket to user profile if logged in
                 };
 
                 await database.ref(`tickets/${ticketId}`).set(ticketData);
@@ -6241,38 +6052,75 @@
 
         window.loadUserTickets = async function() {
             const content = document.getElementById('userTicketsContent');
-            if (!content) return;
+            if (!content) {
+                console.warn('userTicketsContent element not found');
+                return;
+            }
+
+            // Show loading state
+            content.innerHTML = '<div class="changelog-loading">Loading your tickets...</div>';
 
             try {
+                // Check if Firebase is ready
+                if (!firebaseInitialized || !database) {
+                    console.warn('Firebase not initialized, retrying in 1 second...');
+                    setTimeout(loadUserTickets, 1000);
+                    return;
+                }
+
                 // Get stored ticket IDs from localStorage
                 const storedTicketIds = JSON.parse(localStorage.getItem('user_ticket_ids') || '[]');
+                console.log('Stored ticket IDs:', storedTicketIds);
                 
                 // Get current IP for additional filtering
                 let currentIp = null;
                 try {
                     currentIp = await getClientIP();
+                    console.log('Current IP:', currentIp);
                 } catch (e) {
                     console.warn('Could not get IP address:', e);
                 }
 
+                // Fetch all tickets from Firebase
                 const snapshot = await database.ref('tickets').once('value');
                 
-                if (!snapshot.exists() && storedTicketIds.length === 0) {
-                    content.innerHTML = '<div class="changelog-empty">No tickets created yet</div>';
-                    return;
+                if (!snapshot.exists()) {
+                    console.log('No tickets found in database');
+                    if (storedTicketIds.length === 0) {
+                        content.innerHTML = '<div class="changelog-empty">No tickets created yet</div>';
+                        return;
+                    } else {
+                        // Clear invalid ticket IDs from localStorage
+                        localStorage.setItem('user_ticket_ids', JSON.stringify([]));
+                        content.innerHTML = '<div class="changelog-empty">No tickets found</div>';
+                        return;
+                    }
                 }
 
-                const allTickets = snapshot.exists() ? snapshot.val() : {};
+                const allTickets = snapshot.val();
                 const ticketEntries = Object.entries(allTickets).map(([id, ticket]) => ({ id, ...ticket }));
+                console.log('Total tickets in database:', ticketEntries.length);
                 
-                // Filter tickets: include if ticket ID is in localStorage OR if IP matches
+                // Filter tickets: include if ticket ID is in localStorage OR if IP matches OR if userId matches
                 const userTickets = ticketEntries.filter(ticket => {
                     // Include if ticket ID is stored in localStorage
                     if (storedTicketIds.includes(ticket.id)) {
+                        console.log('Found ticket by localStorage:', ticket.id);
+                        return true;
+                    }
+                    // Include if userId matches (for logged-in users)
+                    if (userProfileId && ticket.userId === userProfileId) {
+                        console.log('Found ticket by userId match:', ticket.id);
+                        // Also add to localStorage if not already there
+                        if (!storedTicketIds.includes(ticket.id)) {
+                            storedTicketIds.push(ticket.id);
+                            localStorage.setItem('user_ticket_ids', JSON.stringify(storedTicketIds));
+                        }
                         return true;
                     }
                     // Include if IP matches (for backward compatibility)
                     if (currentIp && ticket.userIp === currentIp) {
+                        console.log('Found ticket by IP match:', ticket.id);
                         // Also add to localStorage if not already there
                         if (!storedTicketIds.includes(ticket.id)) {
                             storedTicketIds.push(ticket.id);
@@ -6282,6 +6130,8 @@
                     }
                     return false;
                 }).sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+
+                console.log('User tickets found:', userTickets.length);
 
                 if (userTickets.length === 0) {
                     content.innerHTML = '<div class="changelog-empty">No tickets created yet</div>';
@@ -6322,9 +6172,10 @@
                 }).join('');
 
                 content.innerHTML = html;
+                console.log('Tickets loaded successfully');
             } catch (error) {
                 console.error('Error loading tickets:', error);
-                content.innerHTML = '<div class="changelog-empty">Error loading tickets</div>';
+                content.innerHTML = '<div class="changelog-empty">Error loading tickets: ' + (error.message || 'Unknown error') + '</div>';
             }
         }
 
