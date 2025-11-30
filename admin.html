@@ -2685,7 +2685,7 @@
                 } else if (tabName === 'profiles') {
                     loadUserProfiles();
                 } else if (tabName === 'keys') {
-                    loadKeys();
+                    loadKeys(true); // Auto-sync with KeyAuth API when tab is opened
                 }
             });
         });
@@ -4055,6 +4055,68 @@
                 }
             }
             
+            async checkKeyStatus(key) {
+                try {
+                    // Use seller API to check key status
+                    const sellerKey = KEYAUTH_CONFIG.sellerKey;
+                    if (!sellerKey) {
+                        throw new Error("Seller API key not configured");
+                    }
+                    
+                    // Build seller API URL to check key info
+                    const params = new URLSearchParams({
+                        sellerkey: sellerKey,
+                        type: "keyinfo",
+                        key: key,
+                        format: "json"
+                    });
+                    
+                    const url = `${KEYAUTH_CONFIG.sellerApiUrl}?${params.toString()}`;
+                    
+                    const response = await fetch(url, {
+                        method: "GET",
+                        headers: {
+                            "Accept": "application/json"
+                        }
+                    });
+                    
+                    if (!response.ok) {
+                        // If keyinfo doesn't work, try alternative method
+                        // Check if key has been used by trying to get user info
+                        return { used: false, error: `HTTP ${response.status}` };
+                    }
+                    
+                    const responseText = await response.text();
+                    let responseData;
+                    
+                    try {
+                        responseData = JSON.parse(responseText);
+                    } catch (e) {
+                        // If not JSON, check if response indicates key is used
+                        const textLower = responseText.toLowerCase();
+                        if (textLower.includes('used') || textLower.includes('activated') || textLower.includes('active')) {
+                            return { used: true };
+                        }
+                        return { used: false };
+                    }
+                    
+                    // Check response for key status indicators
+                    if (responseData.used || responseData.activated || responseData.active) {
+                        return { used: true, data: responseData };
+                    }
+                    
+                    // Check if key has user info (means it's been used)
+                    if (responseData.username || responseData.user || responseData.hwid) {
+                        return { used: true, data: responseData };
+                    }
+                    
+                    return { used: false, data: responseData };
+                } catch (error) {
+                    console.warn('Error checking key status:', error);
+                    return { used: false, error: error.message };
+                }
+            }
+            
             async doRequest(data) {
                 try {
                     const formData = new URLSearchParams();
@@ -4138,7 +4200,7 @@
         }
         
         // Load keys
-        async function loadKeys() {
+        async function loadKeys(autoSync = false) {
             const content = document.getElementById('keysContent');
             if (!content) return;
             
@@ -4155,6 +4217,41 @@
                 }
                 
                 const keys = await keyAuthClient.getKeys();
+                
+                // Auto-sync key status if enabled (check first 10 keys to avoid long delays)
+                if (autoSync && keys.length > 0 && keys.length <= 50) {
+                    try {
+                        console.log('Auto-syncing key status with KeyAuth API...');
+                        let updated = 0;
+                        const keysToCheck = keys.slice(0, 10); // Check first 10 keys to avoid delays
+                        
+                        for (const key of keysToCheck) {
+                            try {
+                                const status = await keyAuthClient.checkKeyStatus(key);
+                                if (status.used !== undefined) {
+                                    const safeKey = key.replace(/[.#$\[\]]/g, '_');
+                                    const currentSnapshot = await database.ref(`keyauthKeys/${safeKey}`).once('value');
+                                    const currentData = currentSnapshot.exists() ? currentSnapshot.val() : null;
+                                    
+                                    if (!currentData || currentData.used !== status.used) {
+                                        await database.ref(`keyauthKeys/${safeKey}/used`).set(status.used);
+                                        if (status.used) updated++;
+                                    }
+                                }
+                                // Small delay to avoid rate limiting
+                                await new Promise(resolve => setTimeout(resolve, 50));
+                            } catch (e) {
+                                // Silently continue on individual key errors
+                            }
+                        }
+                        
+                        if (updated > 0) {
+                            console.log(`Auto-sync updated ${updated} key(s)`);
+                        }
+                    } catch (e) {
+                        console.warn('Auto-sync error (non-critical):', e);
+                    }
+                }
                 
                 if (!keys || keys.length === 0) {
                     content.innerHTML = '<div class="empty-state"><div class="empty-state-text">No keys found. Generate your first key to get started!</div></div>';
@@ -4398,20 +4495,61 @@
         
         // Sync key status from KeyAuth API
         async function syncKeyStatus() {
-            if (!confirm('This will refresh all keys. Continue?')) {
+            if (!confirm('This will check all keys with KeyAuth API to update their status. This may take a while. Continue?')) {
                 return;
             }
             
             try {
                 const content = document.getElementById('keysContent');
                 if (content) {
-                    content.innerHTML = '<div class="loading">Syncing key status...</div>';
+                    content.innerHTML = '<div class="loading">Syncing key status with KeyAuth API...</div>';
                 }
                 
-                console.log('Key sync completed. Refreshing key list...');
+                if (!keyAuthClient) {
+                    keyAuthClient = new KeyAuthClient(KEYAUTH_CONFIG);
+                }
+                
+                const keys = await keyAuthClient.getKeys();
+                let updated = 0;
+                let errors = 0;
+                
+                // Check each key's status with KeyAuth API
+                for (let i = 0; i < keys.length; i++) {
+                    const key = keys[i];
+                    try {
+                        if (content) {
+                            content.innerHTML = `<div class="loading">Checking key ${i + 1} of ${keys.length}...</div>`;
+                        }
+                        
+                        const status = await keyAuthClient.checkKeyStatus(key);
+                        
+                        if (status.used !== undefined) {
+                            const safeKey = key.replace(/[.#$\[\]]/g, '_');
+                            const currentSnapshot = await database.ref(`keyauthKeys/${safeKey}`).once('value');
+                            const currentData = currentSnapshot.exists() ? currentSnapshot.val() : null;
+                            
+                            // Only update if status changed
+                            if (!currentData || currentData.used !== status.used) {
+                                await database.ref(`keyauthKeys/${safeKey}/used`).set(status.used);
+                                if (status.used) {
+                                    updated++;
+                                    console.log(`✅ Key marked as used: ${key}`);
+                                }
+                            }
+                        }
+                        
+                        // Small delay to avoid rate limiting
+                        await new Promise(resolve => setTimeout(resolve, 100));
+                    } catch (error) {
+                        console.warn(`Error checking key ${key}:`, error);
+                        errors++;
+                    }
+                }
+                
+                console.log(`Key sync completed. Updated: ${updated}, Errors: ${errors}`);
                 await loadKeys();
                 
-                alert('✅ Sync completed!');
+                alert(`✅ Sync completed!\n\nUpdated: ${updated} key(s)\nErrors: ${errors}`);
             } catch (error) {
                 console.error('Error syncing keys:', error);
                 alert('Error syncing keys: ' + (error.message || 'Unknown error'));
