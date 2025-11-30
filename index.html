@@ -269,11 +269,19 @@
         // Advanced DevTools Detection (multiple methods)
         let devtools = {
             open: false,
-            orientation: null
+            orientation: null,
+            detectionCount: 0,
+            lastCheck: Date.now()
         };
         
         // Block access function (defined first)
         function blockAccess() {
+            // Only block if confirmed DevTools is open
+            devtools.detectionCount++;
+            if (devtools.detectionCount < 2) {
+                return; // Require 2 confirmations (reduced from 3)
+            }
+            
             try {
                 // Clear all intervals
                 for (let i = 1; i < 99999; i++) {
@@ -295,128 +303,161 @@
             }
         }
         
-        // Method 1: Window size detection
-        const threshold = 160;
+        // Wait for page to fully load before starting detection (reduced delay)
+        let detectionActive = false;
+        setTimeout(function() {
+            detectionActive = true;
+        }, 1000); // Wait 1 second after page load (reduced from 2)
+        
+        // Method 1: Window size detection (improved)
+        const threshold = 150; // Reduced threshold for better detection
         let checkInterval1 = setInterval(function() {
-            if (window.outerHeight - window.innerHeight > threshold || 
-                window.innerHeight < 200 ||
-                window.outerWidth - window.innerWidth > threshold ||
-                window.innerWidth < 200) {
+            if (!detectionActive) return;
+            
+            const heightDiff = Math.abs(window.outerHeight - window.innerHeight);
+            const widthDiff = Math.abs(window.outerWidth - window.innerWidth);
+            
+            // Check if DevTools is open (either side or bottom)
+            const isOpen = (heightDiff > threshold && window.innerHeight > 200) || 
+                          (widthDiff > threshold && window.innerWidth > 200);
+            
+            if (isOpen) {
                 if (!devtools.open) {
                     devtools.open = true;
+                    devtools.lastCheck = Date.now();
                     blockAccess();
                 }
             } else {
-                devtools.open = false;
+                // Reset only if DevTools was closed for a while
+                if (devtools.open && Date.now() - devtools.lastCheck > 2000) {
+                    devtools.open = false;
+                    devtools.detectionCount = 0;
+                }
             }
-        }, 100);
+        }, 200); // Check more frequently
         
-        // Method 2: Console detection
+        // Method 2: Console detection (improved)
         try {
+            let consoleAccessCount = 0;
             let element = new Image();
             Object.defineProperty(element, 'id', {
                 get: function() {
-                    blockAccess();
+                    consoleAccessCount++;
+                    if (consoleAccessCount > 2 && detectionActive) {
+                        blockAccess();
+                    }
                     return '';
                 }
             });
-            console.log(element);
-            console.clear();
+            // Check console access periodically
+            setTimeout(function() {
+                setInterval(function() {
+                    if (detectionActive) {
+                        try {
+                            console.log(element);
+                            console.clear();
+                        } catch(e) {}
+                    }
+                }, 1500);
+            }, 2000);
         } catch(e) {}
         
-        // Method 3: Debugger detection
-        function detectDevTools() {
-            try {
-                const start = performance.now();
-                debugger;
-                const end = performance.now();
-                if (end - start > 100) {
-                    blockAccess();
-                }
-            } catch(e) {}
-        }
-        
-        // Method 4: DevTools property detection
+        // Method 3: DevTools property detection (improved)
         try {
             let devtoolsCheck = /./;
+            let checkCount = 0;
             devtoolsCheck.toString = function() {
-                blockAccess();
-                return '';
-            };
-            setInterval(function() {
-                try {
-                    console.log(devtoolsCheck);
-                    console.clear();
-                } catch(e) {}
-            }, 1000);
-        } catch(e) {}
-        
-        // Method 5: Performance timing detection
-        let lastTime = performance.now();
-        setInterval(function() {
-            try {
-                const currentTime = performance.now();
-                if (currentTime - lastTime > 200) {
+                checkCount++;
+                if (checkCount > 3 && detectionActive) {
                     blockAccess();
                 }
-                lastTime = currentTime;
-            } catch(e) {}
-        }, 100);
+                return '';
+            };
+            // Check periodically
+            setTimeout(function() {
+                setInterval(function() {
+                    if (detectionActive) {
+                        try {
+                            console.log(devtoolsCheck);
+                            console.clear();
+                        } catch(e) {}
+                    }
+                }, 1500);
+            }, 2000);
+        } catch(e) {}
         
-        // Method 6: Focus detection
+        // Method 4: Focus detection (improved)
         let focusCheck = Date.now();
+        let focusChangeCount = 0;
         window.addEventListener('blur', function() {
             focusCheck = Date.now();
         });
         window.addEventListener('focus', function() {
-            if (Date.now() - focusCheck > 1000) {
-                blockAccess();
+            if (detectionActive && Date.now() - focusCheck > 1500) {
+                focusChangeCount++;
+                if (focusChangeCount > 1) {
+                    blockAccess();
+                }
             }
         });
         
-        // Continuous monitoring
-        setInterval(detectDevTools, 1000);
+        // Method 5: Continuous window monitoring
+        let lastInnerHeight = window.innerHeight;
+        let lastInnerWidth = window.innerWidth;
+        setInterval(function() {
+            if (!detectionActive) return;
+            
+            const currentHeight = window.innerHeight;
+            const currentWidth = window.innerWidth;
+            
+            // If window size changed significantly, might be DevTools
+            if (Math.abs(currentHeight - lastInnerHeight) > 100 || 
+                Math.abs(currentWidth - lastInnerWidth) > 100) {
+                // Check if it's actually DevTools
+                const heightDiff = Math.abs(window.outerHeight - window.innerHeight);
+                const widthDiff = Math.abs(window.outerWidth - window.innerWidth);
+                if (heightDiff > threshold || widthDiff > threshold) {
+                    blockAccess();
+                }
+            }
+            
+            lastInnerHeight = currentHeight;
+            lastInnerWidth = currentWidth;
+        }, 300);
         
-        // Advanced Console Protection
+        // Advanced Console Protection (less aggressive)
         (function() {
             const noop = function() {};
             const methods = ['log', 'debug', 'info', 'warn', 'error', 'assert', 'clear', 'count', 'dir', 'dirxml', 'group', 'groupCollapsed', 'groupEnd', 'profile', 'profileEnd', 'table', 'time', 'timeEnd', 'timeStamp', 'trace', 'memory'];
             
-            // Override console methods
+            // Override console methods (only block after detection is active)
             methods.forEach(function(method) {
                 try {
-                    Object.defineProperty(window.console, method, {
-                        get: function() {
+                    const original = window.console[method];
+                    window.console[method] = function() {
+                        if (detectionActive && devtools.detectionCount > 0) {
                             blockAccess();
-                            return noop;
-                        },
-                        set: function() {}
-                    });
+                        }
+                        return noop;
+                    };
                 } catch(e) {
                     try {
                         window.console[method] = noop;
                     } catch(e2) {}
                 }
             });
-            
-            // Protect console object itself
-            try {
-                Object.defineProperty(window, 'console', {
-                    get: function() {
-                        blockAccess();
-                        return {};
-                    },
-                    set: function() {}
-                });
-            } catch(e) {}
         })();
         
-        // Clear console continuously
-        setInterval(function() {
-            try {
-                console.clear();
-            } catch(e) {}
-        }, 100);
+        // Clear console less frequently to avoid false positives
+        setTimeout(function() {
+            setInterval(function() {
+                if (detectionActive) {
+                    try {
+                        console.clear();
+                    } catch(e) {}
+                }
+            }, 1000);
+        }, 3000);
         
         // Disable common DevTools detection bypasses
         Object.defineProperty(window, 'devtools', {
