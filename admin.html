@@ -4057,60 +4057,98 @@
             
             async checkKeyStatus(key) {
                 try {
-                    // Use seller API to check key status
-                    const sellerKey = KEYAUTH_CONFIG.sellerKey;
-                    if (!sellerKey) {
-                        throw new Error("Seller API key not configured");
+                    // Initialize KeyAuth session if needed
+                    if (!this.sessionid) {
+                        await this.init();
                     }
                     
-                    // Build seller API URL to check key info
-                    const params = new URLSearchParams({
-                        sellerkey: sellerKey,
-                        type: "keyinfo",
+                    // Try to use regular KeyAuth API to check key status
+                    // We'll try to get user info for the key (if it's been used, it will have user data)
+                    const postData = {
+                        type: "license",
+                        name: this.name,
+                        ownerid: this.ownerid,
+                        sessionid: this.sessionid,
                         key: key,
-                        format: "json"
-                    });
-                    
-                    const url = `${KEYAUTH_CONFIG.sellerApiUrl}?${params.toString()}`;
-                    
-                    const response = await fetch(url, {
-                        method: "GET",
-                        headers: {
-                            "Accept": "application/json"
-                        }
-                    });
-                    
-                    if (!response.ok) {
-                        // If keyinfo doesn't work, try alternative method
-                        // Check if key has been used by trying to get user info
-                        return { used: false, error: `HTTP ${response.status}` };
-                    }
-                    
-                    const responseText = await response.text();
-                    let responseData;
+                        hwid: "check-status" // Dummy HWID for status check
+                    };
                     
                     try {
-                        responseData = JSON.parse(responseText);
-                    } catch (e) {
-                        // If not JSON, check if response indicates key is used
-                        const textLower = responseText.toLowerCase();
-                        if (textLower.includes('used') || textLower.includes('activated') || textLower.includes('active')) {
-                            return { used: true };
+                        const response = await this.doRequest(postData);
+                        
+                        // If license check succeeds and has user info, key is used
+                        if (response.success === true && response.info) {
+                            // Key has been activated and has user info
+                            return { used: true, data: response.info };
                         }
+                        
+                        // If license check fails with "invalid" or "expired", key might be unused or invalid
+                        if (response.success === false) {
+                            const message = (response.message || '').toLowerCase();
+                            // If it says "already used" or similar, it's been used
+                            if (message.includes('already') || message.includes('used') || message.includes('activated')) {
+                                return { used: true };
+                            }
+                            // Otherwise assume unused (could be invalid key)
+                            return { used: false };
+                        }
+                        
                         return { used: false };
+                    } catch (apiError) {
+                        // If API error, try seller API as fallback
+                        console.log('Regular API check failed, trying seller API...', apiError.message);
+                        
+                        const sellerKey = KEYAUTH_CONFIG.sellerKey;
+                        if (sellerKey) {
+                            // Try seller API with different endpoint types
+                            const endpoints = ['keyinfo', 'info', 'status'];
+                            
+                            for (const endpointType of endpoints) {
+                                try {
+                                    const params = new URLSearchParams({
+                                        sellerkey: sellerKey,
+                                        type: endpointType,
+                                        key: key,
+                                        format: "json"
+                                    });
+                                    
+                                    const url = `${KEYAUTH_CONFIG.sellerApiUrl}?${params.toString()}`;
+                                    const sellerResponse = await fetch(url, {
+                                        method: "GET",
+                                        headers: { "Accept": "application/json" }
+                                    });
+                                    
+                                    if (sellerResponse.ok) {
+                                        const text = await sellerResponse.text();
+                                        const lower = text.toLowerCase();
+                                        
+                                        // Check for indicators that key is used
+                                        if (lower.includes('username') || lower.includes('hwid') || 
+                                            lower.includes('used') || lower.includes('activated') ||
+                                            lower.includes('active') || lower.includes('user')) {
+                                            return { used: true };
+                                        }
+                                        
+                                        // Try parsing as JSON
+                                        try {
+                                            const data = JSON.parse(text);
+                                            if (data.username || data.user || data.hwid || data.used || data.activated) {
+                                                return { used: true, data: data };
+                                            }
+                                        } catch (e) {
+                                            // Not JSON, continue
+                                        }
+                                    }
+                                } catch (e) {
+                                    // Try next endpoint
+                                    continue;
+                                }
+                            }
+                        }
+                        
+                        // If all methods fail, return unknown status
+                        return { used: false, error: 'Unable to determine status' };
                     }
-                    
-                    // Check response for key status indicators
-                    if (responseData.used || responseData.activated || responseData.active) {
-                        return { used: true, data: responseData };
-                    }
-                    
-                    // Check if key has user info (means it's been used)
-                    if (responseData.username || responseData.user || responseData.hwid) {
-                        return { used: true, data: responseData };
-                    }
-                    
-                    return { used: false, data: responseData };
                 } catch (error) {
                     console.warn('Error checking key status:', error);
                     return { used: false, error: error.message };
@@ -4227,21 +4265,30 @@
                         
                         for (const key of keysToCheck) {
                             try {
+                                console.log(`Checking key status: ${key.substring(0, 10)}...`);
                                 const status = await keyAuthClient.checkKeyStatus(key);
-                                if (status.used !== undefined) {
+                                console.log(`Key status result:`, status);
+                                
+                                if (status.used !== undefined && !status.error) {
                                     const safeKey = key.replace(/[.#$\[\]]/g, '_');
                                     const currentSnapshot = await database.ref(`keyauthKeys/${safeKey}`).once('value');
                                     const currentData = currentSnapshot.exists() ? currentSnapshot.val() : null;
                                     
                                     if (!currentData || currentData.used !== status.used) {
                                         await database.ref(`keyauthKeys/${safeKey}/used`).set(status.used);
-                                        if (status.used) updated++;
+                                        if (status.used) {
+                                            updated++;
+                                            console.log(`✅ Updated key as used: ${key.substring(0, 10)}...`);
+                                        }
                                     }
+                                } else if (status.error) {
+                                    console.warn(`Could not check key ${key.substring(0, 10)}...: ${status.error}`);
                                 }
                                 // Small delay to avoid rate limiting
-                                await new Promise(resolve => setTimeout(resolve, 50));
+                                await new Promise(resolve => setTimeout(resolve, 200));
                             } catch (e) {
-                                // Silently continue on individual key errors
+                                console.warn(`Error checking key ${key.substring(0, 10)}...:`, e.message);
+                                // Continue with next key
                             }
                         }
                         
@@ -4509,21 +4556,44 @@
                     keyAuthClient = new KeyAuthClient(KEYAUTH_CONFIG);
                 }
                 
+                // Initialize KeyAuth if needed
+                if (!keyAuthInitialized) {
+                    console.log('Initializing KeyAuth for sync...');
+                    await initKeyAuth();
+                    if (!keyAuthInitialized) {
+                        throw new Error('KeyAuth initialization failed: ' + (keyAuthInitError?.message || 'Unknown error'));
+                    }
+                }
+                
                 const keys = await keyAuthClient.getKeys();
+                
+                if (!keys || keys.length === 0) {
+                    alert('No keys found to sync.');
+                    await loadKeys();
+                    return;
+                }
+                
                 let updated = 0;
                 let errors = 0;
+                let checked = 0;
+                
+                console.log(`Starting sync for ${keys.length} keys...`);
                 
                 // Check each key's status with KeyAuth API
                 for (let i = 0; i < keys.length; i++) {
                     const key = keys[i];
                     try {
                         if (content) {
-                            content.innerHTML = `<div class="loading">Checking key ${i + 1} of ${keys.length}...</div>`;
+                            content.innerHTML = `<div class="loading">Checking key ${i + 1} of ${keys.length}...<br><small>${key.substring(0, 20)}...</small></div>`;
                         }
                         
+                        console.log(`[${i + 1}/${keys.length}] Checking: ${key.substring(0, 15)}...`);
                         const status = await keyAuthClient.checkKeyStatus(key);
+                        checked++;
                         
-                        if (status.used !== undefined) {
+                        console.log(`Status result:`, status);
+                        
+                        if (status.used !== undefined && !status.error) {
                             const safeKey = key.replace(/[.#$\[\]]/g, '_');
                             const currentSnapshot = await database.ref(`keyauthKeys/${safeKey}`).once('value');
                             const currentData = currentSnapshot.exists() ? currentSnapshot.val() : null;
@@ -4533,26 +4603,33 @@
                                 await database.ref(`keyauthKeys/${safeKey}/used`).set(status.used);
                                 if (status.used) {
                                     updated++;
-                                    console.log(`✅ Key marked as used: ${key}`);
+                                    console.log(`✅ Updated: ${key.substring(0, 15)}... marked as USED`);
+                                } else {
+                                    console.log(`✅ Updated: ${key.substring(0, 15)}... marked as UNUSED`);
                                 }
+                            } else {
+                                console.log(`⏭️  No change: ${key.substring(0, 15)}... (already ${status.used ? 'used' : 'unused'})`);
                             }
+                        } else if (status.error) {
+                            console.warn(`⚠️  Error checking ${key.substring(0, 15)}...: ${status.error}`);
+                            errors++;
                         }
                         
-                        // Small delay to avoid rate limiting
-                        await new Promise(resolve => setTimeout(resolve, 100));
+                        // Delay to avoid rate limiting
+                        await new Promise(resolve => setTimeout(resolve, 300));
                     } catch (error) {
-                        console.warn(`Error checking key ${key}:`, error);
+                        console.error(`❌ Error checking key ${key.substring(0, 15)}...:`, error);
                         errors++;
                     }
                 }
                 
-                console.log(`Key sync completed. Updated: ${updated}, Errors: ${errors}`);
+                console.log(`Sync completed. Checked: ${checked}, Updated: ${updated}, Errors: ${errors}`);
                 await loadKeys();
                 
-                alert(`✅ Sync completed!\n\nUpdated: ${updated} key(s)\nErrors: ${errors}`);
+                alert(`✅ Sync completed!\n\nChecked: ${checked} key(s)\nUpdated: ${updated} key(s)\nErrors: ${errors}`);
             } catch (error) {
                 console.error('Error syncing keys:', error);
-                alert('Error syncing keys: ' + (error.message || 'Unknown error'));
+                alert('Error syncing keys: ' + (error.message || 'Unknown error') + '\n\nCheck console for details.');
                 await loadKeys(); // Reload anyway
             }
         }
