@@ -648,6 +648,28 @@
             color: #888;
             margin-bottom: 4px;
             font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .ticket-message-avatar {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 1px solid rgba(74, 74, 74, 0.5);
+        }
+
+        .ticket-message-user-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .ticket-message-username {
+            font-weight: 600;
+            color: #e5e5e5;
         }
 
         .ticket-message-text {
@@ -3792,6 +3814,11 @@
                 if (!container) return;
                 
                 try {
+                    // Get ticket to access userId
+                    const ticketSnapshot = await window.database.ref(`tickets/${ticketId}`).once('value');
+                    const ticket = ticketSnapshot.exists() ? ticketSnapshot.val() : null;
+                    const userId = ticket ? ticket.userId : null;
+                    
                     const snapshot = await window.database.ref(`ticketMessages/${ticketId}`).once('value');
                     const messages = snapshot.exists() ? snapshot.val() : {};
                     const messagesArray = Object.entries(messages)
@@ -3811,15 +3838,30 @@
                         .filter(m => m !== null && (m.message || (Array.isArray(m.images) && m.images.length > 0) || (m.voice && m.voice.data)))
                         .sort((a, b) => a.timestamp - b.timestamp);
                     
-                    this.renderMessages(messagesArray, container);
+                    await this.renderMessages(messagesArray, container, userId);
                 } catch (error) {
                     console.error('Error loading messages:', error);
                     container.innerHTML = '<div style="color: #ef4444; text-align: center; padding: 40px;">Error loading messages</div>';
                 }
             },
             
+            // Get user profile for ticket messages
+            getUserProfileForTicket: async function(userId) {
+                if (!userId || !window.database) return null;
+                
+                try {
+                    const profileSnapshot = await window.database.ref(`userProfiles/${userId}`).once('value');
+                    if (profileSnapshot.exists()) {
+                        return profileSnapshot.val();
+                    }
+                } catch (error) {
+                    console.error('Error loading user profile:', error);
+                }
+                return null;
+            },
+            
             // Render messages
-            renderMessages: function(messages, container) {
+            renderMessages: async function(messages, container, userId) {
                 if (!container) return;
                 
                 if (!Array.isArray(messages) || messages.length === 0) {
@@ -3828,7 +3870,10 @@
                 }
                 
                 try {
-                    const html = messages.map(msg => {
+                    // Load user profile if userId is provided
+                    const userProfile = userId ? await this.getUserProfileForTicket(userId) : null;
+                    
+                    const html = await Promise.all(messages.map(async (msg) => {
                         try {
                             const date = new Date(msg.timestamp || Date.now());
                             const isUser = msg.sender === 'user';
@@ -3836,6 +3881,22 @@
                             
                             const images = Array.isArray(msg.images) ? msg.images : [];
                             const voice = msg.voice || null;
+                            
+                            // Get profile info for user messages
+                            let profileInfo = '';
+                            if (isUser && userProfile) {
+                                const avatarSrc = userProfile.avatar || `data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2224%22 height=%2224%22%3E%3Ccircle cx=%2212%22 cy=%2212%22 r=%2212%22 fill=%22%233a3a3a%22/%3E%3Ctext x=%2212%22 y=%2216%22 font-size=%2210%22 fill=%22%23fff%22 text-anchor=%22middle%22%3E${encodeURIComponent((userProfile.username || '?').charAt(0).toUpperCase())}%3C/text%3E%3C/svg%3E`;
+                                profileInfo = `
+                                    <div class="ticket-message-user-info">
+                                        <img class="ticket-message-avatar" src="${escapeHtml(avatarSrc)}" alt="${escapeHtml(userProfile.username || 'User')}" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2224%22 height=%2224%22%3E%3Ccircle cx=%2212%22 cy=%2212%22 r=%2212%22 fill=%22%233a3a3a%22/%3E%3C/svg%3E'">
+                                        <span class="ticket-message-username">${escapeHtml(userProfile.username || 'User')}</span>
+                                    </div>
+                                `;
+                            } else if (isUser) {
+                                profileInfo = '<span class="ticket-message-username">User</span>';
+                            } else {
+                                profileInfo = '<span class="ticket-message-username">Admin</span>';
+                            }
                             
                             let imagesHtml = '';
                             if (images.length > 0) {
@@ -3866,7 +3927,11 @@
                             
                             return `
                                 <div class="ticket-message ${isUser ? 'user' : 'admin'}">
-                                    <div class="ticket-message-header">${isUser ? 'User' : 'Admin'} • ${date.toLocaleString()}</div>
+                                    <div class="ticket-message-header">
+                                        ${profileInfo}
+                                        <span style="color: #666;">•</span>
+                                        <span>${date.toLocaleString()}</span>
+                                    </div>
                                     ${messageText ? `<div class="ticket-message-text">${messageText}</div>` : ''}
                                     ${imagesHtml}
                                     ${voiceHtml}
@@ -3875,9 +3940,9 @@
                         } catch (e) {
                             return '';
                         }
-                    }).filter(h => h).join('');
+                    }));
                     
-                    container.innerHTML = html || '<div style="color: #888; text-align: center; padding: 40px;">No valid messages</div>';
+                    container.innerHTML = html.filter(h => h).join('') || '<div style="color: #888; text-align: center; padding: 40px;">No valid messages</div>';
                     setTimeout(() => {
                         container.scrollTop = container.scrollHeight;
                     }, 50);
@@ -3898,11 +3963,16 @@
                     }
                 }
                 
-                this.messageListener = (snapshot) => {
+                this.messageListener = async (snapshot) => {
                     const container = this.getElement('adminTicketMessages');
                     if (!container) return;
                     
                     try {
+                        // Get ticket to access userId
+                        const ticketSnapshot = await window.database.ref(`tickets/${this.currentTicketId}`).once('value');
+                        const ticket = ticketSnapshot.exists() ? ticketSnapshot.val() : null;
+                        const userId = ticket ? ticket.userId : null;
+                        
                         const msgs = snapshot.exists() ? snapshot.val() : {};
                         const msgsArray = Object.entries(msgs)
                             .map(([ts, msg]) => {
@@ -3921,7 +3991,7 @@
                             .filter(m => m !== null && (m.message || (Array.isArray(m.images) && m.images.length > 0) || (m.voice && m.voice.data)))
                             .sort((a, b) => a.timestamp - b.timestamp);
                         
-                        this.renderMessages(msgsArray, container);
+                        await this.renderMessages(msgsArray, container, userId);
                     } catch (error) {
                         console.error('Error in listener:', error);
                     }
