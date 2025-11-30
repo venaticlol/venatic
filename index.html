@@ -1417,6 +1417,29 @@
             display: block;
         }
 
+        .profile-tab-btn {
+            flex: 1;
+            padding: 12px;
+            background: transparent;
+            border: none;
+            border-bottom: 2px solid transparent;
+            color: #888;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: inherit;
+        }
+
+        .profile-tab-btn.active {
+            color: #e5e5e5;
+            border-bottom-color: #3b82f6;
+        }
+
+        .profile-tab-btn:hover {
+            color: #b0b0b0;
+        }
+
         .ticket-message-text {
             color: #e5e5e5;
             font-size: 14px;
@@ -4006,10 +4029,13 @@
 
     <!-- User Profile Button -->
     <div class="user-profile-container" id="userProfileContainer" style="display: none;">
-        <button class="user-profile-btn" id="userProfileBtn" onclick="showProfileModal()">
-            <img class="user-profile-avatar" id="userProfileAvatar" src="" alt="Profile" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2232%22 height=%2232%22%3E%3Ccircle cx=%2216%22 cy=%2216%22 r=%2216%22 fill=%22%233a3a3a%22/%3E%3Ctext x=%2216%22 y=%2220%22 font-size=%2214%22 fill=%22%23fff%22 text-anchor=%22middle%22%3E?%3C/text%3E%3C/svg%3E'">
-            <span class="user-profile-name" id="userProfileName">Profile</span>
-        </button>
+        <div style="position: relative;">
+            <button class="user-profile-btn" id="userProfileBtn" onclick="showEditProfileModal()">
+                <img class="user-profile-avatar" id="userProfileAvatar" src="" alt="Profile" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2232%22 height=%2232%22%3E%3Ccircle cx=%2216%22 cy=%2216%22 r=%2216%22 fill=%22%233a3a3a%22/%3E%3Ctext x=%2216%22 y=%2220%22 font-size=%2214%22 fill=%22%23fff%22 text-anchor=%22middle%22%3E?%3C/text%3E%3C/svg%3E'">
+                <span class="user-profile-name" id="userProfileName">Profile</span>
+            </button>
+            <button onclick="logoutProfile()" style="position: absolute; top: -8px; right: -8px; width: 20px; height: 20px; background: rgba(239, 68, 68, 0.9); border: none; border-radius: 50%; color: white; font-size: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: bold; z-index: 1001;" title="Logout">×</button>
+        </div>
     </div>
 
     <!-- Language Switcher -->
@@ -4034,29 +4060,74 @@
     <!-- Cloudflare Turnstile Container (Invisible) -->
     <div id="cloudflare-turnstile-container" style="display: none;"></div>
 
-    <!-- Profile Creation/Edit Modal -->
+    <!-- Profile Signup/Login Modal -->
     <div class="profile-modal-overlay" id="profileModalOverlay">
         <div class="profile-modal">
             <div class="profile-modal-header">
-                <h2 id="profileModalTitle">Create Your Profile</h2>
+                <h2 id="profileModalTitle">Sign Up / Login</h2>
                 <button class="profile-modal-close" id="profileModalCloseBtn" onclick="hideProfileModal()">×</button>
             </div>
             <div class="profile-modal-body">
                 <div class="profile-error-message" id="profileErrorMessage"></div>
-                <div class="profile-avatar-preview">
-                    <img class="profile-avatar-large" id="profileAvatarPreview" src="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22120%22 height=%22120%22%3E%3Ccircle cx=%2260%22 cy=%2260%22 r=%2260%22 fill=%22%233a3a3a%22/%3E%3Ctext x=%2260%22 y=%2275%22 font-size=%2240%22 fill=%22%23fff%22 text-anchor=%22middle%22%3E?%3C/text%3E%3C/svg%3E" alt="Profile Picture">
-                    <label for="profileAvatarInput" class="profile-avatar-upload-btn">Upload Profile Picture</label>
-                    <input type="file" id="profileAvatarInput" accept="image/*" style="display: none;" onchange="handleProfileAvatarUpload(event)">
+                
+                <!-- Tab Switcher -->
+                <div style="display: flex; gap: 8px; margin-bottom: 24px; border-bottom: 1px solid #2a2a2a;">
+                    <button class="profile-tab-btn active" id="profileSignupTab" onclick="switchProfileTab('signup')">Sign Up</button>
+                    <button class="profile-tab-btn" id="profileLoginTab" onclick="switchProfileTab('login')">Login</button>
                 </div>
-                <div class="profile-form-group">
-                    <label class="profile-form-label" for="profileUsernameInput">Username *</label>
-                    <input type="text" id="profileUsernameInput" class="profile-form-input" placeholder="Enter your username" maxlength="30" required>
+
+                <!-- Signup Form -->
+                <div id="profileSignupForm">
+                    <div class="profile-avatar-preview">
+                        <img class="profile-avatar-large" id="profileAvatarPreview" src="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22120%22 height=%22120%22%3E%3Ccircle cx=%2260%22 cy=%2260%22 r=%2260%22 fill=%22%233a3a3a%22/%3E%3Ctext x=%2260%22 y=%2275%22 font-size=%2240%22 fill=%22%23fff%22 text-anchor=%22middle%22%3E?%3C/text%3E%3C/svg%3E" alt="Profile Picture">
+                        <label for="profileAvatarInput" class="profile-avatar-upload-btn">Upload Profile Picture</label>
+                        <input type="file" id="profileAvatarInput" accept="image/*" style="display: none;" onchange="handleProfileAvatarUpload(event)">
+                    </div>
+                    <div class="profile-form-group">
+                        <label class="profile-form-label" for="profileUsernameInput">Username *</label>
+                        <input type="text" id="profileUsernameInput" class="profile-form-input" placeholder="Enter your username" maxlength="30" required>
+                    </div>
+                    <div class="profile-form-group">
+                        <label class="profile-form-label" for="profilePasswordInput">Password *</label>
+                        <input type="password" id="profilePasswordInput" class="profile-form-input" placeholder="Enter your password" minlength="6" required>
+                    </div>
+                    <div class="profile-form-group">
+                        <label class="profile-form-label" for="profileBioInput">Bio (Optional)</label>
+                        <textarea id="profileBioInput" class="profile-form-input profile-form-textarea" placeholder="Tell us about yourself..." maxlength="200"></textarea>
+                    </div>
+                    <button class="profile-submit-btn" id="profileSubmitBtn" onclick="signupProfile()">Sign Up</button>
                 </div>
-                <div class="profile-form-group">
-                    <label class="profile-form-label" for="profileBioInput">Bio (Optional)</label>
-                    <textarea id="profileBioInput" class="profile-form-input profile-form-textarea" placeholder="Tell us about yourself..." maxlength="200"></textarea>
+
+                <!-- Login Form -->
+                <div id="profileLoginForm" style="display: none;">
+                    <div class="profile-form-group">
+                        <label class="profile-form-label" for="loginUsernameInput">Username *</label>
+                        <input type="text" id="loginUsernameInput" class="profile-form-input" placeholder="Enter your username" maxlength="30" required onkeypress="if(event.key === 'Enter') loginProfile()">
+                    </div>
+                    <div class="profile-form-group">
+                        <label class="profile-form-label" for="loginPasswordInput">Password *</label>
+                        <input type="password" id="loginPasswordInput" class="profile-form-input" placeholder="Enter your password" required onkeypress="if(event.key === 'Enter') loginProfile()">
+                    </div>
+                    <button class="profile-submit-btn" id="profileLoginBtn" onclick="loginProfile()">Login</button>
                 </div>
-                <button class="profile-submit-btn" id="profileSubmitBtn" onclick="saveProfile()">Create Profile</button>
+
+                <!-- Edit Profile Form (for logged-in users) -->
+                <div id="profileEditForm" style="display: none;">
+                    <div class="profile-avatar-preview">
+                        <img class="profile-avatar-large" id="editAvatarPreview" src="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22120%22 height=%22120%22%3E%3Ccircle cx=%2260%22 cy=%2260%22 r=%2260%22 fill=%22%233a3a3a%22/%3E%3Ctext x=%2260%22 y=%2275%22 font-size=%2240%22 fill=%22%23fff%22 text-anchor=%22middle%22%3E?%3C/text%3E%3C/svg%3E" alt="Profile Picture">
+                        <label for="editAvatarInput" class="profile-avatar-upload-btn">Upload Profile Picture</label>
+                        <input type="file" id="editAvatarInput" accept="image/*" style="display: none;" onchange="handleEditAvatarUpload(event)">
+                    </div>
+                    <div class="profile-form-group">
+                        <label class="profile-form-label" for="editUsernameInput">Username *</label>
+                        <input type="text" id="editUsernameInput" class="profile-form-input" placeholder="Enter your username" maxlength="30" required>
+                    </div>
+                    <div class="profile-form-group">
+                        <label class="profile-form-label" for="editBioInput">Bio (Optional)</label>
+                        <textarea id="editBioInput" class="profile-form-input profile-form-textarea" placeholder="Tell us about yourself..." maxlength="200"></textarea>
+                    </div>
+                    <button class="profile-submit-btn" id="profileEditBtn" onclick="updateProfile()">Save Changes</button>
+                </div>
             </div>
         </div>
     </div>
@@ -4778,6 +4849,8 @@
         let currentUserProfile = null;
         let userProfileId = null;
         let isFirstTimeProfile = false;
+        const AUTH_TOKEN_KEY = 'recon_auth_token';
+        const USER_PROFILE_ID_KEY = 'recon_user_profile_id';
 
         try {
             if (typeof firebase !== 'undefined') {
@@ -6421,6 +6494,17 @@
         // ============================================
         // Variables declared above with Firebase initialization
 
+        // Simple password hash (for basic security)
+        function hashPassword(password) {
+            let hash = 0;
+            for (let i = 0; i < password.length; i++) {
+                const char = password.charCodeAt(i);
+                hash = ((hash << 5) - hash) + char;
+                hash = hash & hash; // Convert to 32bit integer
+            }
+            return Math.abs(hash).toString(36);
+        }
+
         // Initialize profile system
         async function initializeProfileSystem() {
             if (!firebaseInitialized || !database) {
@@ -6429,20 +6513,41 @@
             }
 
             try {
-                // Get or create user ID
-                userProfileId = localStorage.getItem('userProfileId');
-                if (!userProfileId) {
-                    userProfileId = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-                    localStorage.setItem('userProfileId', userProfileId);
+                // Check for auth token - if not found, user needs to login
+                const authToken = localStorage.getItem(AUTH_TOKEN_KEY);
+                userProfileId = localStorage.getItem(USER_PROFILE_ID_KEY);
+                
+                if (!authToken || !userProfileId) {
+                    // No auth token or profile ID - show login/signup modal
+                    setTimeout(() => {
+                        showProfileModal(true);
+                    }, 1000);
+                    return;
                 }
 
-                // Load existing profile
+                // Verify auth token matches stored profile
                 const profileSnapshot = await database.ref(`userProfiles/${userProfileId}`).once('value');
                 if (profileSnapshot.exists()) {
-                    currentUserProfile = profileSnapshot.val();
-                    displayUserProfile();
+                    const profile = profileSnapshot.val();
+                    // Verify token matches (simple check - token is userId + timestamp hash)
+                    const expectedToken = hashPassword(userProfileId + (profile.createdAt || ''));
+                    if (authToken === expectedToken || authToken === userProfileId) {
+                        currentUserProfile = profile;
+                        displayUserProfile();
+                    } else {
+                        // Invalid token - clear and show login
+                        localStorage.removeItem(AUTH_TOKEN_KEY);
+                        localStorage.removeItem(USER_PROFILE_ID_KEY);
+                        userProfileId = null;
+                        setTimeout(() => {
+                            showProfileModal(true);
+                        }, 1000);
+                    }
                 } else {
-                    // First-time visitor - show profile creation modal
+                    // Profile doesn't exist - clear auth and show signup
+                    localStorage.removeItem(AUTH_TOKEN_KEY);
+                    localStorage.removeItem(USER_PROFILE_ID_KEY);
+                    userProfileId = null;
                     setTimeout(() => {
                         showProfileModal(true);
                     }, 1000);
@@ -6452,31 +6557,81 @@
             }
         }
 
-        // Show profile modal
+        // Switch between signup and login tabs (global)
+        window.switchProfileTab = function(tab) {
+            const signupForm = document.getElementById('profileSignupForm');
+            const loginForm = document.getElementById('profileLoginForm');
+            const editForm = document.getElementById('profileEditForm');
+            const signupTab = document.getElementById('profileSignupTab');
+            const loginTab = document.getElementById('profileLoginTab');
+            
+            if (tab === 'signup') {
+                if (signupForm) signupForm.style.display = 'block';
+                if (loginForm) loginForm.style.display = 'none';
+                if (editForm) editForm.style.display = 'none';
+                if (signupTab) signupTab.classList.add('active');
+                if (loginTab) loginTab.classList.remove('active');
+            } else if (tab === 'login') {
+                if (signupForm) signupForm.style.display = 'none';
+                if (loginForm) loginForm.style.display = 'block';
+                if (editForm) editForm.style.display = 'none';
+                if (signupTab) signupTab.classList.remove('active');
+                if (loginTab) loginTab.classList.add('active');
+            }
+        }
+
+        // Show profile modal (for signup/login)
         function showProfileModal(isFirstTime = false) {
             const modal = document.getElementById('profileModalOverlay');
-            const title = document.getElementById('profileModalTitle');
-            const submitBtn = document.getElementById('profileSubmitBtn');
             const closeBtn = document.getElementById('profileModalCloseBtn');
+            const title = document.getElementById('profileModalTitle');
             
             isFirstTimeProfile = isFirstTime;
             
             if (modal) {
+                // Show signup/login forms, hide edit form
+                const signupForm = document.getElementById('profileSignupForm');
+                const loginForm = document.getElementById('profileLoginForm');
+                const editForm = document.getElementById('profileEditForm');
+                
+                if (signupForm) signupForm.style.display = 'block';
+                if (loginForm) loginForm.style.display = 'none';
+                if (editForm) editForm.style.display = 'none';
+                
+                // Reset to signup tab
+                switchProfileTab('signup');
+                
+                if (title) title.textContent = 'Sign Up / Login';
+                
+                // Clear form fields
+                const usernameInput = document.getElementById('profileUsernameInput');
+                const passwordInput = document.getElementById('profilePasswordInput');
+                const loginUsernameInput = document.getElementById('loginUsernameInput');
+                const loginPasswordInput = document.getElementById('loginPasswordInput');
+                const bioInput = document.getElementById('profileBioInput');
+                const avatarPreview = document.getElementById('profileAvatarPreview');
+                
+                if (usernameInput) usernameInput.value = '';
+                if (passwordInput) passwordInput.value = '';
+                if (loginUsernameInput) loginUsernameInput.value = '';
+                if (loginPasswordInput) loginPasswordInput.value = '';
+                if (bioInput) bioInput.value = '';
+                if (avatarPreview) {
+                    avatarPreview.src = 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22120%22 height=%22120%22%3E%3Ccircle cx=%2260%22 cy=%2260%22 r=%2260%22 fill=%22%233a3a3a%22/%3E%3Ctext x=%2260%22 y=%2275%22 font-size=%2240%22 fill=%22%23fff%22 text-anchor=%22middle%22%3E?%3C/text%3E%3C/svg%3E';
+                }
+                
                 if (isFirstTime) {
-                    if (title) title.textContent = 'Create Your Profile';
-                    if (submitBtn) submitBtn.textContent = 'Create Profile';
                     // Hide close button for first-time users
                     if (closeBtn) closeBtn.style.display = 'none';
                     // Prevent closing by clicking outside
                     modal.onclick = function(e) {
-                        // Prevent closing if clicking outside the modal content
                         if (e.target === modal) {
                             e.preventDefault();
                             e.stopPropagation();
                             return false;
                         }
                     };
-                    // Prevent Escape key from closing
+                    // Prevent Escape key
                     const escapeHandler = function(e) {
                         if (e.key === 'Escape' && isFirstTimeProfile) {
                             e.preventDefault();
@@ -6487,9 +6642,7 @@
                     document.addEventListener('keydown', escapeHandler);
                     modal._escapeHandler = escapeHandler;
                 } else {
-                    if (title) title.textContent = 'Edit Profile';
-                    if (submitBtn) submitBtn.textContent = 'Save Changes';
-                    // Show close button for editing
+                    // Show close button
                     if (closeBtn) closeBtn.style.display = 'flex';
                     // Allow closing by clicking outside
                     modal.onclick = function(e) {
@@ -6502,19 +6655,63 @@
                         document.removeEventListener('keydown', modal._escapeHandler);
                         modal._escapeHandler = null;
                     }
-                    // Load current profile data
-                    if (currentUserProfile) {
-                        const usernameInput = document.getElementById('profileUsernameInput');
-                        const bioInput = document.getElementById('profileBioInput');
-                        const avatarPreview = document.getElementById('profileAvatarPreview');
-                        
-                        if (usernameInput) usernameInput.value = currentUserProfile.username || '';
-                        if (bioInput) bioInput.value = currentUserProfile.bio || '';
-                        if (avatarPreview && currentUserProfile.avatar) {
-                            avatarPreview.src = currentUserProfile.avatar;
-                        }
+                }
+                modal.classList.add('active');
+            }
+        }
+
+        // Show edit profile modal (for logged-in users) (global)
+        window.showEditProfileModal = function() {
+            if (!currentUserProfile) {
+                showProfileModal();
+                return;
+            }
+
+            const modal = document.getElementById('profileModalOverlay');
+            const closeBtn = document.getElementById('profileModalCloseBtn');
+            const title = document.getElementById('profileModalTitle');
+            
+            if (modal) {
+                // Hide signup/login forms, show edit form
+                const signupForm = document.getElementById('profileSignupForm');
+                const loginForm = document.getElementById('profileLoginForm');
+                const editForm = document.getElementById('profileEditForm');
+                
+                if (signupForm) signupForm.style.display = 'none';
+                if (loginForm) loginForm.style.display = 'none';
+                if (editForm) editForm.style.display = 'block';
+                
+                if (title) title.textContent = 'Edit Profile';
+                if (closeBtn) closeBtn.style.display = 'flex';
+                
+                // Load current profile data
+                const usernameInput = document.getElementById('editUsernameInput');
+                const bioInput = document.getElementById('editBioInput');
+                const avatarPreview = document.getElementById('editAvatarPreview');
+                
+                if (usernameInput) usernameInput.value = currentUserProfile.username || '';
+                if (bioInput) bioInput.value = currentUserProfile.bio || '';
+                if (avatarPreview) {
+                    if (currentUserProfile.avatar) {
+                        avatarPreview.src = currentUserProfile.avatar;
+                    } else {
+                        avatarPreview.src = 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22120%22 height=%22120%22%3E%3Ccircle cx=%2260%22 cy=%2260%22 r=%2260%22 fill=%22%233a3a3a%22/%3E%3Ctext x=%2260%22 y=%2275%22 font-size=%2240%22 fill=%22%23fff%22 text-anchor=%22middle%22%3E?%3C/text%3E%3C/svg%3E';
                     }
                 }
+                
+                // Allow closing
+                modal.onclick = function(e) {
+                    if (e.target === modal) {
+                        hideProfileModal();
+                    }
+                };
+                
+                // Remove escape handler if it exists
+                if (modal._escapeHandler) {
+                    document.removeEventListener('keydown', modal._escapeHandler);
+                    modal._escapeHandler = null;
+                }
+                
                 modal.classList.add('active');
             }
         }
@@ -6554,6 +6751,31 @@
             const reader = new FileReader();
             reader.onload = function(e) {
                 const avatarPreview = document.getElementById('profileAvatarPreview');
+                if (avatarPreview) {
+                    avatarPreview.src = e.target.result;
+                }
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // Handle edit avatar upload (global)
+        window.handleEditAvatarUpload = function(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            if (!file.type.startsWith('image/')) {
+                showProfileError('Please select an image file');
+                return;
+            }
+
+            if (file.size > 2 * 1024 * 1024) {
+                showProfileError('Image size must be less than 2MB');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const avatarPreview = document.getElementById('editAvatarPreview');
                 if (avatarPreview) {
                     avatarPreview.src = e.target.result;
                 }
@@ -6605,21 +6827,24 @@
             }
         }
 
-        // Save profile
-        async function saveProfile() {
-            if (!firebaseInitialized || !database || !userProfileId) {
+        // Signup new profile (global)
+        window.signupProfile = async function() {
+            if (!firebaseInitialized || !database) {
                 showProfileError('Database not available. Please refresh the page.');
                 return;
             }
 
             const usernameInput = document.getElementById('profileUsernameInput');
+            const passwordInput = document.getElementById('profilePasswordInput');
             const bioInput = document.getElementById('profileBioInput');
             const avatarPreview = document.getElementById('profileAvatarPreview');
             const submitBtn = document.getElementById('profileSubmitBtn');
 
-            if (!usernameInput) return;
+            if (!usernameInput || !passwordInput) return;
 
             const username = usernameInput.value.trim();
+            const password = passwordInput.value;
+
             if (!username) {
                 showProfileError('Please enter a username');
                 return;
@@ -6635,8 +6860,13 @@
                 return;
             }
 
-            // Check if username is already taken (case-insensitive)
-            const usernameTaken = await isUsernameTaken(username, currentUserProfile ? userProfileId : null);
+            if (!password || password.length < 6) {
+                showProfileError('Password must be at least 6 characters');
+                return;
+            }
+
+            // Check if username is already taken
+            const usernameTaken = await isUsernameTaken(username);
             if (usernameTaken) {
                 showProfileError('This username is already taken. Please choose another one.');
                 return;
@@ -6645,14 +6875,19 @@
             try {
                 if (submitBtn) {
                     submitBtn.disabled = true;
-                    submitBtn.textContent = 'Saving...';
+                    submitBtn.textContent = 'Creating Account...';
                 }
+
+                // Generate new user ID
+                userProfileId = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                const passwordHash = hashPassword(password);
 
                 const profileData = {
                     username: username,
+                    passwordHash: passwordHash,
                     bio: (bioInput ? bioInput.value.trim() : '') || '',
                     avatar: (avatarPreview && avatarPreview.src && !avatarPreview.src.includes('data:image/svg')) ? avatarPreview.src : null,
-                    createdAt: currentUserProfile ? currentUserProfile.createdAt : Date.now(),
+                    createdAt: Date.now(),
                     updatedAt: Date.now(),
                     userId: userProfileId
                 };
@@ -6660,24 +6895,26 @@
                 await database.ref(`userProfiles/${userProfileId}`).set(profileData);
                 currentUserProfile = profileData;
 
+                // Store auth token
+                const authToken = hashPassword(userProfileId + profileData.createdAt);
+                localStorage.setItem(AUTH_TOKEN_KEY, authToken);
+                localStorage.setItem(USER_PROFILE_ID_KEY, userProfileId);
+
                 // Update display
                 displayUserProfile();
 
-                // Hide modal (now allowed since profile is created)
+                // Hide modal
                 isFirstTimeProfile = false;
                 const modal = document.getElementById('profileModalOverlay');
                 const closeBtn = document.getElementById('profileModalCloseBtn');
                 if (modal) {
                     modal.classList.remove('active');
-                    // Re-enable close button
                     if (closeBtn) closeBtn.style.display = 'flex';
-                    // Re-enable clicking outside to close
                     modal.onclick = function(e) {
                         if (e.target === modal) {
                             hideProfileModal();
                         }
                     };
-                    // Remove escape key handler
                     if (modal._escapeHandler) {
                         document.removeEventListener('keydown', modal._escapeHandler);
                         modal._escapeHandler = null;
@@ -6686,16 +6923,150 @@
 
                 if (submitBtn) {
                     submitBtn.disabled = false;
-                    submitBtn.textContent = 'Create Profile';
+                    submitBtn.textContent = 'Sign Up';
                 }
             } catch (error) {
-                console.error('Error saving profile:', error);
-                showProfileError('Error saving profile. Please try again.');
+                console.error('Error signing up:', error);
+                showProfileError('Error creating account. Please try again.');
                 if (submitBtn) {
                     submitBtn.disabled = false;
-                    submitBtn.textContent = 'Create Profile';
+                    submitBtn.textContent = 'Sign Up';
                 }
             }
+        }
+
+        // Login to existing profile (global)
+        window.loginProfile = async function() {
+            if (!firebaseInitialized || !database) {
+                showProfileError('Database not available. Please refresh the page.');
+                return;
+            }
+
+            const usernameInput = document.getElementById('loginUsernameInput');
+            const passwordInput = document.getElementById('loginPasswordInput');
+            const loginBtn = document.getElementById('profileLoginBtn');
+
+            if (!usernameInput || !passwordInput) return;
+
+            const username = usernameInput.value.trim();
+            const password = passwordInput.value;
+
+            if (!username) {
+                showProfileError('Please enter your username');
+                return;
+            }
+
+            if (!password) {
+                showProfileError('Please enter your password');
+                return;
+            }
+
+            try {
+                if (loginBtn) {
+                    loginBtn.disabled = true;
+                    loginBtn.textContent = 'Logging in...';
+                }
+
+                // Find user by username
+                const profilesSnapshot = await database.ref('userProfiles').once('value');
+                if (!profilesSnapshot.exists()) {
+                    showProfileError('Invalid username or password');
+                    if (loginBtn) {
+                        loginBtn.disabled = false;
+                        loginBtn.textContent = 'Login';
+                    }
+                    return;
+                }
+
+                const profiles = profilesSnapshot.val();
+                let foundProfile = null;
+                let foundUserId = null;
+
+                for (const [userId, profile] of Object.entries(profiles)) {
+                    if ((profile.username || '').toLowerCase().trim() === username.toLowerCase().trim()) {
+                        foundProfile = profile;
+                        foundUserId = userId;
+                        break;
+                    }
+                }
+
+                if (!foundProfile) {
+                    showProfileError('Invalid username or password');
+                    if (loginBtn) {
+                        loginBtn.disabled = false;
+                        loginBtn.textContent = 'Login';
+                    }
+                    return;
+                }
+
+                // Verify password
+                const passwordHash = hashPassword(password);
+                if (foundProfile.passwordHash !== passwordHash) {
+                    showProfileError('Invalid username or password');
+                    if (loginBtn) {
+                        loginBtn.disabled = false;
+                        loginBtn.textContent = 'Login';
+                    }
+                    return;
+                }
+
+                // Login successful
+                userProfileId = foundUserId;
+                currentUserProfile = foundProfile;
+
+                // Store auth token
+                const authToken = hashPassword(userProfileId + (foundProfile.createdAt || ''));
+                localStorage.setItem(AUTH_TOKEN_KEY, authToken);
+                localStorage.setItem(USER_PROFILE_ID_KEY, userProfileId);
+
+                // Update display
+                displayUserProfile();
+
+                // Hide modal
+                isFirstTimeProfile = false;
+                const modal = document.getElementById('profileModalOverlay');
+                const closeBtn = document.getElementById('profileModalCloseBtn');
+                if (modal) {
+                    modal.classList.remove('active');
+                    if (closeBtn) closeBtn.style.display = 'flex';
+                    modal.onclick = function(e) {
+                        if (e.target === modal) {
+                            hideProfileModal();
+                        }
+                    };
+                    if (modal._escapeHandler) {
+                        document.removeEventListener('keydown', modal._escapeHandler);
+                        modal._escapeHandler = null;
+                    }
+                }
+
+                if (loginBtn) {
+                    loginBtn.disabled = false;
+                    loginBtn.textContent = 'Login';
+                }
+            } catch (error) {
+                console.error('Error logging in:', error);
+                showProfileError('Error logging in. Please try again.');
+                if (loginBtn) {
+                    loginBtn.disabled = false;
+                    loginBtn.textContent = 'Login';
+                }
+            }
+        }
+
+        // Logout function (global)
+        window.logoutProfile = function() {
+            localStorage.removeItem(AUTH_TOKEN_KEY);
+            localStorage.removeItem(USER_PROFILE_ID_KEY);
+            currentUserProfile = null;
+            userProfileId = null;
+            
+            // Hide profile button
+            const container = document.getElementById('userProfileContainer');
+            if (container) container.style.display = 'none';
+            
+            // Show login modal
+            showProfileModal(true);
         }
 
         // Display user profile in header
@@ -6717,6 +7088,80 @@
                 }
             }
             if (name) name.textContent = currentUserProfile.username || 'Profile';
+        }
+
+        // Update profile (for editing existing profile) (global)
+        window.updateProfile = async function() {
+            if (!firebaseInitialized || !database || !userProfileId) {
+                showProfileError('Database not available. Please refresh the page.');
+                return;
+            }
+
+            const usernameInput = document.getElementById('editUsernameInput');
+            const bioInput = document.getElementById('editBioInput');
+            const avatarPreview = document.getElementById('editAvatarPreview');
+            const submitBtn = document.getElementById('profileEditBtn');
+
+            if (!usernameInput) return;
+
+            const username = usernameInput.value.trim();
+            if (!username) {
+                showProfileError('Please enter a username');
+                return;
+            }
+
+            if (username.length < 3) {
+                showProfileError('Username must be at least 3 characters');
+                return;
+            }
+
+            if (username.length > 30) {
+                showProfileError('Username must be less than 30 characters');
+                return;
+            }
+
+            // Check if username is already taken (excluding current user)
+            const usernameTaken = await isUsernameTaken(username, userProfileId);
+            if (usernameTaken) {
+                showProfileError('This username is already taken. Please choose another one.');
+                return;
+            }
+
+            try {
+                if (submitBtn) {
+                    submitBtn.disabled = true;
+                    submitBtn.textContent = 'Saving...';
+                }
+
+                const profileData = {
+                    ...currentUserProfile,
+                    username: username,
+                    bio: (bioInput ? bioInput.value.trim() : '') || '',
+                    avatar: (avatarPreview && avatarPreview.src && !avatarPreview.src.includes('data:image/svg')) ? avatarPreview.src : currentUserProfile.avatar,
+                    updatedAt: Date.now()
+                };
+
+                await database.ref(`userProfiles/${userProfileId}`).update(profileData);
+                currentUserProfile = profileData;
+
+                // Update display
+                displayUserProfile();
+
+                // Hide modal
+                hideProfileModal();
+
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Save Changes';
+                }
+            } catch (error) {
+                console.error('Error updating profile:', error);
+                showProfileError('Error updating profile. Please try again.');
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Save Changes';
+                }
+            }
         }
 
         // Get user profile for ticket messages
