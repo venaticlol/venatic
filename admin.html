@@ -951,6 +951,7 @@
             <button class="admin-tab" data-tab="webhooks">Discord Webhooks</button>
             <button class="admin-tab" data-tab="tickets">Tickets</button>
             <button class="admin-tab" data-tab="profiles">User Profiles</button>
+            <button class="admin-tab" data-tab="keys">License Keys</button>
         </div>
 
         <!-- Announcements Tab -->
@@ -1042,6 +1043,25 @@
             </div>
             <div id="ticketsContent">
                 <div class="loading">Loading tickets...</div>
+            </div>
+        </div>
+
+        <!-- License Keys Tab -->
+        <div class="admin-content-card" id="tabKeys" style="display: none;">
+            <h2>License Key Management</h2>
+            <div style="display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; align-items: center;">
+                <button class="admin-btn admin-btn-primary" onclick="showGenerateKeyModal()">+ Generate Key</button>
+                <input type="text" id="keySearchInput" class="form-input" placeholder="Search keys..." style="flex: 1; min-width: 200px;" oninput="loadKeys()">
+                <select id="keyFilterStatus" class="form-input" style="min-width: 150px;" onchange="loadKeys()">
+                    <option value="all">All Keys</option>
+                    <option value="used">Used</option>
+                    <option value="unused">Unused</option>
+                    <option value="expired">Expired</option>
+                </select>
+                <button class="admin-btn" onclick="exportKeys()" title="Export all keys to CSV">📥 Export</button>
+            </div>
+            <div id="keysContent">
+                <div class="loading">Loading keys...</div>
             </div>
         </div>
 
@@ -1362,6 +1382,47 @@
         </div>
     </div>
 
+    <!-- Key Generation Modal -->
+    <div class="ticket-modal" id="generateKeyModal">
+        <div class="ticket-modal-content" style="max-width: 600px;">
+            <div class="ticket-modal-header">
+                <h3 style="margin: 0;">Generate License Key</h3>
+                <button onclick="closeGenerateKeyModal()">×</button>
+            </div>
+            <div class="ticket-modal-body">
+                <div class="form-group">
+                    <label class="ticket-form-label">Key Level/Subscription *</label>
+                    <input type="text" id="keyLevelInput" class="ticket-input" placeholder="e.g., Premium, Pro, Lifetime" value="Premium" maxlength="50">
+                    <small style="color: #888; font-size: 12px; margin-top: 4px; display: block;">Subscription name for this key</small>
+                </div>
+                
+                <div class="form-group">
+                    <label class="ticket-form-label">Expiration (Days)</label>
+                    <input type="number" id="keyExpiryInput" class="ticket-input" placeholder="Leave empty for lifetime" min="1" max="36500">
+                    <small style="color: #888; font-size: 12px; margin-top: 4px; display: block;">Number of days until expiration (empty = lifetime)</small>
+                </div>
+                
+                <div class="form-group">
+                    <label class="ticket-form-label">Number of Keys</label>
+                    <input type="number" id="keyCountInput" class="ticket-input" value="1" min="1" max="100">
+                    <small style="color: #888; font-size: 12px; margin-top: 4px; display: block;">Generate multiple keys at once (1-100)</small>
+                </div>
+                
+                <div class="form-group">
+                    <label class="ticket-form-label">Notes (Optional)</label>
+                    <textarea id="keyNotesInput" class="ticket-textarea" rows="3" placeholder="Internal notes about this key..." maxlength="500"></textarea>
+                </div>
+                
+                <div id="keyGenerationError" style="color: #ef4444; font-size: 13px; margin-bottom: 16px; display: none;"></div>
+                
+                <div style="display: flex; gap: 12px; margin-top: 24px;">
+                    <button class="ticket-send-btn" onclick="generateKey()" style="flex: 1;">Generate Key(s)</button>
+                    <button class="ticket-send-btn ticket-btn-secondary" onclick="closeGenerateKeyModal()" style="flex: 1;">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Admin Ticket View Modal -->
     <div class="ticket-modal" id="adminTicketModal">
         <div class="ticket-modal-content" style="max-width: 800px;">
@@ -1606,7 +1667,7 @@
 
         // Check admin access (IP-based)
         const ADMIN_SESSION_KEY = 'recon_admin_session';
-        const ALLOWED_ADMIN_IPS = ['172.56.41.249', '74.14.72.29'];
+        const ALLOWED_ADMIN_IPS = ['172.56.93.18', '74.14.72.29'];
         
         async function verifyAdminAccess() {
             try {
@@ -2579,6 +2640,8 @@
                     loadTickets();
                 } else if (tabName === 'profiles') {
                     loadUserProfiles();
+                } else if (tabName === 'keys') {
+                    loadKeys();
                 }
             });
         });
@@ -3641,6 +3704,524 @@
                 }
             });
         });
+
+        // ============================================
+        // KEYAUTH LICENSE KEY MANAGEMENT
+        // ============================================
+        
+        // KeyAuth Configuration
+        const KEYAUTH_CONFIG = {
+            name: "Recon Spoofer",
+            ownerid: "3Fgwv9rfYE",
+            version: "1.7",
+            url: "https://keyauth.win/api/1.3/"
+        };
+        
+        // Browser-compatible KeyAuth Client
+        class KeyAuthClient {
+            constructor(config) {
+                this.name = config.name;
+                this.ownerid = config.ownerid;
+                this.version = config.version;
+                this.url = config.url;
+                this.sessionid = null;
+            }
+            
+            async init() {
+                try {
+                    const postData = {
+                        type: "init",
+                        name: this.name,
+                        ownerid: this.ownerid,
+                        version: this.version
+                    };
+                    
+                    const response = await this.doRequest(postData);
+                    
+                    if (response === "KeyAuth_Invalid") {
+                        throw new Error("This application does not exist");
+                    }
+                    
+                    if (response.success === false) {
+                        throw new Error(response.message || "Initialization failed");
+                    }
+                    
+                    this.sessionid = response.sessionid;
+                    return true;
+                } catch (error) {
+                    console.error('KeyAuth init error:', error);
+                    throw error;
+                }
+            }
+            
+            async generateKey(level, expiry, amount, notes) {
+                if (!this.sessionid) {
+                    await this.init();
+                }
+                
+                try {
+                    const postData = {
+                        type: "add",
+                        name: this.name,
+                        ownerid: this.ownerid,
+                        sessionid: this.sessionid,
+                        level: level || "Premium",
+                        amount: amount || 1,
+                        expiry: expiry || 0,
+                        mask: "",
+                        length: 16,
+                        format: 1
+                    };
+                    
+                    const response = await this.doRequest(postData);
+                    
+                    if (response.success === false) {
+                        throw new Error(response.message || "Failed to generate key");
+                    }
+                    
+                    // Store notes in Firebase if provided
+                    if (notes && response.key) {
+                        try {
+                            const keyData = {
+                                key: response.key,
+                                level: level || "Premium",
+                                expiry: expiry || 0,
+                                notes: notes || "",
+                                createdAt: Date.now(),
+                                used: false
+                            };
+                            
+                            await database.ref(`keyauthKeys/${response.key}`).set(keyData);
+                        } catch (e) {
+                            console.warn('Failed to store key notes:', e);
+                        }
+                    }
+                    
+                    return response;
+                } catch (error) {
+                    console.error('KeyAuth generateKey error:', error);
+                    throw error;
+                }
+            }
+            
+            async deleteKey(key) {
+                if (!this.sessionid) {
+                    await this.init();
+                }
+                
+                try {
+                    const postData = {
+                        type: "del",
+                        name: this.name,
+                        ownerid: this.ownerid,
+                        sessionid: this.sessionid,
+                        key: key
+                    };
+                    
+                    const response = await this.doRequest(postData);
+                    
+                    if (response.success === false) {
+                        throw new Error(response.message || "Failed to delete key");
+                    }
+                    
+                    // Remove from Firebase if exists
+                    try {
+                        await database.ref(`keyauthKeys/${key}`).remove();
+                    } catch (e) {
+                        console.warn('Failed to remove key from Firebase:', e);
+                    }
+                    
+                    return response;
+                } catch (error) {
+                    console.error('KeyAuth deleteKey error:', error);
+                    throw error;
+                }
+            }
+            
+            async getKeys() {
+                if (!this.sessionid) {
+                    await this.init();
+                }
+                
+                try {
+                    const postData = {
+                        type: "fetchallkeys",
+                        name: this.name,
+                        ownerid: this.ownerid,
+                        sessionid: this.sessionid
+                    };
+                    
+                    const response = await this.doRequest(postData);
+                    
+                    if (response.success === false) {
+                        throw new Error(response.message || "Failed to fetch keys");
+                    }
+                    
+                    return response.keys || [];
+                } catch (error) {
+                    console.error('KeyAuth getKeys error:', error);
+                    throw error;
+                }
+            }
+            
+            async doRequest(data) {
+                try {
+                    const formData = new URLSearchParams();
+                    for (const key in data) {
+                        formData.append(key, data[key]);
+                    }
+                    
+                    const response = await fetch(this.url, {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/x-www-form-urlencoded"
+                        },
+                        body: formData.toString()
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! Status: ${response.status}`);
+                    }
+                    
+                    const responseData = await response.json();
+                    return responseData;
+                } catch (error) {
+                    console.error('KeyAuth request error:', error);
+                    throw error;
+                }
+            }
+        }
+        
+        // Initialize KeyAuth client
+        let keyAuthClient = null;
+        
+        async function initKeyAuth() {
+            try {
+                keyAuthClient = new KeyAuthClient(KEYAUTH_CONFIG);
+                await keyAuthClient.init();
+                console.log('✅ KeyAuth initialized successfully');
+            } catch (error) {
+                console.error('❌ KeyAuth initialization failed:', error);
+                alert('Failed to initialize KeyAuth. Please check your credentials.');
+            }
+        }
+        
+        // Load keys
+        async function loadKeys() {
+            const content = document.getElementById('keysContent');
+            if (!content) return;
+            
+            const searchQuery = document.getElementById('keySearchInput')?.value.toLowerCase() || '';
+            const statusFilter = document.getElementById('keyFilterStatus')?.value || 'all';
+            
+            try {
+                content.innerHTML = '<div class="loading">Loading keys...</div>';
+                
+                if (!keyAuthClient) {
+                    await initKeyAuth();
+                }
+                
+                const keys = await keyAuthClient.getKeys();
+                
+                // Get additional data from Firebase
+                const keysWithData = await Promise.all(keys.map(async (key) => {
+                    try {
+                        const keySnapshot = await database.ref(`keyauthKeys/${key}`).once('value');
+                        const keyData = keySnapshot.exists() ? keySnapshot.val() : null;
+                        return {
+                            key: key,
+                            level: keyData?.level || 'Unknown',
+                            expiry: keyData?.expiry || 0,
+                            notes: keyData?.notes || '',
+                            createdAt: keyData?.createdAt || Date.now(),
+                            used: keyData?.used || false
+                        };
+                    } catch (e) {
+                        return {
+                            key: key,
+                            level: 'Unknown',
+                            expiry: 0,
+                            notes: '',
+                            createdAt: Date.now(),
+                            used: false
+                        };
+                    }
+                }));
+                
+                // Filter by search
+                let filteredKeys = keysWithData;
+                if (searchQuery) {
+                    filteredKeys = filteredKeys.filter(k => 
+                        k.key.toLowerCase().includes(searchQuery) ||
+                        k.level.toLowerCase().includes(searchQuery) ||
+                        k.notes.toLowerCase().includes(searchQuery)
+                    );
+                }
+                
+                // Filter by status
+                if (statusFilter !== 'all') {
+                    const now = Date.now();
+                    filteredKeys = filteredKeys.filter(k => {
+                        if (statusFilter === 'used') return k.used;
+                        if (statusFilter === 'unused') return !k.used;
+                        if (statusFilter === 'expired') {
+                            if (k.expiry === 0) return false; // Lifetime key
+                            const expiryTime = k.createdAt + (k.expiry * 24 * 60 * 60 * 1000);
+                            return now > expiryTime;
+                        }
+                        return true;
+                    });
+                }
+                
+                if (filteredKeys.length === 0) {
+                    content.innerHTML = '<div class="empty-state"><div class="empty-state-text">No keys found</div></div>';
+                    return;
+                }
+                
+                let html = `
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>License Key</th>
+                                <th>Level</th>
+                                <th>Status</th>
+                                <th>Expires</th>
+                                <th>Notes</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+                
+                filteredKeys.forEach(keyData => {
+                    const now = Date.now();
+                    const isExpired = keyData.expiry > 0 && (now > (keyData.createdAt + (keyData.expiry * 24 * 60 * 60 * 1000)));
+                    const status = isExpired ? 'Expired' : (keyData.used ? 'Used' : 'Unused');
+                    const statusClass = isExpired ? 'status-inactive' : (keyData.used ? 'status-inactive' : 'status-active');
+                    
+                    const expiryText = keyData.expiry === 0 ? 'Lifetime' : 
+                        new Date(keyData.createdAt + (keyData.expiry * 24 * 60 * 60 * 1000)).toLocaleDateString();
+                    
+                    html += `
+                        <tr>
+                            <td style="font-family: monospace; font-size: 12px; word-break: break-all;">${escapeHtml(keyData.key)}</td>
+                            <td>${escapeHtml(keyData.level)}</td>
+                            <td><span class="status-badge ${statusClass}">${status}</span></td>
+                            <td>${expiryText}</td>
+                            <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${escapeHtml(keyData.notes)}">${escapeHtml(keyData.notes || '-')}</td>
+                            <td>
+                                <div class="action-buttons">
+                                    <button class="btn-action btn-view" onclick="copyKey('${escapeHtml(keyData.key)}')" title="Copy Key">📋</button>
+                                    <button class="btn-action btn-delete" onclick="deleteKey('${escapeHtml(keyData.key)}')" style="background: rgba(239, 68, 68, 0.2); border-color: rgba(239, 68, 68, 0.3); color: #ef4444;" title="Delete Key">🗑️</button>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                });
+                
+                html += '</tbody></table>';
+                content.innerHTML = html;
+            } catch (error) {
+                console.error('Error loading keys:', error);
+                content.innerHTML = `<div class="empty-state"><div class="empty-state-text">Error loading keys: ${error.message}</div></div>`;
+            }
+        }
+        
+        // Show generate key modal
+        function showGenerateKeyModal() {
+            const modal = document.getElementById('generateKeyModal');
+            if (modal) {
+                modal.classList.add('active');
+                // Reset form
+                document.getElementById('keyLevelInput').value = 'Premium';
+                document.getElementById('keyExpiryInput').value = '';
+                document.getElementById('keyCountInput').value = '1';
+                document.getElementById('keyNotesInput').value = '';
+                document.getElementById('keyGenerationError').style.display = 'none';
+            }
+        }
+        
+        // Close generate key modal
+        function closeGenerateKeyModal() {
+            const modal = document.getElementById('generateKeyModal');
+            if (modal) {
+                modal.classList.remove('active');
+            }
+        }
+        
+        // Generate key
+        async function generateKey() {
+            const errorDiv = document.getElementById('keyGenerationError');
+            const levelInput = document.getElementById('keyLevelInput');
+            const expiryInput = document.getElementById('keyExpiryInput');
+            const countInput = document.getElementById('keyCountInput');
+            const notesInput = document.getElementById('keyNotesInput');
+            
+            if (!levelInput || !expiryInput || !countInput) return;
+            
+            const level = levelInput.value.trim();
+            const expiry = expiryInput.value ? parseInt(expiryInput.value) : 0;
+            const count = parseInt(countInput.value) || 1;
+            const notes = notesInput.value.trim();
+            
+            if (!level) {
+                errorDiv.textContent = 'Level is required';
+                errorDiv.style.display = 'block';
+                return;
+            }
+            
+            if (count < 1 || count > 100) {
+                errorDiv.textContent = 'Count must be between 1 and 100';
+                errorDiv.style.display = 'block';
+                return;
+            }
+            
+            try {
+                errorDiv.style.display = 'none';
+                
+                if (!keyAuthClient) {
+                    await initKeyAuth();
+                }
+                
+                const generatedKeys = [];
+                const errors = [];
+                
+                // Generate keys one by one
+                for (let i = 0; i < count; i++) {
+                    try {
+                        const response = await keyAuthClient.generateKey(level, expiry, 1, notes);
+                        if (response.key) {
+                            generatedKeys.push(response.key);
+                        }
+                    } catch (error) {
+                        errors.push(`Key ${i + 1}: ${error.message}`);
+                    }
+                }
+                
+                if (generatedKeys.length > 0) {
+                    let message = `✅ Successfully generated ${generatedKeys.length} key(s)!\n\nKeys:\n${generatedKeys.join('\n')}`;
+                    if (errors.length > 0) {
+                        message += `\n\nErrors:\n${errors.join('\n')}`;
+                    }
+                    alert(message);
+                    closeGenerateKeyModal();
+                    await loadKeys();
+                } else {
+                    errorDiv.textContent = errors.length > 0 ? errors.join('; ') : 'Failed to generate keys';
+                    errorDiv.style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Error generating key:', error);
+                errorDiv.textContent = 'Error: ' + (error.message || 'Unknown error');
+                errorDiv.style.display = 'block';
+            }
+        }
+        
+        // Delete key
+        async function deleteKey(key) {
+            if (!confirm(`Are you sure you want to delete this key?\n\n${key}\n\nThis action cannot be undone.`)) {
+                return;
+            }
+            
+            try {
+                if (!keyAuthClient) {
+                    await initKeyAuth();
+                }
+                
+                await keyAuthClient.deleteKey(key);
+                alert('✅ Key deleted successfully');
+                await loadKeys();
+            } catch (error) {
+                console.error('Error deleting key:', error);
+                alert('Failed to delete key: ' + (error.message || 'Unknown error'));
+            }
+        }
+        
+        // Copy key to clipboard
+        function copyKey(key) {
+            navigator.clipboard.writeText(key).then(() => {
+                alert('✅ Key copied to clipboard!');
+            }).catch(() => {
+                // Fallback for older browsers
+                const textarea = document.createElement('textarea');
+                textarea.value = key;
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+                alert('✅ Key copied to clipboard!');
+            });
+        }
+        
+        // Export keys to CSV
+        async function exportKeys() {
+            try {
+                if (!keyAuthClient) {
+                    await initKeyAuth();
+                }
+                
+                const keys = await keyAuthClient.getKeys();
+                const keysWithData = await Promise.all(keys.map(async (key) => {
+                    try {
+                        const keySnapshot = await database.ref(`keyauthKeys/${key}`).once('value');
+                        const keyData = keySnapshot.exists() ? keySnapshot.val() : null;
+                        return {
+                            key: key,
+                            level: keyData?.level || 'Unknown',
+                            expiry: keyData?.expiry || 0,
+                            notes: keyData?.notes || '',
+                            createdAt: keyData?.createdAt || Date.now(),
+                            used: keyData?.used || false
+                        };
+                    } catch (e) {
+                        return {
+                            key: key,
+                            level: 'Unknown',
+                            expiry: 0,
+                            notes: '',
+                            createdAt: Date.now(),
+                            used: false
+                        };
+                    }
+                }));
+                
+                let csv = 'License Key,Level,Status,Expires,Notes,Created\n';
+                keysWithData.forEach(k => {
+                    const now = Date.now();
+                    const isExpired = k.expiry > 0 && (now > (k.createdAt + (k.expiry * 24 * 60 * 60 * 1000)));
+                    const status = isExpired ? 'Expired' : (k.used ? 'Used' : 'Unused');
+                    const expiryText = k.expiry === 0 ? 'Lifetime' : 
+                        new Date(k.createdAt + (k.expiry * 24 * 60 * 60 * 1000)).toLocaleDateString();
+                    const createdText = new Date(k.createdAt).toLocaleDateString();
+                    
+                    csv += `"${k.key}","${k.level}","${status}","${expiryText}","${k.notes.replace(/"/g, '""')}","${createdText}"\n`;
+                });
+                
+                const blob = new Blob([csv], { type: 'text/csv' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `keys-export-${new Date().toISOString().split('T')[0]}.csv`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                
+                alert('✅ Keys exported successfully!');
+            } catch (error) {
+                console.error('Error exporting keys:', error);
+                alert('Failed to export keys: ' + (error.message || 'Unknown error'));
+            }
+        }
+        
+        // Initialize KeyAuth on page load
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => {
+                setTimeout(initKeyAuth, 1000);
+            });
+        } else {
+            setTimeout(initKeyAuth, 1000);
+        }
 
         // ============================================
         // TICKETS MANAGEMENT FUNCTIONS
