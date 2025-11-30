@@ -5289,6 +5289,9 @@
                 // Initialize profile system
                 initializeProfileSystem();
                 
+                // Initialize ticket system and load user tickets
+                setupUserTicketsListener();
+                
                 // Initialize glitch effect
                 initGlitchEffect();
                 
@@ -6210,8 +6213,30 @@
             // Initialize ticket system
             TicketSystem.init();
             
-            // Load tickets
+            // Load tickets initially
             loadUserTickets();
+            
+            // Set up real-time listener for tickets updates
+            try {
+                const storedTicketIds = JSON.parse(localStorage.getItem('user_ticket_ids') || '[]');
+                if (storedTicketIds.length > 0) {
+                    // Listen for changes to user's tickets
+                    storedTicketIds.forEach(ticketId => {
+                        database.ref(`tickets/${ticketId}`).on('value', () => {
+                            // Reload tickets when any ticket is updated
+                            loadUserTickets();
+                        });
+                    });
+                }
+                
+                // Also listen to the main tickets path for new tickets
+                database.ref('tickets').on('value', () => {
+                    // Reload tickets when tickets change
+                    loadUserTickets();
+                });
+            } catch (error) {
+                console.error('Error setting up tickets listener:', error);
+            }
         }
 
         window.loadUserTickets = async function() {
