@@ -1516,6 +1516,7 @@
                     <table class="admin-table">
                         <thead>
                             <tr>
+                                <th>User</th>
                                 <th>Rating</th>
                                 <th>Review</th>
                                 <th>Timestamp</th>
@@ -1525,11 +1526,32 @@
                         <tbody>
                 `;
 
-                reviews.forEach(([id, review]) => {
+                // Load all profiles for reviews
+                const profilesSnapshot = await database.ref('userProfiles').once('value');
+                const profiles = profilesSnapshot.exists() ? profilesSnapshot.val() : {};
+
+                for (const [id, review] of reviews) {
                     const date = new Date(review.timestamp || 0);
                     const stars = '⭐'.repeat(review.rating || 0);
+                    
+                    // Get user profile if userId exists
+                    let userHtml = '<span style="color: #888;">Anonymous</span>';
+                    if (review.userId && profiles[review.userId]) {
+                        const profile = profiles[review.userId];
+                        const avatarSrc = profile.avatar || `data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2232%22 height=%2232%22%3E%3Ccircle cx=%2216%22 cy=%2216%22 r=%2216%22 fill=%22%233a3a3a%22/%3E%3Ctext x=%2216%22 y=%2220%22 font-size=%2212%22 fill=%22%23fff%22 text-anchor=%22middle%22%3E${encodeURIComponent((profile.username || '?').charAt(0).toUpperCase())}%3C/text%3E%3C/svg%3E`;
+                        userHtml = `
+                            <div style="display: flex; align-items: center; gap: 8px; cursor: pointer;" onclick="viewUserProfile('${escapeHtml(review.userId)}')">
+                                <img src="${escapeHtml(avatarSrc)}" alt="${escapeHtml(profile.username || 'User')}" 
+                                     style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; border: 1px solid rgba(74, 74, 74, 0.5);"
+                                     onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2232%22 height=%2232%22%3E%3Ccircle cx=%2216%22 cy=%2216%22 r=%2216%22 fill=%22%233a3a3a%22/%3E%3C/svg%3E'">
+                                <span style="color: #e5e5e5; font-weight: 500;">${escapeHtml(profile.username || 'User')}</span>
+                            </div>
+                        `;
+                    }
+                    
                     html += `
                         <tr>
+                            <td>${userHtml}</td>
                             <td>${stars} (${review.rating || 0}/5)</td>
                             <td>${escapeHtml(review.review || 'No review text')}</td>
                             <td>${date.toLocaleString()}</td>
@@ -1540,7 +1562,7 @@
                             </td>
                         </tr>
                     `;
-                });
+                }
 
                 html += '</tbody></table>';
                 content.innerHTML = html;

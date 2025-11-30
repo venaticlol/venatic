@@ -2292,6 +2292,26 @@
             flex-shrink: 0;
         }
 
+        .review-stream-user {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        .review-stream-user:hover {
+            opacity: 0.8;
+        }
+
+        .review-stream-user img {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 1px solid rgba(74, 74, 74, 0.5);
+        }
+
 
         .review-bubbles-container.hidden {
             display: none;
@@ -6714,6 +6734,66 @@
             return null;
         }
 
+        // View user profile from review click (global function)
+        window.viewUserProfileFromReview = async function(userId) {
+            if (!firebaseInitialized || !database) {
+                alert('Unable to load profile. Please try again later.');
+                return;
+            }
+
+            try {
+                const profileSnapshot = await database.ref(`userProfiles/${userId}`).once('value');
+                if (!profileSnapshot.exists()) {
+                    alert('Profile not found');
+                    return;
+                }
+
+                const profile = profileSnapshot.val();
+                const avatarSrc = profile.avatar || `data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22120%22 height=%22120%22%3E%3Ccircle cx=%2260%22 cy=%2260%22 r=%2260%22 fill=%22%233a3a3a%22/%3E%3Ctext x=%2260%22 y=%2275%22 font-size=%2240%22 fill=%22%23fff%22 text-anchor=%22middle%22%3E${encodeURIComponent((profile.username || '?').charAt(0).toUpperCase())}%3C/text%3E%3C/svg%3E`;
+                const createdDate = profile.createdAt ? new Date(profile.createdAt).toLocaleString() : 'Unknown';
+                const updatedDate = profile.updatedAt ? new Date(profile.updatedAt).toLocaleString() : 'Unknown';
+
+                // Create modal to display profile
+                const modal = document.createElement('div');
+                modal.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.95); z-index: 20000; display: flex; align-items: center; justify-content: center;';
+                modal.onclick = function(e) {
+                    if (e.target === modal) {
+                        document.body.removeChild(modal);
+                    }
+                };
+
+                modal.innerHTML = `
+                    <div style="background: #0a0a0a; border: 1px solid #1a1a1a; border-radius: 12px; max-width: 500px; width: 90%; max-height: 90vh; overflow-y: auto; padding: 24px; position: relative;">
+                        <button onclick="this.closest('div[style*=\\'position: fixed\\']').remove()" style="position: absolute; top: 16px; right: 16px; background: none; border: none; color: #888; font-size: 28px; cursor: pointer; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; transition: all 0.3s;" onmouseover="this.style.color='#ef4444'; this.style.transform='rotate(90deg)'" onmouseout="this.style.color='#888'; this.style.transform='rotate(0deg)'">×</button>
+                        <div style="text-align: center; margin-bottom: 24px;">
+                            <img src="${escapeHtml(avatarSrc)}" alt="${escapeHtml(profile.username || 'User')}" 
+                                 style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 3px solid rgba(74, 74, 74, 0.5); margin-bottom: 16px;"
+                                 onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22120%22 height=%22120%22%3E%3Ccircle cx=%2260%22 cy=%2260%22 r=%2260%22 fill=%22%233a3a3a%22/%3E%3C/svg%3E'">
+                            <h3 style="margin: 0 0 8px 0; color: #e5e5e5; font-size: 24px;">${escapeHtml(profile.username || 'Unknown')}</h3>
+                            <p style="color: #888; margin: 0; font-size: 12px;">User ID: ${escapeHtml(userId)}</p>
+                        </div>
+                        <div style="margin-bottom: 16px;">
+                            <strong style="color: #c0c0c0; display: block; margin-bottom: 8px;">Bio:</strong>
+                            <p style="color: #e5e5e5; margin: 0; line-height: 1.6;">${escapeHtml(profile.bio || 'No bio provided')}</p>
+                        </div>
+                        <div style="margin-bottom: 16px;">
+                            <strong style="color: #c0c0c0; display: block; margin-bottom: 8px;">Member Since:</strong>
+                            <p style="color: #e5e5e5; margin: 0;">${createdDate}</p>
+                        </div>
+                        <div style="margin-bottom: 16px;">
+                            <strong style="color: #c0c0c0; display: block; margin-bottom: 8px;">Last Updated:</strong>
+                            <p style="color: #e5e5e5; margin: 0;">${updatedDate}</p>
+                        </div>
+                    </div>
+                `;
+
+                document.body.appendChild(modal);
+            } catch (error) {
+                console.error('Error viewing profile:', error);
+                alert('Error loading profile: ' + (error.message || 'Unknown error'));
+            }
+        }
+
         // Real-time listeners for blacklist and maintenance
         let blacklistListener = null;
         let maintenanceListener = null;
@@ -7553,7 +7633,8 @@
 
                 const ratingData = {
                     rating: rating,
-                    timestamp: Date.now()
+                    timestamp: Date.now(),
+                    userId: userProfileId || null  // Link review to user profile
                 };
 
                 // Only add review text if provided
@@ -7864,7 +7945,7 @@
         }
 
         // Update the review stream ticker
-        function updateReviewStream() {
+        async function updateReviewStream() {
             const track = document.getElementById('reviewStreamTrack');
             if (!track) return;
 
@@ -7900,7 +7981,7 @@
             });
 
             // Create review items from unique reviews only
-            uniqueReviews.forEach(review => {
+            for (const review of uniqueReviews) {
                 const item = document.createElement('div');
                 item.className = 'review-stream-item';
 
@@ -7913,13 +7994,37 @@
                     reviewText = reviewText.substring(0, 100) + '...';
                 }
 
+                // Load user profile if userId exists
+                let profileHtml = '';
+                if (review.userId && firebaseInitialized && database) {
+                    try {
+                        const profileSnapshot = await database.ref(`userProfiles/${review.userId}`).once('value');
+                        if (profileSnapshot.exists()) {
+                            const profile = profileSnapshot.val();
+                            const avatarSrc = profile.avatar || `data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2224%22 height=%2224%22%3E%3Ccircle cx=%2212%22 cy=%2212%22 r=%2212%22 fill=%22%233a3a3a%22/%3E%3Ctext x=%2212%22 y=%2216%22 font-size=%2210%22 fill=%22%23fff%22 text-anchor=%22middle%22%3E${encodeURIComponent((profile.username || '?').charAt(0).toUpperCase())}%3C/text%3E%3C/svg%3E`;
+                            profileHtml = `
+                                <div class="review-stream-user" onclick="viewUserProfileFromReview('${escapeHtml(review.userId)}')" style="display: flex; align-items: center; gap: 8px; cursor: pointer; margin-right: 12px; transition: opacity 0.2s;" onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">
+                                    <img src="${escapeHtml(avatarSrc)}" alt="${escapeHtml(profile.username || 'User')}" 
+                                         style="width: 24px; height: 24px; border-radius: 50%; object-fit: cover; border: 1px solid rgba(74, 74, 74, 0.5);"
+                                         onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2224%22 height=%2224%22%3E%3Ccircle cx=%2212%22 cy=%2212%22 r=%2212%22 fill=%22%233a3a3a%22/%3E%3C/svg%3E'">
+                                    <span style="color: #b0b0b0; font-size: 12px; font-weight: 500;">${escapeHtml(profile.username || 'User')}</span>
+                                </div>
+                            `;
+                        }
+                    } catch (error) {
+                        console.error('Error loading profile for review:', error);
+                    }
+                }
+
                 item.innerHTML = `
+                    ${profileHtml}
                     <span class="review-stream-stars">${stars}</span>
+                    <span class="review-stream-separator"></span>
                     <span class="review-stream-text">${escapeHtml(reviewText)}</span>
                 `;
 
                 track.appendChild(item);
-            });
+            }
 
             // Duplicate all items for seamless infinite scroll
             // We need to duplicate the entire set to ensure smooth looping
