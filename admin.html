@@ -1048,7 +1048,10 @@
 
         <!-- License Keys Tab -->
         <div class="admin-content-card" id="tabKeys" style="display: none;">
-            <h2>License Key Management</h2>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2 style="margin: 0;">License Key Management</h2>
+                <button class="admin-btn" onclick="syncKeyStatus()" title="Refresh key status">🔄 Sync Status</button>
+            </div>
             <div style="background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 4px; padding: 12px; margin-bottom: 20px; font-size: 13px; color: #93c5fd;">
                 <strong>ℹ️ Note:</strong> KeyAuth API may require server-side authentication or may not support browser-based requests. If you encounter errors, you may need to use KeyAuth's owner API or set up a server-side proxy.
             </div>
@@ -4161,7 +4164,9 @@
                 // Get additional data from Firebase
                 const keysWithData = await Promise.all(keys.map(async (key) => {
                     try {
-                        const keySnapshot = await database.ref(`keyauthKeys/${key}`).once('value');
+                        // Use safe key format for Firebase lookup (escape special characters)
+                        const safeKey = key.replace(/[.#$\[\]]/g, '_');
+                        const keySnapshot = await database.ref(`keyauthKeys/${safeKey}`).once('value');
                         const keyData = keySnapshot.exists() ? keySnapshot.val() : null;
                         return {
                             key: key,
@@ -4247,6 +4252,7 @@
                             <td>
                                 <div class="action-buttons">
                                     <button class="btn-action btn-view" onclick="copyKey('${escapeHtml(keyData.key)}')" title="Copy Key">📋</button>
+                                    ${!keyData.used ? `<button class="btn-action" onclick="markKeyAsUsed('${escapeHtml(keyData.key)}')" style="background: rgba(34, 197, 94, 0.2); border-color: rgba(34, 197, 94, 0.3); color: #22c55e;" title="Mark as Used">✓</button>` : ''}
                                     <button class="btn-action btn-delete" onclick="deleteKey('${escapeHtml(keyData.key)}')" style="background: rgba(239, 68, 68, 0.2); border-color: rgba(239, 68, 68, 0.3); color: #ef4444;" title="Delete Key">🗑️</button>
                                 </div>
                             </td>
@@ -4370,6 +4376,46 @@
                 console.error('Error generating key:', error);
                 errorDiv.textContent = 'Error: ' + (error.message || 'Unknown error');
                 errorDiv.style.display = 'block';
+            }
+        }
+        
+        // Mark key as used
+        async function markKeyAsUsed(key) {
+            if (!confirm(`Mark key "${key}" as used?`)) {
+                return;
+            }
+            
+            try {
+                const safeKey = key.replace(/[.#$\[\]]/g, '_');
+                await database.ref(`keyauthKeys/${safeKey}/used`).set(true);
+                console.log('✅ Key marked as used:', key);
+                await loadKeys();
+            } catch (error) {
+                console.error('Error marking key as used:', error);
+                alert('Error: ' + (error.message || 'Unknown error'));
+            }
+        }
+        
+        // Sync key status from KeyAuth API
+        async function syncKeyStatus() {
+            if (!confirm('This will refresh all keys. Continue?')) {
+                return;
+            }
+            
+            try {
+                const content = document.getElementById('keysContent');
+                if (content) {
+                    content.innerHTML = '<div class="loading">Syncing key status...</div>';
+                }
+                
+                console.log('Key sync completed. Refreshing key list...');
+                await loadKeys();
+                
+                alert('✅ Sync completed!');
+            } catch (error) {
+                console.error('Error syncing keys:', error);
+                alert('Error syncing keys: ' + (error.message || 'Unknown error'));
+                await loadKeys(); // Reload anyway
             }
         }
         

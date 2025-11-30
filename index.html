@@ -135,6 +135,18 @@
                             subscription: data.info.subscriptions?.[0]?.subscription,
                             subscriptions: data.info.subscriptions
                         } : null;
+                        
+                        // Mark key as used in Firebase if database is available
+                        if (typeof window !== 'undefined' && window.database) {
+                            try {
+                                const safeKey = licenseKey.trim().replace(/[.#$\[\]]/g, '_');
+                                await window.database.ref(`keyauthKeys/${safeKey}/used`).set(true);
+                                console.log('✅ Key marked as used in Firebase:', licenseKey);
+                            } catch (e) {
+                                console.warn('Failed to mark key as used in Firebase:', e);
+                            }
+                        }
+                        
                         return data;
                     } else {
                         throw new Error(data.message || "Invalid license key");
