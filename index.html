@@ -8981,12 +8981,13 @@
                 const isAllowedUser = checkAdminUser();
                 if (isAllowedUser) {
                     isAdminLoggedIn = true;
-                    showAdminPanel();
+                    // Don't automatically redirect - just update the button
+                    // User can click the admin button to access admin panel
                     updateAdminButton();
                 } else {
                     // User not authorized, logout
                     adminLogout();
-                    showAdminError('Access denied: Your account is not authorized for admin access');
+                    // Don't show error on page load, only when they try to access
                 }
             }
         }
