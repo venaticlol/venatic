@@ -8625,7 +8625,7 @@
             const seenUsernames = new Set(); // Track by username as well
             const seenReviewTexts = new Set(); // Fallback: also track by review text to prevent exact duplicates
             const uniqueReviews = [];
-            
+
             // First pass: load profiles and build username map for all reviews
             const userIdToUsername = new Map();
             if (firebaseInitialized && database) {
@@ -8699,8 +8699,43 @@
             
             console.log(`Deduplication: ${availableReviews.length} reviews -> ${uniqueReviews.length} unique reviews`);
 
-            // Create review items from unique reviews only
+            // Final deduplication pass: ensure no duplicates by checking usernames and review text one more time
+            const finalUniqueReviews = [];
+            const finalSeenUsernames = new Set();
+            const finalSeenTexts = new Set();
+            
             for (const review of uniqueReviews) {
+                // Load profile to get username
+                let username = '';
+                if (review.userId && firebaseInitialized && database) {
+                    try {
+                        const profileSnapshot = await database.ref(`userProfiles/${review.userId}`).once('value');
+                        if (profileSnapshot.exists()) {
+                            const profile = profileSnapshot.val();
+                            username = (profile.username || '').trim().toLowerCase();
+                        }
+                    } catch (error) {
+                        // Continue if profile load fails
+                    }
+                }
+                
+                const reviewText = (review.review || '').trim().toLowerCase();
+                
+                // Final check: skip if we've seen this username OR this exact review text
+                if ((username && finalSeenUsernames.has(username)) || finalSeenTexts.has(reviewText)) {
+                    console.log(`Final deduplication: Skipping duplicate - username="${username}", text="${reviewText.substring(0, 30)}..."`);
+                    continue;
+                }
+                
+                if (username) finalSeenUsernames.add(username);
+                if (reviewText) finalSeenTexts.add(reviewText);
+                finalUniqueReviews.push(review);
+            }
+            
+            console.log(`Final deduplication: ${uniqueReviews.length} -> ${finalUniqueReviews.length} unique reviews`);
+
+            // Create review items from final unique reviews only
+            for (const review of finalUniqueReviews) {
                 const item = document.createElement('div');
                 item.className = 'review-stream-item';
 
@@ -8748,19 +8783,19 @@
             // Duplicate all items for seamless infinite scroll
             // Only duplicate if we have multiple unique reviews (at least 2)
             // This ensures each user only appears once per cycle
-            if (uniqueReviews.length >= 2) {
-                const items = track.querySelectorAll('.review-stream-item');
-                const itemsArray = Array.from(items);
-                
-                // Clone each item to create the duplicate set (exact copies)
+            if (finalUniqueReviews.length >= 2) {
+            const items = track.querySelectorAll('.review-stream-item');
+            const itemsArray = Array.from(items);
+            
+            // Clone each item to create the duplicate set (exact copies)
                 // This creates a seamless loop - after showing all unique users, it cycles back
-                itemsArray.forEach(item => {
-                    const clone = item.cloneNode(true);
-                    // Ensure clone has same styles
-                    clone.style.cssText = item.style.cssText;
-                    track.appendChild(clone);
-                });
-            } else if (uniqueReviews.length === 1) {
+            itemsArray.forEach(item => {
+                const clone = item.cloneNode(true);
+                // Ensure clone has same styles
+                clone.style.cssText = item.style.cssText;
+                track.appendChild(clone);
+            });
+            } else if (finalUniqueReviews.length === 1) {
                 // If only one review, don't duplicate - just show it once
                 // The animation will still work but won't loop seamlessly
                 console.log('Only one unique review - not duplicating for seamless loop');
