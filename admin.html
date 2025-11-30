@@ -1049,6 +1049,9 @@
         <!-- License Keys Tab -->
         <div class="admin-content-card" id="tabKeys" style="display: none;">
             <h2>License Key Management</h2>
+            <div style="background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 4px; padding: 12px; margin-bottom: 20px; font-size: 13px; color: #93c5fd;">
+                <strong>ℹ️ Note:</strong> KeyAuth API may require server-side authentication or may not support browser-based requests. If you encounter errors, you may need to use KeyAuth's owner API or set up a server-side proxy.
+            </div>
             <div style="display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; align-items: center;">
                 <button class="admin-btn admin-btn-primary" onclick="showGenerateKeyModal()">+ Generate Key</button>
                 <input type="text" id="keySearchInput" class="form-input" placeholder="Search keys..." style="flex: 1; min-width: 200px;" oninput="loadKeys()">
@@ -3776,16 +3779,33 @@
                     
                     const response = await this.doRequest(postData);
                     
-                    if (response === "KeyAuth_Invalid") {
-                        throw new Error("This application does not exist");
+                    // Handle string responses
+                    if (typeof response === 'string') {
+                        if (response === "KeyAuth_Invalid") {
+                            throw new Error("This application does not exist. Please verify your app name ('Recon Spoofer'), owner ID ('3Fgwv9rfYE'), and version ('1.7') are correct.");
+                        }
+                        throw new Error(`KeyAuth API returned: ${response}`);
                     }
                     
-                    if (response.success === false) {
-                        throw new Error(response.message || "Initialization failed");
+                    // Handle object responses
+                    if (response && typeof response === 'object') {
+                        if (response.success === false) {
+                            throw new Error(response.message || "Initialization failed");
+                        }
+                        
+                        if (response.message === "invalidver") {
+                            throw new Error("Application version mismatch. Please verify the version number.");
+                        }
+                        
+                        if (!response.sessionid) {
+                            throw new Error("No session ID received from KeyAuth API. The API may not support browser-based requests.");
+                        }
+                        
+                        this.sessionid = response.sessionid;
+                        return true;
                     }
                     
-                    this.sessionid = response.sessionid;
-                    return true;
+                    throw new Error("Unexpected response format from KeyAuth API");
                 } catch (error) {
                     console.error('KeyAuth init error:', error);
                     throw error;
@@ -3918,13 +3938,41 @@
                     });
                     
                     if (!response.ok) {
-                        throw new Error(`HTTP error! Status: ${response.status}`);
+                        const errorText = await response.text();
+                        throw new Error(`HTTP ${response.status}: ${errorText || 'Unknown error'}`);
                     }
                     
-                    const responseData = await response.json();
-                    return responseData;
+                    // Check if response is JSON
+                    const contentType = response.headers.get('content-type');
+                    if (contentType && contentType.includes('application/json')) {
+                        const responseData = await response.json();
+                        
+                        // Handle string responses (like "KeyAuth_Invalid")
+                        if (typeof responseData === 'string') {
+                            if (responseData === "KeyAuth_Invalid") {
+                                throw new Error("This application does not exist. Please verify your app name and owner ID.");
+                            }
+                            return { success: false, message: responseData };
+                        }
+                        
+                        return responseData;
+                    } else {
+                        // Handle non-JSON responses
+                        const text = await response.text();
+                        if (text === "KeyAuth_Invalid") {
+                            throw new Error("This application does not exist. Please verify your app name and owner ID.");
+                        }
+                        throw new Error(`Unexpected response format: ${text.substring(0, 100)}`);
+                    }
                 } catch (error) {
                     console.error('KeyAuth request error:', error);
+                    // Provide more helpful error messages
+                    if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+                        throw new Error('Network error: KeyAuth API may not be accessible from browser. Consider using a server-side proxy.');
+                    }
+                    if (error.message.includes('CORS')) {
+                        throw new Error('CORS error: KeyAuth API does not allow browser requests. You may need to use a server-side proxy.');
+                    }
                     throw error;
                 }
             }
@@ -3932,15 +3980,27 @@
         
         // Initialize KeyAuth client
         let keyAuthClient = null;
+        let keyAuthInitialized = false;
+        let keyAuthInitError = null;
         
         async function initKeyAuth() {
             try {
                 keyAuthClient = new KeyAuthClient(KEYAUTH_CONFIG);
                 await keyAuthClient.init();
+                keyAuthInitialized = true;
+                keyAuthInitError = null;
                 console.log('✅ KeyAuth initialized successfully');
             } catch (error) {
+                keyAuthInitialized = false;
+                keyAuthInitError = error;
                 console.error('❌ KeyAuth initialization failed:', error);
-                alert('Failed to initialize KeyAuth. Please check your credentials.');
+                console.error('Error details:', {
+                    message: error.message,
+                    stack: error.stack,
+                    config: KEYAUTH_CONFIG
+                });
+                // Don't show alert on page load - only show when user tries to use it
+                // The error will be shown when user tries to generate/load keys
             }
         }
         
@@ -3955,8 +4015,12 @@
             try {
                 content.innerHTML = '<div class="loading">Loading keys...</div>';
                 
-                if (!keyAuthClient) {
+                if (!keyAuthClient || !keyAuthInitialized) {
                     await initKeyAuth();
+                }
+                
+                if (!keyAuthInitialized) {
+                    throw keyAuthInitError || new Error('KeyAuth initialization failed');
                 }
                 
                 const keys = await keyAuthClient.getKeys();
@@ -4061,7 +4125,17 @@
                 content.innerHTML = html;
             } catch (error) {
                 console.error('Error loading keys:', error);
-                content.innerHTML = `<div class="empty-state"><div class="empty-state-text">Error loading keys: ${error.message}</div></div>`;
+                const errorMsg = error.message || 'Unknown error';
+                content.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-text">Error loading keys: ${escapeHtml(errorMsg)}</div>
+                        <div style="margin-top: 16px; color: #888; font-size: 13px;">
+                            <p>KeyAuth API may require server-side authentication or may not support browser-based requests.</p>
+                            <p style="margin-top: 8px;">Please verify your KeyAuth credentials and ensure the API supports browser access.</p>
+                        </div>
+                        <button class="admin-btn" onclick="loadKeys()" style="margin-top: 16px;">Retry</button>
+                    </div>
+                `;
             }
         }
         
@@ -4117,8 +4191,14 @@
             try {
                 errorDiv.style.display = 'none';
                 
-                if (!keyAuthClient) {
+                if (!keyAuthClient || !keyAuthInitialized) {
                     await initKeyAuth();
+                }
+                
+                if (!keyAuthInitialized) {
+                    errorDiv.textContent = 'KeyAuth not initialized: ' + (keyAuthInitError?.message || 'Unknown error. Please check your credentials.');
+                    errorDiv.style.display = 'block';
+                    return;
                 }
                 
                 const generatedKeys = [];
@@ -4162,8 +4242,13 @@
             }
             
             try {
-                if (!keyAuthClient) {
+                if (!keyAuthClient || !keyAuthInitialized) {
                     await initKeyAuth();
+                }
+                
+                if (!keyAuthInitialized) {
+                    alert('KeyAuth not initialized: ' + (keyAuthInitError?.message || 'Unknown error. Please check your credentials.'));
+                    return;
                 }
                 
                 await keyAuthClient.deleteKey(key);
@@ -4194,8 +4279,13 @@
         // Export keys to CSV
         async function exportKeys() {
             try {
-                if (!keyAuthClient) {
+                if (!keyAuthClient || !keyAuthInitialized) {
                     await initKeyAuth();
+                }
+                
+                if (!keyAuthInitialized) {
+                    alert('KeyAuth not initialized: ' + (keyAuthInitError?.message || 'Unknown error. Please check your credentials.'));
+                    return;
                 }
                 
                 const keys = await keyAuthClient.getKeys();
@@ -4252,13 +4342,21 @@
             }
         }
         
-        // Initialize KeyAuth on page load
+        // Initialize KeyAuth on page load (non-blocking, silent failure)
+        // KeyAuth will be initialized when user tries to use key management features
+        // This prevents blocking the admin panel if KeyAuth API is unavailable
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', () => {
-                setTimeout(initKeyAuth, 1000);
+                // Try to initialize silently in background
+                initKeyAuth().catch(() => {
+                    // Silently fail - will show error when user tries to use features
+                });
             });
         } else {
-            setTimeout(initKeyAuth, 1000);
+            // Try to initialize silently in background
+            initKeyAuth().catch(() => {
+                // Silently fail - will show error when user tries to use features
+            });
         }
 
         // ============================================
