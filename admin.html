@@ -3755,7 +3755,9 @@
             name: "Recon Spoofer",
             ownerid: "3Fgwv9rfYE",
             version: "1.7",
-            url: "https://keyauth.win/api/1.3/"
+            url: "https://keyauth.win/api/1.3/",
+            sellerKey: "35315ce3dde2445c55a2b0632f23bbfe", // Seller API key for admin operations
+            sellerApiUrl: "https://keyauth.win/api/seller/"
         };
         
         // Browser-compatible KeyAuth Client
@@ -3813,49 +3815,103 @@
             }
             
             async generateKey(level, expiry, amount, notes) {
-                if (!this.sessionid) {
-                    await this.init();
-                }
-                
                 try {
-                    const postData = {
-                        type: "add",
-                        name: this.name,
-                        ownerid: this.ownerid,
-                        sessionid: this.sessionid,
-                        level: level || "Premium",
-                        amount: amount || 1,
-                        expiry: expiry || 0,
-                        mask: "",
-                        length: 16,
-                        format: 1
-                    };
-                    
-                    const response = await this.doRequest(postData);
-                    
-                    if (response.success === false) {
-                        throw new Error(response.message || "Failed to generate key");
+                    // Use seller API for key generation
+                    const sellerKey = KEYAUTH_CONFIG.sellerKey;
+                    if (!sellerKey) {
+                        throw new Error("Seller API key not configured");
                     }
                     
-                    // Store notes in Firebase if provided
-                    if (notes && response.key) {
-                        try {
-                            const keyData = {
-                                key: response.key,
-                                level: level || "Premium",
-                                expiry: expiry || 0,
-                                notes: notes || "",
-                                createdAt: Date.now(),
-                                used: false
-                            };
-                            
-                            await database.ref(`keyauthKeys/${response.key}`).set(keyData);
-                        } catch (e) {
-                            console.warn('Failed to store key notes:', e);
+                    // Convert level to number if it's a string
+                    let levelNum = 1;
+                    if (typeof level === 'string') {
+                        // Map common level names to numbers
+                        const levelMap = {
+                            'Premium': 1,
+                            'Pro': 2,
+                            'Lifetime': 3,
+                            'Basic': 1,
+                            'Standard': 2,
+                            'Enterprise': 4
+                        };
+                        levelNum = levelMap[level] || 1;
+                    } else {
+                        levelNum = level || 1;
+                    }
+                    
+                    // Build seller API URL
+                    const params = new URLSearchParams({
+                        sellerkey: sellerKey,
+                        type: "add",
+                        expiry: (expiry || 0).toString(),
+                        mask: "******-******-******-******-******-******",
+                        level: levelNum.toString(),
+                        amount: (amount || 1).toString(),
+                        format: "json"
+                    });
+                    
+                    const url = `${KEYAUTH_CONFIG.sellerApiUrl}?${params.toString()}`;
+                    
+                    const response = await fetch(url, {
+                        method: "GET",
+                        headers: {
+                            "Accept": "application/json"
+                        }
+                    });
+                    
+                    if (!response.ok) {
+                        const errorText = await response.text();
+                        throw new Error(`HTTP ${response.status}: ${errorText || 'Unknown error'}`);
+                    }
+                    
+                    // Parse response - seller API can return text or JSON
+                    // Read response as text first to handle both formats
+                    const responseText = await response.text();
+                    let responseData;
+                    
+                    // Try to parse as JSON first
+                    try {
+                        responseData = JSON.parse(responseText);
+                    } catch (e) {
+                        // If not JSON, treat as text response
+                        // Text response can be a single key or multiple keys separated by newlines
+                        const keys = responseText.trim().split(/\r?\n/).filter(k => k.trim());
+                        responseData = { keys: keys.length > 0 ? keys : [responseText.trim()] };
+                    }
+                    
+                    // Handle multiple keys
+                    const generatedKeys = responseData.keys || (responseData.key ? [responseData.key] : []);
+                    
+                    if (generatedKeys.length === 0) {
+                        throw new Error("No keys generated. Check your seller API key and parameters.");
+                    }
+                    
+                    // Store keys in Firebase with notes
+                    for (const key of generatedKeys) {
+                        if (key && key.trim()) {
+                            try {
+                                const keyData = {
+                                    key: key.trim(),
+                                    level: level || "Premium",
+                                    levelNum: levelNum,
+                                    expiry: expiry || 0,
+                                    notes: notes || "",
+                                    createdAt: Date.now(),
+                                    used: false
+                                };
+                                
+                                await database.ref(`keyauthKeys/${key.trim()}`).set(keyData);
+                            } catch (e) {
+                                console.warn('Failed to store key notes:', e);
+                            }
                         }
                     }
                     
-                    return response;
+                    return {
+                        success: true,
+                        keys: generatedKeys,
+                        key: generatedKeys[0] // For backward compatibility
+                    };
                 } catch (error) {
                     console.error('KeyAuth generateKey error:', error);
                     throw error;
@@ -3863,23 +3919,58 @@
             }
             
             async deleteKey(key) {
-                if (!this.sessionid) {
-                    await this.init();
-                }
-                
                 try {
-                    const postData = {
+                    // Use seller API for key deletion
+                    const sellerKey = KEYAUTH_CONFIG.sellerKey;
+                    if (!sellerKey) {
+                        throw new Error("Seller API key not configured");
+                    }
+                    
+                    // Build seller API URL
+                    const params = new URLSearchParams({
+                        sellerkey: sellerKey,
                         type: "del",
-                        name: this.name,
-                        ownerid: this.ownerid,
-                        sessionid: this.sessionid,
-                        key: key
-                    };
+                        key: key,
+                        format: "json"
+                    });
                     
-                    const response = await this.doRequest(postData);
+                    const url = `${KEYAUTH_CONFIG.sellerApiUrl}?${params.toString()}`;
                     
-                    if (response.success === false) {
-                        throw new Error(response.message || "Failed to delete key");
+                    const response = await fetch(url, {
+                        method: "GET",
+                        headers: {
+                            "Accept": "application/json"
+                        }
+                    });
+                    
+                    if (!response.ok) {
+                        const errorText = await response.text();
+                        throw new Error(`HTTP ${response.status}: ${errorText || 'Unknown error'}`);
+                    }
+                    
+                    // Parse response - seller API can return text or JSON
+                    const responseText = await response.text();
+                    let responseData;
+                    
+                    // Try to parse as JSON first
+                    try {
+                        responseData = JSON.parse(responseText);
+                    } catch (e) {
+                        // If not JSON, treat as text response
+                        // Check if deletion was successful based on text content
+                        const textLower = responseText.toLowerCase();
+                        if (textLower.includes('success') || textLower.includes('deleted') || textLower.includes('removed')) {
+                            responseData = { success: true, message: responseText };
+                        } else if (textLower.includes('error') || textLower.includes('fail')) {
+                            responseData = { success: false, message: responseText };
+                        } else {
+                            // Assume success if no error keywords found
+                            responseData = { success: true, message: responseText || "Key deleted successfully" };
+                        }
+                    }
+                    
+                    if (responseData.success === false) {
+                        throw new Error(responseData.message || "Failed to delete key");
                     }
                     
                     // Remove from Firebase if exists
@@ -3889,7 +3980,7 @@
                         console.warn('Failed to remove key from Firebase:', e);
                     }
                     
-                    return response;
+                    return { success: true, message: "Key deleted successfully" };
                 } catch (error) {
                     console.error('KeyAuth deleteKey error:', error);
                     throw error;
@@ -3897,28 +3988,66 @@
             }
             
             async getKeys() {
-                if (!this.sessionid) {
-                    await this.init();
-                }
-                
                 try {
-                    const postData = {
-                        type: "fetchallkeys",
-                        name: this.name,
-                        ownerid: this.ownerid,
-                        sessionid: this.sessionid
-                    };
-                    
-                    const response = await this.doRequest(postData);
-                    
-                    if (response.success === false) {
-                        throw new Error(response.message || "Failed to fetch keys");
+                    // Try to get keys from Firebase first (faster and more reliable)
+                    // Then supplement with KeyAuth API if needed
+                    const keysFromFirebase = [];
+                    try {
+                        const keysSnapshot = await database.ref('keyauthKeys').once('value');
+                        if (keysSnapshot.exists()) {
+                            const keysData = keysSnapshot.val();
+                            keysFromFirebase.push(...Object.keys(keysData));
+                        }
+                    } catch (e) {
+                        console.warn('Failed to load keys from Firebase:', e);
                     }
                     
-                    return response.keys || [];
+                    // If we have keys in Firebase, return them
+                    // Otherwise, try to fetch from KeyAuth API (if seller API supports it)
+                    if (keysFromFirebase.length > 0) {
+                        return keysFromFirebase;
+                    }
+                    
+                    // Fallback: Try to use seller API to fetch keys (if supported)
+                    // Note: Seller API might not have a "fetchallkeys" endpoint
+                    // In that case, we'll rely on Firebase storage
+                    const sellerKey = KEYAUTH_CONFIG.sellerKey;
+                    if (sellerKey) {
+                        try {
+                            const params = new URLSearchParams({
+                                sellerkey: sellerKey,
+                                type: "fetchallkeys",
+                                format: "json"
+                            });
+                            
+                            const url = `${KEYAUTH_CONFIG.sellerApiUrl}?${params.toString()}`;
+                            const response = await fetch(url, {
+                                method: "GET",
+                                headers: {
+                                    "Accept": "application/json"
+                                }
+                            });
+                            
+                            if (response.ok) {
+                                const contentType = response.headers.get('content-type');
+                                if (contentType && contentType.includes('application/json')) {
+                                    const responseData = await response.json();
+                                    if (responseData.keys && Array.isArray(responseData.keys)) {
+                                        return responseData.keys;
+                                    }
+                                }
+                            }
+                        } catch (e) {
+                            console.warn('Seller API fetchallkeys not available, using Firebase storage:', e);
+                        }
+                    }
+                    
+                    // Return keys from Firebase (even if empty)
+                    return keysFromFirebase;
                 } catch (error) {
                     console.error('KeyAuth getKeys error:', error);
-                    throw error;
+                    // Return empty array instead of throwing - allows UI to still work
+                    return [];
                 }
             }
             
@@ -4015,12 +4144,10 @@
             try {
                 content.innerHTML = '<div class="loading">Loading keys...</div>';
                 
-                if (!keyAuthClient || !keyAuthInitialized) {
-                    await initKeyAuth();
-                }
-                
-                if (!keyAuthInitialized) {
-                    throw keyAuthInitError || new Error('KeyAuth initialization failed');
+                // getKeys() doesn't require initialization since it uses Firebase
+                // Only initialize if needed for other operations
+                if (!keyAuthClient) {
+                    keyAuthClient = new KeyAuthClient(KEYAUTH_CONFIG);
                 }
                 
                 const keys = await keyAuthClient.getKeys();
