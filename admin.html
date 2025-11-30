@@ -4267,8 +4267,8 @@
                 }
             },
             
-            // Delete ticket
-            delete: async function(ticketId) {
+            // Delete ticket (using bracket notation for Firefox compatibility)
+            'delete': async function(ticketId) {
                 if (!ticketId) {
                     if (this.currentTicketId) {
                         ticketId = this.currentTicketId;
@@ -4312,7 +4312,7 @@
             // Delete from modal
             deleteTicket: function() {
                 if (this.currentTicketId) {
-                    this.delete(this.currentTicketId);
+                    this['delete'](this.currentTicketId);
                 }
             },
             
@@ -4435,7 +4435,8 @@
                     alert('Ticket system not initialized. Please refresh the page.');
                     return;
                 }
-                window.TicketSystemAdmin.delete(ticketId);
+                // Use bracket notation for Firefox compatibility
+                window.TicketSystemAdmin['delete'](ticketId);
             } catch (error) {
                 console.error('Error in deleteAdminTicket:', error);
                 alert('Error deleting ticket: ' + (error.message || 'Unknown error'));
@@ -4468,7 +4469,8 @@
         
         window.deleteAdminTicketFromModal = function() {
             if (window.TicketSystemAdmin) {
-                window.TicketSystemAdmin.delete(window.TicketSystemAdmin.currentTicketId);
+                // Use bracket notation for Firefox compatibility
+                window.TicketSystemAdmin['delete'](window.TicketSystemAdmin.currentTicketId);
             }
         };
         
