@@ -8980,15 +8980,21 @@
                 // Verify user is still authorized
                 const isAllowedUser = checkAdminUser();
                 if (isAllowedUser) {
+                    // Set admin status but DON'T automatically redirect
                     isAdminLoggedIn = true;
-                    // Don't automatically redirect - just update the button
-                    // User can click the admin button to access admin panel
+                    // Just update the button - user must click it to access admin
                     updateAdminButton();
+                    console.log('✅ Admin user detected - button updated (no auto-redirect)');
                 } else {
                     // User not authorized, logout
-                    adminLogout();
+                    isAdminLoggedIn = false;
+                    updateAdminButton();
                     // Don't show error on page load, only when they try to access
                 }
+            } else {
+                // No user logged in
+                isAdminLoggedIn = false;
+                updateAdminButton();
             }
         }
 
@@ -9008,8 +9014,10 @@
                 if (isAllowedUser) {
                     isAdminLoggedIn = true;
                     hideAdminModal();
-                    showAdminPanel();
                     updateAdminButton();
+                    // Enable redirect only after explicit login action
+                    enableAdminRedirect();
+                    showAdminPanel();
                     console.log('✅ Admin login successful via user verification');
                     return true;
                 } else {
@@ -9052,8 +9060,23 @@
         }
 
         // Show admin panel - redirect to admin page
+        // ONLY called when user explicitly clicks admin button
+        let adminRedirectAllowed = false;
+        
         function showAdminPanel() {
+            // Only allow redirect if explicitly enabled by user action
+            if (!adminRedirectAllowed) {
+                console.warn('⚠️ Admin redirect blocked - not user-initiated');
+                return;
+            }
+            console.log('✅ Admin panel access - user initiated');
+            adminRedirectAllowed = false; // Reset flag after use
             window.location.href = '/admin';
+        }
+        
+        // Enable redirect only when admin button is clicked
+        function enableAdminRedirect() {
+            adminRedirectAllowed = true;
         }
 
         // Hide admin panel
@@ -9435,14 +9458,22 @@
         document.addEventListener('DOMContentLoaded', () => {
             // No initialization needed for IP-based auth
 
-            // Check admin session
+            // Check admin session (but don't auto-redirect)
+            // This only updates the admin button visibility
             checkAdminSession();
+            
+            // Ensure no automatic redirects happen
+            console.log('Page loaded - admin check completed (no auto-redirect)');
 
             // Admin login button
             const adminBtn = document.getElementById('adminLoginBtn');
             if (adminBtn) {
-                adminBtn.addEventListener('click', () => {
+                adminBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
                     if (isAdminLoggedIn) {
+                        // Enable redirect ONLY when user explicitly clicks
+                        enableAdminRedirect();
                         showAdminPanel();
                     } else {
                         showAdminModal();
