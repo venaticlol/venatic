@@ -760,140 +760,6 @@
             line-height: 1.7;
         }
 
-        /* System Requirements */
-        .requirements {
-            padding: 120px 24px;
-            background: linear-gradient(to bottom, #0a0a0a 0%, #000000 100%);
-        }
-
-        .requirements-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 32px;
-            margin-top: 48px;
-            max-width: 400px;
-            margin-left: auto;
-            margin-right: auto;
-        }
-
-        .req-card {
-            padding: 32px;
-            background: #0a0a0a;
-            border: 1px solid #1a1a1a;
-            border-radius: 4px;
-            opacity: 0;
-            transform: translateY(30px);
-            transition: all 0.4s ease;
-        }
-
-        .req-card:hover {
-            transform: translateY(-4px);
-            border-color: #2a2a2a;
-        }
-
-        .req-title {
-            font-size: 18px;
-            font-weight: 600;
-            margin-bottom: 20px;
-            color: #e5e5e5;
-            padding-bottom: 12px;
-            border-bottom: 1px solid #1a1a1a;
-        }
-
-        .req-list {
-            list-style: none;
-        }
-
-        .req-list li {
-            padding: 8px 0;
-            color: #888888;
-            font-size: 14px;
-            position: relative;
-            padding-left: 24px;
-        }
-
-        .req-list li::before {
-            content: '✓';
-            position: absolute;
-            left: 0;
-            color: #6a6a6a;
-            font-weight: 600;
-        }
-
-        /* Installer Info Panel */
-        .installer-info {
-            padding: 120px 24px;
-            display: flex;
-            justify-content: center;
-            background: linear-gradient(to bottom, #000000 0%, #0a0a0a 100%);
-        }
-
-        .info-card {
-            background: #0a0a0a;
-            border: 1px solid #1a1a1a;
-            border-radius: 4px;
-            padding: 48px;
-            max-width: 600px;
-            width: 100%;
-            opacity: 0;
-            transform: translateY(30px);
-            transition: all 0.4s ease;
-        }
-
-        .info-card:hover {
-            border-color: #2a2a2a;
-            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
-        }
-
-        .info-title {
-            font-size: 24px;
-            font-weight: 600;
-            margin-bottom: 32px;
-            color: #e5e5e5;
-            text-align: center;
-        }
-
-        .info-grid {
-            display: grid;
-            gap: 16px;
-        }
-
-        .info-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 16px 20px;
-            background: #050505;
-            border: 1px solid #1a1a1a;
-            border-radius: 4px;
-            transition: all 0.3s ease;
-        }
-
-        .info-item:hover {
-            border-color: #2a2a2a;
-            background: #0f0f0f;
-        }
-
-        .info-label {
-            color: #888888;
-            font-weight: 500;
-            font-size: 14px;
-        }
-
-        .info-value {
-            color: #e5e5e5;
-            font-family: 'Courier New', monospace;
-            font-size: 13px;
-            font-weight: 600;
-        }
-
-        .hash-value {
-            font-size: 11px;
-            word-break: break-all;
-            text-align: right;
-            max-width: 300px;
-        }
-
         /* Changelog Section */
         .changelog {
             padding: 120px 24px;
@@ -3333,7 +3199,7 @@
                 padding: 60px 24px;
             }
 
-            .features, .requirements, .installer-info, .changelog, .rating-section {
+            .features, .changelog, .rating-section {
                 padding: 80px 24px;
             }
 
@@ -4621,49 +4487,6 @@
                     <div class="feature-icon">🔄</div>
                     <h3 class="feature-title">Automatic Updates</h3>
                     <p class="feature-text">Stay current with seamless background updates. Always have the latest features and security patches.</p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- System Requirements -->
-    <section class="requirements">
-        <div class="container">
-            <h2 class="section-title reveal">System Requirements</h2>
-            <p class="section-subtitle reveal">Windows operating system required</p>
-            <div class="requirements-grid">
-                <div class="req-card reveal">
-                    <h3 class="req-title">Windows</h3>
-                    <ul class="req-list">
-                        <li>Windows 10 (22H2 or later)</li>
-                        <li>Windows 11 (22H2 or later)</li>
-                        <li>Windows 11 (24H2 or later)</li>
-                        <li>64-bit processor</li>
-                        <li>Administrator privileges</li>
-                    </ul>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Installer Info Panel -->
-    <section class="installer-info">
-        <div class="container">
-            <div class="info-card reveal">
-                <h2 class="info-title">Installer Information</h2>
-                <div class="info-grid">
-                    <div class="info-item">
-                        <span class="info-label">Version</span>
-                        <span class="info-value">1.7</span>
-                    </div>
-                    <div class="info-item">
-                        <span class="info-label">File Size</span>
-                        <span class="info-value">1.19 MB</span>
-                    </div>
-                    <div class="info-item">
-                        <span class="info-label">Format</span>
-                        <span class="info-value">.exe</span>
-                    </div>
                 </div>
             </div>
         </div>
