@@ -914,6 +914,7 @@
             <button class="admin-tab" data-tab="surveys">Surveys & Polls</button>
             <button class="admin-tab" data-tab="webhooks">Discord Webhooks</button>
             <button class="admin-tab" data-tab="tickets">Tickets</button>
+            <button class="admin-tab" data-tab="profiles">User Profiles</button>
         </div>
 
         <!-- Announcements Tab -->
@@ -1005,6 +1006,17 @@
             </div>
             <div id="ticketsContent">
                 <div class="loading">Loading tickets...</div>
+            </div>
+        </div>
+
+        <!-- User Profiles Tab -->
+        <div class="admin-content-card" id="tabProfiles" style="display: none;">
+            <h2>User Profiles Management</h2>
+            <div style="display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap;">
+                <input type="text" id="profileSearchInput" class="form-input" placeholder="Search profiles by username..." style="flex: 2; min-width: 200px;" oninput="loadUserProfiles()">
+            </div>
+            <div id="profilesContent">
+                <div class="loading">Loading profiles...</div>
             </div>
         </div>
     </div>
@@ -2362,6 +2374,8 @@
                     loadWebhooks();
                 } else if (tabName === 'tickets') {
                     loadTickets();
+                } else if (tabName === 'profiles') {
+                    loadUserProfiles();
                 }
             });
         });
@@ -4239,6 +4253,239 @@
         };
         
         // Old ticket functions removed - using TicketSystemAdmin class above
+
+        // ============================================
+        // USER PROFILE MANAGEMENT
+        // ============================================
+        
+        // Load user profiles
+        async function loadUserProfiles() {
+            const content = document.getElementById('profilesContent');
+            if (!content) return;
+            
+            try {
+                const searchInput = document.getElementById('profileSearchInput');
+                const searchTerm = searchInput ? searchInput.value.toLowerCase().trim() : '';
+                
+                const profilesSnapshot = await database.ref('userProfiles').once('value');
+                if (!profilesSnapshot.exists()) {
+                    content.innerHTML = '<div class="empty-state"><div class="empty-state-icon">👤</div><div class="empty-state-text">No user profiles yet</div></div>';
+                    return;
+                }
+                
+                const profiles = profilesSnapshot.val();
+                const profilesArray = Object.entries(profiles)
+                    .map(([id, profile]) => ({
+                        id: id,
+                        ...profile
+                    }))
+                    .filter(profile => {
+                        if (!searchTerm) return true;
+                        const username = (profile.username || '').toLowerCase();
+                        const bio = (profile.bio || '').toLowerCase();
+                        return username.includes(searchTerm) || bio.includes(searchTerm);
+                    })
+                    .sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+                
+                if (profilesArray.length === 0) {
+                    content.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🔍</div><div class="empty-state-text">No profiles found matching your search</div></div>';
+                    return;
+                }
+                
+                let html = `
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>Avatar</th>
+                                <th>Username</th>
+                                <th>Bio</th>
+                                <th>Created</th>
+                                <th>Updated</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+                
+                profilesArray.forEach(profile => {
+                    const avatarSrc = profile.avatar || `data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2240%22 height=%2240%22%3E%3Ccircle cx=%2220%22 cy=%2220%22 r=%2220%22 fill=%22%233a3a3a%22/%3E%3Ctext x=%2220%22 y=%2225%22 font-size=%2216%22 fill=%22%23fff%22 text-anchor=%22middle%22%3E${encodeURIComponent((profile.username || '?').charAt(0).toUpperCase())}%3C/text%3E%3C/svg%3E`;
+                    const createdDate = profile.createdAt ? new Date(profile.createdAt).toLocaleString() : 'Unknown';
+                    const updatedDate = profile.updatedAt ? new Date(profile.updatedAt).toLocaleString() : 'Unknown';
+                    const bio = (profile.bio || '').substring(0, 50) + ((profile.bio || '').length > 50 ? '...' : '');
+                    
+                    html += `
+                        <tr>
+                            <td>
+                                <img src="${escapeHtml(avatarSrc)}" alt="${escapeHtml(profile.username || 'User')}" 
+                                     style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid rgba(74, 74, 74, 0.5);"
+                                     onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2240%22 height=%2240%22%3E%3Ccircle cx=%2220%22 cy=%2220%22 r=%2220%22 fill=%22%233a3a3a%22/%3E%3C/svg%3E'">
+                            </td>
+                            <td>${escapeHtml(profile.username || 'Unknown')}</td>
+                            <td>${escapeHtml(bio || 'No bio')}</td>
+                            <td>${createdDate}</td>
+                            <td>${updatedDate}</td>
+                            <td>
+                                <div class="action-buttons">
+                                    <button class="btn-action btn-view" onclick="viewUserProfile('${escapeHtml(profile.id)}')">View</button>
+                                    <button class="btn-action btn-edit" onclick="editUserProfile('${escapeHtml(profile.id)}')">Edit</button>
+                                    <button class="btn-action btn-delete" onclick="deleteUserProfile('${escapeHtml(profile.id)}')">Delete</button>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                });
+                
+                html += `
+                        </tbody>
+                    </table>
+                `;
+                
+                content.innerHTML = html;
+            } catch (error) {
+                console.error('Error loading profiles:', error);
+                content.innerHTML = '<div style="color: #ef4444; padding: 20px;">Error loading profiles: ' + (error.message || 'Unknown error') + '</div>';
+            }
+        }
+        
+        // View user profile
+        async function viewUserProfile(profileId) {
+            try {
+                const profileSnapshot = await database.ref(`userProfiles/${profileId}`).once('value');
+                if (!profileSnapshot.exists()) {
+                    alert('Profile not found');
+                    return;
+                }
+                
+                const profile = profileSnapshot.val();
+                const avatarSrc = profile.avatar || `data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22120%22 height=%22120%22%3E%3Ccircle cx=%2260%22 cy=%2260%22 r=%2260%22 fill=%22%233a3a3a%22/%3E%3Ctext x=%2260%22 y=%2275%22 font-size=%2240%22 fill=%22%23fff%22 text-anchor=%22middle%22%3E${encodeURIComponent((profile.username || '?').charAt(0).toUpperCase())}%3C/text%3E%3C/svg%3E`;
+                const createdDate = profile.createdAt ? new Date(profile.createdAt).toLocaleString() : 'Unknown';
+                const updatedDate = profile.updatedAt ? new Date(profile.updatedAt).toLocaleString() : 'Unknown';
+                
+                const modal = document.getElementById('userInfoModal');
+                const content = document.getElementById('userInfoContent');
+                
+                if (modal && content) {
+                    content.innerHTML = `
+                        <div style="text-align: center; margin-bottom: 24px;">
+                            <img src="${escapeHtml(avatarSrc)}" alt="${escapeHtml(profile.username || 'User')}" 
+                                 style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover; border: 3px solid rgba(74, 74, 74, 0.5); margin-bottom: 16px;"
+                                 onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22120%22 height=%22120%22%3E%3Ccircle cx=%2260%22 cy=%2260%22 r=%2260%22 fill=%22%233a3a3a%22/%3E%3C/svg%3E'">
+                            <h3 style="margin: 0 0 8px 0; color: #e5e5e5;">${escapeHtml(profile.username || 'Unknown')}</h3>
+                            <p style="color: #888; margin: 0;">User ID: ${escapeHtml(profileId)}</p>
+                        </div>
+                        <div style="margin-bottom: 16px;">
+                            <strong style="color: #c0c0c0;">Bio:</strong>
+                            <p style="color: #e5e5e5; margin-top: 8px;">${escapeHtml(profile.bio || 'No bio provided')}</p>
+                        </div>
+                        <div style="margin-bottom: 16px;">
+                            <strong style="color: #c0c0c0;">Created:</strong>
+                            <p style="color: #e5e5e5; margin-top: 8px;">${createdDate}</p>
+                        </div>
+                        <div style="margin-bottom: 16px;">
+                            <strong style="color: #c0c0c0;">Last Updated:</strong>
+                            <p style="color: #e5e5e5; margin-top: 8px;">${updatedDate}</p>
+                        </div>
+                    `;
+                    modal.style.display = 'flex';
+                }
+            } catch (error) {
+                console.error('Error viewing profile:', error);
+                alert('Error loading profile: ' + (error.message || 'Unknown error'));
+            }
+        }
+        
+        // Check if username is already taken (admin panel)
+        async function isUsernameTakenAdmin(username, excludeUserId = null) {
+            try {
+                const profilesSnapshot = await database.ref('userProfiles').once('value');
+                if (!profilesSnapshot.exists()) {
+                    return false;
+                }
+                
+                const profiles = profilesSnapshot.val();
+                const usernameLower = username.toLowerCase().trim();
+                
+                for (const [userId, profile] of Object.entries(profiles)) {
+                    // Skip the current user's profile if editing
+                    if (excludeUserId && userId === excludeUserId) {
+                        continue;
+                    }
+                    
+                    const existingUsername = (profile.username || '').toLowerCase().trim();
+                    if (existingUsername === usernameLower) {
+                        return true;
+                    }
+                }
+                
+                return false;
+            } catch (error) {
+                console.error('Error checking username:', error);
+                return false;
+            }
+        }
+        
+        // Edit user profile
+        async function editUserProfile(profileId) {
+            try {
+                const profileSnapshot = await database.ref(`userProfiles/${profileId}`).once('value');
+                if (!profileSnapshot.exists()) {
+                    alert('Profile not found');
+                    return;
+                }
+                
+                const profile = profileSnapshot.val();
+                const newUsername = prompt('Enter new username:', profile.username || '');
+                if (newUsername === null) return;
+                
+                if (!newUsername.trim()) {
+                    alert('Username cannot be empty');
+                    return;
+                }
+                
+                if (newUsername.length < 3) {
+                    alert('Username must be at least 3 characters');
+                    return;
+                }
+                
+                // Check if username is already taken (case-insensitive)
+                const usernameTaken = await isUsernameTakenAdmin(newUsername.trim(), profileId);
+                if (usernameTaken) {
+                    alert('This username is already taken. Please choose another one.');
+                    return;
+                }
+                
+                const newBio = prompt('Enter new bio (optional):', profile.bio || '');
+                if (newBio === null) return;
+                
+                await database.ref(`userProfiles/${profileId}`).update({
+                    username: newUsername.trim(),
+                    bio: (newBio || '').trim(),
+                    updatedAt: Date.now()
+                });
+                
+                alert('✅ Profile updated successfully!');
+                loadUserProfiles();
+            } catch (error) {
+                console.error('Error editing profile:', error);
+                alert('Error updating profile: ' + (error.message || 'Unknown error'));
+            }
+        }
+        
+        // Delete user profile
+        async function deleteUserProfile(profileId) {
+            if (!confirm('Are you sure you want to delete this profile? This action cannot be undone.')) {
+                return;
+            }
+            
+            try {
+                await database.ref(`userProfiles/${profileId}`).remove();
+                alert('✅ Profile deleted successfully!');
+                loadUserProfiles();
+            } catch (error) {
+                console.error('Error deleting profile:', error);
+                alert('Error deleting profile: ' + (error.message || 'Unknown error'));
+            }
+        }
     </script>
 </body>
 </html>

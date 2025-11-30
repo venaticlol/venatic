@@ -14,7 +14,7 @@
     
     <!-- Security Headers -->
     <meta http-equiv="X-Content-Type-Options" content="nosniff">
-    <meta http-equiv="X-Frame-Options" content="DENY">
+    <!-- Note: X-Frame-Options must be set via HTTP headers, not meta tags -->
     <meta http-equiv="X-XSS-Protection" content="1; mode=block">
     <meta name="referrer" content="strict-origin-when-cross-origin">
     
@@ -1155,6 +1155,266 @@
             color: #888;
             margin-bottom: 4px;
             font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .ticket-message-avatar {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 1px solid rgba(74, 74, 74, 0.5);
+        }
+
+        .ticket-message-user-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .ticket-message-username {
+            font-weight: 600;
+            color: #e5e5e5;
+        }
+
+        /* User Profile Styles */
+        .user-profile-container {
+            position: fixed;
+            top: 70px;
+            right: 20px;
+            z-index: 1000;
+        }
+
+        .user-profile-btn {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 16px;
+            background: rgba(10, 10, 10, 0.8);
+            border: 1px solid rgba(42, 42, 42, 0.5);
+            border-radius: 8px;
+            color: #e5e5e5;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .user-profile-btn:hover {
+            background: rgba(26, 26, 26, 0.9);
+            border-color: rgba(74, 74, 74, 0.7);
+            transform: translateY(-2px);
+        }
+
+        .user-profile-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid rgba(74, 74, 74, 0.5);
+        }
+
+        .user-profile-name {
+            max-width: 150px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .profile-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.95);
+            backdrop-filter: blur(10px);
+            z-index: 10000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .profile-modal-overlay.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .profile-modal-overlay.required {
+            pointer-events: all !important;
+        }
+
+        .profile-modal-overlay.required .profile-modal {
+            pointer-events: all;
+        }
+
+        .profile-modal {
+            background: #0a0a0a;
+            border: 1px solid #1a1a1a;
+            border-radius: 12px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            transform: scale(0.9);
+            transition: transform 0.3s ease;
+        }
+
+        .profile-modal-overlay.active .profile-modal {
+            transform: scale(1);
+        }
+
+        .profile-modal-header {
+            padding: 24px;
+            border-bottom: 1px solid #1a1a1a;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .profile-modal-header h2 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 700;
+            color: #e5e5e5;
+        }
+
+        .profile-modal-close {
+            background: none;
+            border: none;
+            color: #888;
+            font-size: 28px;
+            cursor: pointer;
+            padding: 0;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .profile-modal-close:hover {
+            color: #ef4444;
+            transform: rotate(90deg);
+        }
+
+        .profile-modal-body {
+            padding: 24px;
+        }
+
+        .profile-avatar-preview {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .profile-avatar-large {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid rgba(74, 74, 74, 0.5);
+            background: #1a1a1a;
+        }
+
+        .profile-avatar-upload-btn {
+            padding: 10px 20px;
+            background: rgba(26, 26, 26, 0.8);
+            border: 1px solid rgba(74, 74, 74, 0.5);
+            border-radius: 8px;
+            color: #e5e5e5;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .profile-avatar-upload-btn:hover {
+            background: rgba(42, 42, 42, 0.8);
+            border-color: rgba(74, 74, 74, 0.8);
+        }
+
+        .profile-form-group {
+            margin-bottom: 20px;
+        }
+
+        .profile-form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #c0c0c0;
+        }
+
+        .profile-form-input {
+            width: 100%;
+            padding: 12px 16px;
+            background: #050505;
+            border: 1px solid #2a2a2a;
+            border-radius: 8px;
+            color: #e5e5e5;
+            font-size: 15px;
+            font-family: inherit;
+            transition: all 0.3s ease;
+        }
+
+        .profile-form-input:focus {
+            outline: none;
+            border-color: #4a4a4a;
+            background: #0a0a0a;
+        }
+
+        .profile-form-textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .profile-submit-btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #1a1a1a 0%, #0f0f0f 100%);
+            border: 1px solid #4a4a4a;
+            border-radius: 8px;
+            color: #e5e5e5;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 8px;
+        }
+
+        .profile-submit-btn:hover:not(:disabled) {
+            background: linear-gradient(135deg, #222222 0%, #1a1a1a 100%);
+            border-color: #6a6a6a;
+            transform: translateY(-2px);
+        }
+
+        .profile-submit-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .profile-error-message {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #ef4444;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            font-size: 14px;
+            display: none;
+        }
+
+        .profile-error-message.show {
+            display: block;
         }
 
         .ticket-message-text {
@@ -3008,6 +3268,26 @@
                 min-width: 130px;
             }
 
+            /* Responsive: User Profile */
+            .user-profile-container {
+                top: 60px;
+                right: 10px;
+            }
+
+            .user-profile-btn {
+                padding: 8px 12px;
+                font-size: 12px;
+            }
+
+            .user-profile-avatar {
+                width: 24px;
+                height: 24px;
+            }
+
+            .user-profile-name {
+                max-width: 100px;
+            }
+
             .lang-option {
                 padding: 8px 10px;
                 font-size: 13px;
@@ -3702,6 +3982,14 @@
             </svg>
             <span>Admin</span>
                 </button>
+        </div>
+
+    <!-- User Profile Button -->
+    <div class="user-profile-container" id="userProfileContainer" style="display: none;">
+        <button class="user-profile-btn" id="userProfileBtn" onclick="showProfileModal()">
+            <img class="user-profile-avatar" id="userProfileAvatar" src="" alt="Profile" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2232%22 height=%2232%22%3E%3Ccircle cx=%2216%22 cy=%2216%22 r=%2216%22 fill=%22%233a3a3a%22/%3E%3Ctext x=%2216%22 y=%2220%22 font-size=%2214%22 fill=%22%23fff%22 text-anchor=%22middle%22%3E?%3C/text%3E%3C/svg%3E'">
+            <span class="user-profile-name" id="userProfileName">Profile</span>
+        </button>
     </div>
 
     <!-- Language Switcher -->
@@ -3725,6 +4013,33 @@
 
     <!-- Cloudflare Turnstile Container (Invisible) -->
     <div id="cloudflare-turnstile-container" style="display: none;"></div>
+
+    <!-- Profile Creation/Edit Modal -->
+    <div class="profile-modal-overlay" id="profileModalOverlay">
+        <div class="profile-modal">
+            <div class="profile-modal-header">
+                <h2 id="profileModalTitle">Create Your Profile</h2>
+                <button class="profile-modal-close" id="profileModalCloseBtn" onclick="hideProfileModal()">×</button>
+            </div>
+            <div class="profile-modal-body">
+                <div class="profile-error-message" id="profileErrorMessage"></div>
+                <div class="profile-avatar-preview">
+                    <img class="profile-avatar-large" id="profileAvatarPreview" src="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22120%22 height=%22120%22%3E%3Ccircle cx=%2260%22 cy=%2260%22 r=%2260%22 fill=%22%233a3a3a%22/%3E%3Ctext x=%2260%22 y=%2275%22 font-size=%2240%22 fill=%22%23fff%22 text-anchor=%22middle%22%3E?%3C/text%3E%3C/svg%3E" alt="Profile Picture">
+                    <label for="profileAvatarInput" class="profile-avatar-upload-btn">Upload Profile Picture</label>
+                    <input type="file" id="profileAvatarInput" accept="image/*" style="display: none;" onchange="handleProfileAvatarUpload(event)">
+                </div>
+                <div class="profile-form-group">
+                    <label class="profile-form-label" for="profileUsernameInput">Username *</label>
+                    <input type="text" id="profileUsernameInput" class="profile-form-input" placeholder="Enter your username" maxlength="30" required>
+                </div>
+                <div class="profile-form-group">
+                    <label class="profile-form-label" for="profileBioInput">Bio (Optional)</label>
+                    <textarea id="profileBioInput" class="profile-form-input profile-form-textarea" placeholder="Tell us about yourself..." maxlength="200"></textarea>
+                </div>
+                <button class="profile-submit-btn" id="profileSubmitBtn" onclick="saveProfile()">Create Profile</button>
+            </div>
+        </div>
+    </div>
 
     <!-- Admin Login Modal -->
     <div class="admin-modal-overlay" id="adminModalOverlay" style="display: none;">
@@ -4293,7 +4608,7 @@
                 console.warn('Cloudflare Turnstile container not found');
                     return;
                 }
-            
+
             try {
                 turnstileWidgetId = turnstile.render(container, {
                     sitekey: CLOUDFLARE_TURNSTILE_SITE_KEY,
@@ -4438,6 +4753,11 @@
         // Initialize Firebase
         let database = null;
         let firebaseInitialized = false;
+        
+        // User Profile System Variables (declared early for access)
+        let currentUserProfile = null;
+        let userProfileId = null;
+        let isFirstTimeProfile = false;
 
         try {
             if (typeof firebase !== 'undefined') {
@@ -4466,6 +4786,9 @@
                 
                 // Track user visit
                 trackUserVisit();
+                
+                // Initialize profile system
+                initializeProfileSystem();
                 
                 // Initialize glitch effect
                 initGlitchEffect();
@@ -5592,7 +5915,7 @@
         };
         
         // Render messages
-        TicketSystem.renderMessages = function(messages, container) {
+        TicketSystem.renderMessages = async function(messages, container) {
             if (!container) return;
             
             if (!Array.isArray(messages) || messages.length === 0) {
@@ -5601,13 +5924,32 @@
             }
             
             try {
-                const html = messages.map(msg => {
+                // Load user profile if this is a user message
+                const userProfile = userProfileId ? await getUserProfileForTicket(userProfileId) : null;
+                
+                const html = await Promise.all(messages.map(async (msg) => {
                     try {
                         const date = new Date(msg.timestamp || Date.now());
                         const isUser = msg.sender === 'user';
                         const messageText = escapeHtml(String(msg.message || ''));
                         const images = Array.isArray(msg.images) ? msg.images : [];
                         const voice = msg.voice || null;
+                        
+                        // Get profile info for user messages
+                        let profileInfo = '';
+                        if (isUser && userProfile) {
+                            const avatarSrc = userProfile.avatar || `data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2224%22 height=%2224%22%3E%3Ccircle cx=%2212%22 cy=%2212%22 r=%2212%22 fill=%22%233a3a3a%22/%3E%3Ctext x=%2212%22 y=%2216%22 font-size=%2210%22 fill=%22%23fff%22 text-anchor=%22middle%22%3E${encodeURIComponent((userProfile.username || '?').charAt(0).toUpperCase())}%3C/text%3E%3C/svg%3E`;
+                            profileInfo = `
+                                <div class="ticket-message-user-info">
+                                    <img class="ticket-message-avatar" src="${escapeHtml(avatarSrc)}" alt="${escapeHtml(userProfile.username || 'User')}" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2224%22 height=%2224%22%3E%3Ccircle cx=%2212%22 cy=%2212%22 r=%2212%22 fill=%22%233a3a3a%22/%3E%3C/svg%3E'">
+                                    <span class="ticket-message-username">${escapeHtml(userProfile.username || 'You')}</span>
+                                </div>
+                            `;
+                        } else if (isUser) {
+                            profileInfo = '<span class="ticket-message-username">You</span>';
+                        } else {
+                            profileInfo = '<span class="ticket-message-username">Admin</span>';
+                        }
                         
                         let imagesHtml = '';
                         if (images.length > 0) {
@@ -5638,7 +5980,11 @@
                         
                         return `
                             <div class="ticket-message ${isUser ? 'user' : 'admin'}">
-                                <div class="ticket-message-header">${isUser ? 'You' : 'Admin'} • ${date.toLocaleString()}</div>
+                                <div class="ticket-message-header">
+                                    ${profileInfo}
+                                    <span style="color: #666;">•</span>
+                                    <span>${date.toLocaleString()}</span>
+                                </div>
                                 ${messageText ? `<div class="ticket-message-text">${messageText}</div>` : ''}
                                 ${imagesHtml}
                                 ${voiceHtml}
@@ -5647,9 +5993,9 @@
                     } catch (e) {
                         return '';
                     }
-                }).filter(h => h).join('');
+                }));
                 
-                container.innerHTML = html || '<div style="color: #888; text-align: center; padding: 40px;">No valid messages</div>';
+                container.innerHTML = html.filter(h => h).join('') || '<div style="color: #888; text-align: center; padding: 40px;">No valid messages</div>';
                 setTimeout(() => {
                     container.scrollTop = container.scrollHeight;
                 }, 50);
@@ -6048,6 +6394,324 @@
                 // Fallback to a generated ID
                 return 'unknown_' + Math.random().toString(36).substr(2, 9);
             }
+        }
+
+        // ============================================
+        // USER PROFILE SYSTEM
+        // ============================================
+        // Variables declared above with Firebase initialization
+
+        // Initialize profile system
+        async function initializeProfileSystem() {
+            if (!firebaseInitialized || !database) {
+                console.warn('Firebase not initialized, profile system disabled');
+                return;
+            }
+
+            try {
+                // Get or create user ID
+                userProfileId = localStorage.getItem('userProfileId');
+                if (!userProfileId) {
+                    userProfileId = 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                    localStorage.setItem('userProfileId', userProfileId);
+                }
+
+                // Load existing profile
+                const profileSnapshot = await database.ref(`userProfiles/${userProfileId}`).once('value');
+                if (profileSnapshot.exists()) {
+                    currentUserProfile = profileSnapshot.val();
+                    displayUserProfile();
+                } else {
+                    // First-time visitor - show profile creation modal
+                    setTimeout(() => {
+                        showProfileModal(true);
+                    }, 1000);
+                }
+            } catch (error) {
+                console.error('Error initializing profile system:', error);
+            }
+        }
+
+        // Show profile modal
+        function showProfileModal(isFirstTime = false) {
+            const modal = document.getElementById('profileModalOverlay');
+            const title = document.getElementById('profileModalTitle');
+            const submitBtn = document.getElementById('profileSubmitBtn');
+            const closeBtn = document.getElementById('profileModalCloseBtn');
+            
+            isFirstTimeProfile = isFirstTime;
+            
+            if (modal) {
+                if (isFirstTime) {
+                    if (title) title.textContent = 'Create Your Profile';
+                    if (submitBtn) submitBtn.textContent = 'Create Profile';
+                    // Hide close button for first-time users
+                    if (closeBtn) closeBtn.style.display = 'none';
+                    // Prevent closing by clicking outside
+                    modal.onclick = function(e) {
+                        // Prevent closing if clicking outside the modal content
+                        if (e.target === modal) {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            return false;
+                        }
+                    };
+                    // Prevent Escape key from closing
+                    const escapeHandler = function(e) {
+                        if (e.key === 'Escape' && isFirstTimeProfile) {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            return false;
+                        }
+                    };
+                    document.addEventListener('keydown', escapeHandler);
+                    modal._escapeHandler = escapeHandler;
+                } else {
+                    if (title) title.textContent = 'Edit Profile';
+                    if (submitBtn) submitBtn.textContent = 'Save Changes';
+                    // Show close button for editing
+                    if (closeBtn) closeBtn.style.display = 'flex';
+                    // Allow closing by clicking outside
+                    modal.onclick = function(e) {
+                        if (e.target === modal) {
+                            hideProfileModal();
+                        }
+                    };
+                    // Remove escape handler if it exists
+                    if (modal._escapeHandler) {
+                        document.removeEventListener('keydown', modal._escapeHandler);
+                        modal._escapeHandler = null;
+                    }
+                    // Load current profile data
+                    if (currentUserProfile) {
+                        const usernameInput = document.getElementById('profileUsernameInput');
+                        const bioInput = document.getElementById('profileBioInput');
+                        const avatarPreview = document.getElementById('profileAvatarPreview');
+                        
+                        if (usernameInput) usernameInput.value = currentUserProfile.username || '';
+                        if (bioInput) bioInput.value = currentUserProfile.bio || '';
+                        if (avatarPreview && currentUserProfile.avatar) {
+                            avatarPreview.src = currentUserProfile.avatar;
+                        }
+                    }
+                }
+                modal.classList.add('active');
+            }
+        }
+
+        // Hide profile modal
+        function hideProfileModal() {
+            // Don't allow closing if it's a first-time profile creation
+            if (isFirstTimeProfile) {
+                return;
+            }
+            
+            const modal = document.getElementById('profileModalOverlay');
+            if (modal) {
+                modal.classList.remove('active');
+            }
+            const errorMsg = document.getElementById('profileErrorMessage');
+            if (errorMsg) {
+                errorMsg.classList.remove('show');
+            }
+        }
+
+        // Handle profile avatar upload
+        function handleProfileAvatarUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            if (!file.type.startsWith('image/')) {
+                showProfileError('Please select an image file');
+                return;
+            }
+
+            if (file.size > 2 * 1024 * 1024) {
+                showProfileError('Image size must be less than 2MB');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const avatarPreview = document.getElementById('profileAvatarPreview');
+                if (avatarPreview) {
+                    avatarPreview.src = e.target.result;
+                }
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // Show profile error
+        function showProfileError(message) {
+            const errorDiv = document.getElementById('profileErrorMessage');
+            if (errorDiv) {
+                errorDiv.textContent = message;
+                errorDiv.classList.add('show');
+                setTimeout(() => {
+                    errorDiv.classList.remove('show');
+                }, 5000);
+            }
+        }
+
+        // Check if username is already taken
+        async function isUsernameTaken(username, excludeUserId = null) {
+            if (!firebaseInitialized || !database) return false;
+            
+            try {
+                const profilesSnapshot = await database.ref('userProfiles').once('value');
+                if (!profilesSnapshot.exists()) {
+                    return false;
+                }
+                
+                const profiles = profilesSnapshot.val();
+                const usernameLower = username.toLowerCase().trim();
+                
+                for (const [userId, profile] of Object.entries(profiles)) {
+                    // Skip the current user's profile if editing
+                    if (excludeUserId && userId === excludeUserId) {
+                        continue;
+                    }
+                    
+                    const existingUsername = (profile.username || '').toLowerCase().trim();
+                    if (existingUsername === usernameLower) {
+                        return true;
+                    }
+                }
+                
+                return false;
+            } catch (error) {
+                console.error('Error checking username:', error);
+                return false;
+            }
+        }
+
+        // Save profile
+        async function saveProfile() {
+            if (!firebaseInitialized || !database || !userProfileId) {
+                showProfileError('Database not available. Please refresh the page.');
+                return;
+            }
+
+            const usernameInput = document.getElementById('profileUsernameInput');
+            const bioInput = document.getElementById('profileBioInput');
+            const avatarPreview = document.getElementById('profileAvatarPreview');
+            const submitBtn = document.getElementById('profileSubmitBtn');
+
+            if (!usernameInput) return;
+
+            const username = usernameInput.value.trim();
+            if (!username) {
+                showProfileError('Please enter a username');
+                return;
+            }
+
+            if (username.length < 3) {
+                showProfileError('Username must be at least 3 characters');
+                return;
+            }
+
+            if (username.length > 30) {
+                showProfileError('Username must be less than 30 characters');
+                return;
+            }
+
+            // Check if username is already taken (case-insensitive)
+            const usernameTaken = await isUsernameTaken(username, currentUserProfile ? userProfileId : null);
+            if (usernameTaken) {
+                showProfileError('This username is already taken. Please choose another one.');
+                return;
+            }
+
+            try {
+                if (submitBtn) {
+                    submitBtn.disabled = true;
+                    submitBtn.textContent = 'Saving...';
+                }
+
+                const profileData = {
+                    username: username,
+                    bio: (bioInput ? bioInput.value.trim() : '') || '',
+                    avatar: (avatarPreview && avatarPreview.src && !avatarPreview.src.includes('data:image/svg')) ? avatarPreview.src : null,
+                    createdAt: currentUserProfile ? currentUserProfile.createdAt : Date.now(),
+                    updatedAt: Date.now(),
+                    userId: userProfileId
+                };
+
+                await database.ref(`userProfiles/${userProfileId}`).set(profileData);
+                currentUserProfile = profileData;
+
+                // Update display
+                displayUserProfile();
+
+                // Hide modal (now allowed since profile is created)
+                isFirstTimeProfile = false;
+                const modal = document.getElementById('profileModalOverlay');
+                const closeBtn = document.getElementById('profileModalCloseBtn');
+                if (modal) {
+                    modal.classList.remove('active');
+                    // Re-enable close button
+                    if (closeBtn) closeBtn.style.display = 'flex';
+                    // Re-enable clicking outside to close
+                    modal.onclick = function(e) {
+                        if (e.target === modal) {
+                            hideProfileModal();
+                        }
+                    };
+                    // Remove escape key handler
+                    if (modal._escapeHandler) {
+                        document.removeEventListener('keydown', modal._escapeHandler);
+                        modal._escapeHandler = null;
+                    }
+                }
+
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Create Profile';
+                }
+            } catch (error) {
+                console.error('Error saving profile:', error);
+                showProfileError('Error saving profile. Please try again.');
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Create Profile';
+                }
+            }
+        }
+
+        // Display user profile in header
+        function displayUserProfile() {
+            if (!currentUserProfile) return;
+
+            const container = document.getElementById('userProfileContainer');
+            const avatar = document.getElementById('userProfileAvatar');
+            const name = document.getElementById('userProfileName');
+
+            if (container) container.style.display = 'block';
+            if (avatar) {
+                if (currentUserProfile.avatar) {
+                    avatar.src = currentUserProfile.avatar;
+                } else {
+                    // Generate initial avatar
+                    const initial = (currentUserProfile.username || '?').charAt(0).toUpperCase();
+                    avatar.src = `data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2232%22 height=%2232%22%3E%3Ccircle cx=%2216%22 cy=%2216%22 r=%2216%22 fill=%22%233a3a3a%22/%3E%3Ctext x=%2216%22 y=%2220%22 font-size=%2214%22 fill=%22%23fff%22 text-anchor=%22middle%22%3E${encodeURIComponent(initial)}%3C/text%3E%3C/svg%3E`;
+                }
+            }
+            if (name) name.textContent = currentUserProfile.username || 'Profile';
+        }
+
+        // Get user profile for ticket messages
+        async function getUserProfileForTicket(userId) {
+            if (!firebaseInitialized || !database) return null;
+            
+            try {
+                const profileSnapshot = await database.ref(`userProfiles/${userId}`).once('value');
+                if (profileSnapshot.exists()) {
+                    return profileSnapshot.val();
+                }
+            } catch (error) {
+                console.error('Error loading user profile:', error);
+            }
+            return null;
         }
 
         // Real-time listeners for blacklist and maintenance
