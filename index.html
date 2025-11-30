@@ -2331,7 +2331,7 @@
         .review-stream-track {
             display: inline-flex;
             gap: 30px;
-            animation: streamScroll 8s linear infinite;
+            animation: streamScroll 60s linear infinite;
             will-change: transform;
             white-space: nowrap;
         }
@@ -8536,31 +8536,32 @@
                     })
                     .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0)); // Most recent first
 
-                // Remove duplicates from database - keep only the most recent version of each unique review text
-                const seenReviewTexts = new Map(); // Map of normalized text -> review object
+                // Remove duplicates by userId - keep only the most recent review from each user
+                const seenUserIds = new Map(); // Map of userId -> review object
                 
                 allReviews.forEach(review => {
-                    // Normalize review text: trim, lowercase, and normalize whitespace
-                    const normalizedText = review.review.trim().toLowerCase().replace(/\s+/g, ' ');
+                    // Use userId to identify unique users
+                    // If no userId, use a fallback identifier
+                    const userId = review.userId || review.user || 'anonymous';
                     
-                    // If we haven't seen this review text, or this one is more recent, keep it
-                    if (!seenReviewTexts.has(normalizedText)) {
-                        seenReviewTexts.set(normalizedText, review);
+                    // If we haven't seen this user, or this review is more recent, keep it
+                    if (!seenUserIds.has(userId)) {
+                        seenUserIds.set(userId, review);
                     } else {
-                        // Compare timestamps - keep the more recent one
-                        const existingReview = seenReviewTexts.get(normalizedText);
+                        // Compare timestamps - keep the more recent review from this user
+                        const existingReview = seenUserIds.get(userId);
                         const existingTimestamp = existingReview.timestamp || 0;
                         const currentTimestamp = review.timestamp || 0;
                         
                         if (currentTimestamp > existingTimestamp) {
-                            seenReviewTexts.set(normalizedText, review);
+                            seenUserIds.set(userId, review);
                         }
                     }
                 });
 
-                // Convert map values to array - these are the unique reviews
-                const newReviews = Array.from(seenReviewTexts.values())
-                    .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0)); // Sort by timestamp again
+                // Convert map values to array - these are unique reviews (one per user)
+                const newReviews = Array.from(seenUserIds.values())
+                    .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0)); // Sort by timestamp
 
                 // Update available reviews with deduplicated list
                 availableReviews = newReviews;
@@ -8592,19 +8593,19 @@
                 return;
             }
 
-            // Remove duplicates - track unique reviews by their text content only
-            const seenReviews = new Set();
+            // Remove duplicates - track unique reviews by userId
+            // Each user's review should only appear once per cycle
+            const seenUserIds = new Set();
             const uniqueReviews = [];
 
             availableReviews.forEach(review => {
-                // Normalize review text: trim, lowercase, and normalize whitespace
-                const reviewText = review.review.trim().toLowerCase().replace(/\s+/g, ' ');
-                // Use only the review text for uniqueness (not rating)
-                // This ensures the same review text only appears once regardless of rating
-                const uniqueKey = reviewText;
+                // Use userId to ensure each user only appears once
+                // If no userId, use a fallback identifier
+                const userId = review.userId || review.user || 'anonymous';
+                const uniqueKey = userId;
                 
-                if (!seenReviews.has(uniqueKey)) {
-                    seenReviews.add(uniqueKey);
+                if (!seenUserIds.has(uniqueKey)) {
+                    seenUserIds.add(uniqueKey);
                     uniqueReviews.push(review);
                 }
             });
