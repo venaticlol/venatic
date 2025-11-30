@@ -8536,61 +8536,75 @@
                     })
                     .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0)); // Most recent first
 
-                // Remove duplicates by userId and review text - keep only the most recent review from each user
-                const seenUserIds = new Map(); // Map of userId -> review object
-                const seenReviewTexts = new Set(); // Also track by review text to prevent exact duplicates
+                // Load all user profiles first
+                const userIdToProfile = new Map();
+                const uniqueUserIds = [...new Set(allReviews.map(r => r.userId).filter(Boolean))];
                 
-                allReviews.forEach(review => {
-                    // Normalize userId
-                    let userId = review.userId;
-                    if (!userId || userId === null || userId === undefined || userId === '') {
-                        userId = null;
-                    } else {
-                        userId = String(userId).trim();
-                    }
-                    
-                    // Also check review text to prevent exact duplicate reviews
+                if (uniqueUserIds.length > 0 && firebaseInitialized && database) {
+                    const profilePromises = uniqueUserIds.map(async (userId) => {
+                        try {
+                            const profileSnapshot = await database.ref(`userProfiles/${userId}`).once('value');
+                            if (profileSnapshot.exists()) {
+                                userIdToProfile.set(userId, profileSnapshot.val());
+                            }
+                        } catch (error) {
+                            // Continue if profile load fails
+                        }
+                    });
+                    await Promise.all(profilePromises);
+                }
+
+                // Simple deduplication: one review per username, one review per exact text
+                const seenUsernames = new Map(); // username -> review (keep most recent)
+                const seenReviewTexts = new Set(); // exact review text (prevent duplicates)
+                
+                for (const review of allReviews) {
+                    // Get username from profile
+                    const profile = review.userId ? userIdToProfile.get(review.userId) : null;
+                    const username = profile ? (profile.username || '').trim().toLowerCase() : '';
                     const reviewText = (review.review || '').trim().toLowerCase();
-                    const reviewKey = reviewText || `rating_${review.rating || 0}`;
                     
-                    // Create identifier for this user
-                    let userIdentifier = userId || `anonymous_${reviewKey}`;
-                    
-                    // Check if we've seen this exact review text already (strongest check)
-                    if (seenReviewTexts.has(reviewKey)) {
-                        // Skip exact duplicate review text
-                        return;
+                    // Skip if we've seen this exact review text (strongest check)
+                    if (seenReviewTexts.has(reviewText)) {
+                        continue;
                     }
                     
-                    // If we haven't seen this user, or this review is more recent, keep it
-                    if (!seenUserIds.has(userIdentifier)) {
-                        seenUserIds.set(userIdentifier, review);
-                        seenReviewTexts.add(reviewKey);
+                    // If we have a username, check by username
+                    if (username) {
+                        if (!seenUsernames.has(username)) {
+                            // First time seeing this username
+                            seenUsernames.set(username, review);
+                            seenReviewTexts.add(reviewText);
+                        } else {
+                            // Already have a review from this username - keep the more recent one
+                            const existingReview = seenUsernames.get(username);
+                            if (review.timestamp > (existingReview.timestamp || 0)) {
+                                // Remove old review text
+                                const oldText = (existingReview.review || '').trim().toLowerCase();
+                                seenReviewTexts.delete(oldText);
+                                // Add new review
+                                seenUsernames.set(username, review);
+                                seenReviewTexts.add(reviewText);
+                            }
+                        }
                     } else {
-                        // Compare timestamps - keep the more recent review from this user
-                        const existingReview = seenUserIds.get(userIdentifier);
-                        const existingTimestamp = existingReview.timestamp || 0;
-                        const currentTimestamp = review.timestamp || 0;
-                        
-                        if (currentTimestamp > existingTimestamp) {
-                            // Remove old review text from set
-                            const oldReviewText = (existingReview.review || '').trim().toLowerCase();
-                            const oldReviewKey = oldReviewText || `rating_${existingReview.rating || 0}`;
-                            seenReviewTexts.delete(oldReviewKey);
-                            
-                            // Add new review
-                            seenUserIds.set(userIdentifier, review);
-                            seenReviewTexts.add(reviewKey);
+                        // No username - use review text as identifier
+                        if (!seenReviewTexts.has(reviewText)) {
+                            seenReviewTexts.add(reviewText);
+                            // Store with a unique key
+                            seenUsernames.set(`anonymous_${reviewText}`, review);
                         }
                     }
-                });
+                }
 
-                // Convert map values to array - these are unique reviews (one per user)
-                const newReviews = Array.from(seenUserIds.values())
-                    .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0)); // Sort by timestamp
+                // Get unique reviews (one per username)
+                const uniqueReviews = Array.from(seenUsernames.values())
+                    .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
 
-                // Update available reviews with deduplicated list
-                availableReviews = newReviews;
+                // Update available reviews
+                availableReviews = uniqueReviews;
+                
+                console.log(`Loaded ${allReviews.length} reviews, deduplicated to ${uniqueReviews.length} unique reviews`);
                 
                 // Update the stream ticker
                 updateReviewStream();
@@ -8614,128 +8628,54 @@
                 placeholder.className = 'review-stream-item';
                 placeholder.innerHTML = '<span class="review-stream-text" style="color: #666;">No reviews yet. Be the first to leave one!</span>';
                 track.appendChild(placeholder);
-                // Duplicate for seamless loop
                 track.appendChild(placeholder.cloneNode(true));
                 return;
             }
 
-            // Remove duplicates - track unique reviews by userId and username
-            // Each user's review should only appear once per cycle
-            const seenUserIds = new Set();
-            const seenUsernames = new Set(); // Track by username as well
-            const seenReviewTexts = new Set(); // Fallback: also track by review text to prevent exact duplicates
-            const uniqueReviews = [];
-
-            // First pass: load profiles and build username map for all reviews
-            const userIdToUsername = new Map();
-            if (firebaseInitialized && database) {
-                const profilePromises = availableReviews
-                    .filter(r => r.userId)
-                    .map(async (review) => {
-                        try {
-                            const profileSnapshot = await database.ref(`userProfiles/${review.userId}`).once('value');
-                            if (profileSnapshot.exists()) {
-                                const profile = profileSnapshot.val();
-                                const username = (profile.username || '').trim().toLowerCase();
-                                if (username) {
-                                    userIdToUsername.set(review.userId, username);
-                                }
-                            }
-                        } catch (error) {
-                            // Continue if profile load fails
-                        }
-                    });
-                await Promise.all(profilePromises);
-            }
-
-            // Second pass: deduplicate reviews by userId, username, and review text
-            for (const review of availableReviews) {
-                // Get username from map if available
-                const username = (userIdToUsername.get(review.userId) || '').trim().toLowerCase();
-                
-                // Normalize userId
-                let userId = review.userId;
-                if (!userId || userId === null || userId === undefined || userId === '') {
-                    userId = null;
-                } else {
-                    userId = String(userId).trim();
-                }
-                
-                // Create unique identifier - prioritize username if available
-                let userIdentifier = '';
-                if (username) {
-                    // If we have a username, use it as the primary identifier
-                    // This ensures same username = same user, even if userIds differ
-                    userIdentifier = `username_${username}`;
-                } else if (userId) {
-                    // Fall back to userId if no username
-                    userIdentifier = `userid_${userId}`;
-                } else {
-                    // Last resort: use review text (but this is less reliable)
-                    const reviewText = (review.review || '').trim().toLowerCase().substring(0, 50);
-                    const rating = review.rating || 0;
-                    userIdentifier = `anonymous_${rating}_${reviewText}`;
-                }
-                
-                // Also check review text to prevent exact duplicate reviews
-                const reviewText = (review.review || '').trim().toLowerCase();
-                const reviewKey = reviewText || `rating_${review.rating || 0}`;
-                
-                // Check if this is a duplicate by user identifier, username, or review text
-                // If ANY of these match, it's a duplicate
-                const isDuplicate = seenUserIds.has(userIdentifier) || 
-                                   (username && seenUsernames.has(username)) || 
-                                   seenReviewTexts.has(reviewKey);
-                
-                if (!isDuplicate) {
-                    seenUserIds.add(userIdentifier);
-                    if (username) seenUsernames.add(username);
-                    seenReviewTexts.add(reviewKey);
-                    uniqueReviews.push(review);
-                } else {
-                    console.log(`Skipping duplicate review: userId=${userId}, username=${username}, text="${reviewText.substring(0, 30)}..."`);
-                }
-            }
+            // Load all profiles for reviews that have userId
+            const userIdToProfile = new Map();
+            const reviewsWithUserIds = availableReviews.filter(r => r.userId);
             
-            console.log(`Deduplication: ${availableReviews.length} reviews -> ${uniqueReviews.length} unique reviews`);
-
-            // Final deduplication pass: ensure no duplicates by checking usernames and review text one more time
-            const finalUniqueReviews = [];
-            const finalSeenUsernames = new Set();
-            const finalSeenTexts = new Set();
-            
-            for (const review of uniqueReviews) {
-                // Load profile to get username
-                let username = '';
-                if (review.userId && firebaseInitialized && database) {
+            if (reviewsWithUserIds.length > 0 && firebaseInitialized && database) {
+                const uniqueUserIds = [...new Set(reviewsWithUserIds.map(r => r.userId))];
+                const profilePromises = uniqueUserIds.map(async (userId) => {
                     try {
-                        const profileSnapshot = await database.ref(`userProfiles/${review.userId}`).once('value');
+                        const profileSnapshot = await database.ref(`userProfiles/${userId}`).once('value');
                         if (profileSnapshot.exists()) {
-                            const profile = profileSnapshot.val();
-                            username = (profile.username || '').trim().toLowerCase();
+                            userIdToProfile.set(userId, profileSnapshot.val());
                         }
                     } catch (error) {
                         // Continue if profile load fails
                     }
-                }
-                
+                });
+                await Promise.all(profilePromises);
+            }
+
+            // Final deduplication: ensure one review per username and one per exact text
+            const finalReviews = [];
+            const seenUsernames = new Set();
+            const seenTexts = new Set();
+            
+            for (const review of availableReviews) {
+                // Get username from profile
+                const profile = review.userId ? userIdToProfile.get(review.userId) : null;
+                const username = profile ? (profile.username || '').trim().toLowerCase() : '';
                 const reviewText = (review.review || '').trim().toLowerCase();
                 
-                // Final check: skip if we've seen this username OR this exact review text
-                if ((username && finalSeenUsernames.has(username)) || finalSeenTexts.has(reviewText)) {
-                    console.log(`Final deduplication: Skipping duplicate - username="${username}", text="${reviewText.substring(0, 30)}..."`);
+                // Skip if we've seen this username OR this exact review text
+                if ((username && seenUsernames.has(username)) || seenTexts.has(reviewText)) {
                     continue;
                 }
                 
-                if (username) finalSeenUsernames.add(username);
-                if (reviewText) finalSeenTexts.add(reviewText);
-                finalUniqueReviews.push(review);
+                if (username) seenUsernames.add(username);
+                if (reviewText) seenTexts.add(reviewText);
+                finalReviews.push({ review, profile });
             }
             
-            console.log(`Final deduplication: ${uniqueReviews.length} -> ${finalUniqueReviews.length} unique reviews`);
+            console.log(`Displaying ${finalReviews.length} unique reviews (from ${availableReviews.length} total)`);
 
-            // Create review items from final unique reviews only
-            for (const review of finalUniqueReviews) {
+            // Create review items
+            for (const { review, profile } of finalReviews) {
                 const item = document.createElement('div');
                 item.className = 'review-stream-item';
 
@@ -8748,26 +8688,18 @@
                     reviewText = reviewText.substring(0, 100) + '...';
                 }
 
-                // Load user profile if userId exists
+                // Build profile HTML if we have profile data
                 let profileHtml = '';
-                if (review.userId && firebaseInitialized && database) {
-                    try {
-                        const profileSnapshot = await database.ref(`userProfiles/${review.userId}`).once('value');
-                        if (profileSnapshot.exists()) {
-                            const profile = profileSnapshot.val();
-                            const avatarSrc = profile.avatar || `data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2224%22 height=%2224%22%3E%3Ccircle cx=%2212%22 cy=%2212%22 r=%2212%22 fill=%22%233a3a3a%22/%3E%3Ctext x=%2212%22 y=%2216%22 font-size=%2210%22 fill=%22%23fff%22 text-anchor=%22middle%22%3E${encodeURIComponent((profile.username || '?').charAt(0).toUpperCase())}%3C/text%3E%3C/svg%3E`;
-                            profileHtml = `
-                                <div class="review-stream-user" onclick="viewUserProfileFromReview('${escapeHtml(review.userId)}')" style="display: flex; align-items: center; gap: 8px; cursor: pointer; margin-right: 12px; transition: opacity 0.2s;" onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">
-                                    <img src="${escapeHtml(avatarSrc)}" alt="${escapeHtml(profile.username || 'User')}" 
-                                         style="width: 24px; height: 24px; border-radius: 50%; object-fit: cover; border: 1px solid rgba(74, 74, 74, 0.5);"
-                                         onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2224%22 height=%2224%22%3E%3Ccircle cx=%2212%22 cy=%2212%22 r=%2212%22 fill=%22%233a3a3a%22/%3E%3C/svg%3E'">
-                                    <span style="color: #b0b0b0; font-size: 12px; font-weight: 500;">${escapeHtml(profile.username || 'User')}</span>
-                                </div>
-                            `;
-                        }
-                    } catch (error) {
-                        console.error('Error loading profile for review:', error);
-                    }
+                if (profile && review.userId) {
+                    const avatarSrc = profile.avatar || `data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2224%22 height=%2224%22%3E%3Ccircle cx=%2212%22 cy=%2212%22 r=%2212%22 fill=%22%233a3a3a%22/%3E%3Ctext x=%2212%22 y=%2216%22 font-size=%2210%22 fill=%22%23fff%22 text-anchor=%22middle%22%3E${encodeURIComponent((profile.username || '?').charAt(0).toUpperCase())}%3C/text%3E%3C/svg%3E`;
+                    profileHtml = `
+                        <div class="review-stream-user" onclick="viewUserProfileFromReview('${escapeHtml(review.userId)}')" style="display: flex; align-items: center; gap: 8px; cursor: pointer; margin-right: 12px; transition: opacity 0.2s;" onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">
+                            <img src="${escapeHtml(avatarSrc)}" alt="${escapeHtml(profile.username || 'User')}" 
+                                 style="width: 24px; height: 24px; border-radius: 50%; object-fit: cover; border: 1px solid rgba(74, 74, 74, 0.5);"
+                                 onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2224%22 height=%2224%22%3E%3Ccircle cx=%2212%22 cy=%2212%22 r=%2212%22 fill=%22%233a3a3a%22/%3E%3C/svg%3E'">
+                            <span style="color: #b0b0b0; font-size: 12px; font-weight: 500;">${escapeHtml(profile.username || 'User')}</span>
+                        </div>
+                    `;
                 }
 
                 item.innerHTML = `
@@ -8780,30 +8712,18 @@
                 track.appendChild(item);
             }
 
-            // Duplicate all items for seamless infinite scroll
-            // Only duplicate if we have multiple unique reviews (at least 2)
-            // This ensures each user only appears once per cycle
-            if (finalUniqueReviews.length >= 2) {
+            // Duplicate items for seamless infinite scroll (only if we have 2+ unique reviews)
+            if (finalReviews.length >= 2) {
             const items = track.querySelectorAll('.review-stream-item');
-            const itemsArray = Array.from(items);
-            
-            // Clone each item to create the duplicate set (exact copies)
-                // This creates a seamless loop - after showing all unique users, it cycles back
-            itemsArray.forEach(item => {
+                items.forEach(item => {
                 const clone = item.cloneNode(true);
-                // Ensure clone has same styles
                 clone.style.cssText = item.style.cssText;
                 track.appendChild(clone);
             });
-            } else if (finalUniqueReviews.length === 1) {
-                // If only one review, don't duplicate - just show it once
-                // The animation will still work but won't loop seamlessly
-                console.log('Only one unique review - not duplicating for seamless loop');
             }
             
-            // Add a small delay to ensure DOM is updated before animation starts
+            // Reset animation
             requestAnimationFrame(() => {
-                // Reset animation to ensure smooth start
                 track.style.animation = 'none';
                 requestAnimationFrame(() => {
                     track.style.animation = '';
