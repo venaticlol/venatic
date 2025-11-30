@@ -3914,8 +3914,12 @@
                     for (const key of generatedKeys) {
                         if (key && key.trim()) {
                             try {
+                                const trimmedKey = key.trim();
+                                // Escape special characters in Firebase key path
+                                const safeKey = trimmedKey.replace(/[.#$\[\]]/g, '_');
+                                
                                 const keyData = {
-                                    key: key.trim(),
+                                    key: trimmedKey,
                                     level: level || "Premium",
                                     levelNum: levelNum,
                                     expiry: expiry || 0,
@@ -3924,9 +3928,12 @@
                                     used: false
                                 };
                                 
-                                await database.ref(`keyauthKeys/${key.trim()}`).set(keyData);
+                                console.log('Storing key in Firebase:', { safeKey, trimmedKey, keyData });
+                                await database.ref(`keyauthKeys/${safeKey}`).set(keyData);
+                                console.log('✅ Key stored successfully:', trimmedKey);
                             } catch (e) {
-                                console.warn('Failed to store key notes:', e);
+                                console.error('Failed to store key in Firebase:', e, key);
+                                throw e; // Re-throw to show error to user
                             }
                         }
                     }
@@ -4019,10 +4026,20 @@
                         const keysSnapshot = await database.ref('keyauthKeys').once('value');
                         if (keysSnapshot.exists()) {
                             const keysData = keysSnapshot.val();
-                            keysFromFirebase.push(...Object.keys(keysData));
+                            // Get the actual key value from each entry (not the Firebase key)
+                            Object.keys(keysData).forEach(firebaseKey => {
+                                const keyEntry = keysData[firebaseKey];
+                                if (keyEntry && keyEntry.key) {
+                                    keysFromFirebase.push(keyEntry.key);
+                                } else {
+                                    // Fallback: use Firebase key if key property doesn't exist
+                                    keysFromFirebase.push(firebaseKey);
+                                }
+                            });
                         }
+                        console.log('Loaded keys from Firebase:', keysFromFirebase.length);
                     } catch (e) {
-                        console.warn('Failed to load keys from Firebase:', e);
+                        console.error('Failed to load keys from Firebase:', e);
                     }
                     
                     // Return keys from Firebase (even if empty)
@@ -4324,8 +4341,13 @@
                 for (let i = 0; i < count; i++) {
                     try {
                         const response = await keyAuthClient.generateKey(level, expiry, 1, notes);
-                        if (response.key) {
+                        // Handle both single key and multiple keys response
+                        if (response.keys && Array.isArray(response.keys)) {
+                            generatedKeys.push(...response.keys);
+                        } else if (response.key) {
                             generatedKeys.push(response.key);
+                        } else {
+                            throw new Error('No key returned from API');
                         }
                     } catch (error) {
                         errors.push(`Key ${i + 1}: ${error.message}`);
