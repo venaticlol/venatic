@@ -1665,40 +1665,73 @@
             window.firebaseInitialized = false;
         }
 
-        // Check admin access (IP-based)
-        const ADMIN_SESSION_KEY = 'recon_admin_session';
-        const ALLOWED_ADMIN_IPS = ['172.56.93.18', '74.14.72.29'];
+        // Check admin access (User ID-based)
+        const USER_PROFILE_ID_KEY = 'recon_user_profile_id';
+        const ALLOWED_ADMIN_USER_IDS = [
+            'user_1764492219870_1nmahxwjb',
+            'user_1764533348919_8pq7xrq95'
+        ];
         
         async function verifyAdminAccess() {
             try {
-                // Check session first
-                const session = sessionStorage.getItem(ADMIN_SESSION_KEY);
-                if (session !== 'true') {
+                // Wait for Firebase to initialize if not ready
+                let retries = 0;
+                while (!window.firebaseInitialized && retries < 10) {
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                    retries++;
+                }
+                
+                // Check if user is logged in
+                const userProfileId = localStorage.getItem(USER_PROFILE_ID_KEY);
+                
+                if (!userProfileId) {
+                    alert('Access denied. Please log in to access the admin panel.');
                     window.location.href = '/';
                     return false;
                 }
                 
-                // Verify IP is still authorized
-                const ip = await getClientIP();
-                if (!ALLOWED_ADMIN_IPS.includes(ip)) {
-                    // IP not authorized - clear session and redirect
-                    sessionStorage.removeItem(ADMIN_SESSION_KEY);
-                    alert(`Access denied. Your IP (${ip}) is not authorized for admin access.`);
+                // Verify user ID is authorized
+                if (!ALLOWED_ADMIN_USER_IDS.includes(userProfileId)) {
+                    alert('Access denied. Your account is not authorized for admin access.');
                     window.location.href = '/';
                     return false;
                 }
                 
-                console.log('✅ Admin access verified - IP:', ip);
+                // Verify user profile still exists in Firebase
+                if (window.firebaseInitialized && window.database) {
+                    try {
+                        const profileSnapshot = await window.database.ref(`userProfiles/${userProfileId}`).once('value');
+                        if (!profileSnapshot.exists()) {
+                            alert('Access denied. Your account no longer exists.');
+                            localStorage.removeItem(USER_PROFILE_ID_KEY);
+                            localStorage.removeItem('recon_auth_token');
+                            window.location.href = '/';
+                            return false;
+                        }
+                    } catch (error) {
+                        console.error('Error verifying user profile:', error);
+                        // Continue anyway if Firebase check fails
+                    }
+                }
+                
+                console.log('✅ Admin access verified - User ID:', userProfileId);
                 return true;
             } catch (error) {
                 console.error('Error verifying admin access:', error);
+                alert('Error verifying admin access. Please try again.');
                 window.location.href = '/';
                 return false;
             }
         }
         
-        // Verify admin access on page load
-        verifyAdminAccess();
+        // Verify admin access on page load (after Firebase initializes)
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => {
+                setTimeout(verifyAdminAccess, 1000);
+            });
+        } else {
+            setTimeout(verifyAdminAccess, 1000);
+        }
 
         // Track admin panel visit (optional)
         async function trackUserVisit() {
@@ -2188,7 +2221,9 @@
 
         // Logout
         function logout() {
-            sessionStorage.removeItem(ADMIN_SESSION_KEY);
+            // Clear user session
+            localStorage.removeItem(USER_PROFILE_ID_KEY);
+            localStorage.removeItem('recon_auth_token');
             window.location.href = '/';
         }
 
