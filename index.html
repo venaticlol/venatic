@@ -8536,35 +8536,51 @@
                     })
                     .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0)); // Most recent first
 
-                // Remove duplicates by userId - keep only the most recent review from each user
+                // Remove duplicates by userId and review text - keep only the most recent review from each user
                 const seenUserIds = new Map(); // Map of userId -> review object
+                const seenReviewTexts = new Set(); // Also track by review text to prevent exact duplicates
                 
                 allReviews.forEach(review => {
-                    // Use userId to identify unique users
-                    // Normalize userId: convert to string, handle null/undefined
+                    // Normalize userId
                     let userId = review.userId;
                     if (!userId || userId === null || userId === undefined || userId === '') {
-                        // For reviews without userId, try to use a combination of review text and rating
-                        // This helps distinguish different anonymous users
-                        const reviewText = (review.review || '').trim().toLowerCase().substring(0, 50);
-                        const rating = review.rating || 0;
-                        userId = `anonymous_${rating}_${reviewText}`;
+                        userId = null;
                     } else {
-                        // Normalize userId to string
                         userId = String(userId).trim();
                     }
                     
+                    // Also check review text to prevent exact duplicate reviews
+                    const reviewText = (review.review || '').trim().toLowerCase();
+                    const reviewKey = reviewText || `rating_${review.rating || 0}`;
+                    
+                    // Create identifier for this user
+                    let userIdentifier = userId || `anonymous_${reviewKey}`;
+                    
+                    // Check if we've seen this exact review text already (strongest check)
+                    if (seenReviewTexts.has(reviewKey)) {
+                        // Skip exact duplicate review text
+                        return;
+                    }
+                    
                     // If we haven't seen this user, or this review is more recent, keep it
-                    if (!seenUserIds.has(userId)) {
-                        seenUserIds.set(userId, review);
+                    if (!seenUserIds.has(userIdentifier)) {
+                        seenUserIds.set(userIdentifier, review);
+                        seenReviewTexts.add(reviewKey);
                     } else {
                         // Compare timestamps - keep the more recent review from this user
-                        const existingReview = seenUserIds.get(userId);
+                        const existingReview = seenUserIds.get(userIdentifier);
                         const existingTimestamp = existingReview.timestamp || 0;
                         const currentTimestamp = review.timestamp || 0;
                         
                         if (currentTimestamp > existingTimestamp) {
-                            seenUserIds.set(userId, review);
+                            // Remove old review text from set
+                            const oldReviewText = (existingReview.review || '').trim().toLowerCase();
+                            const oldReviewKey = oldReviewText || `rating_${existingReview.rating || 0}`;
+                            seenReviewTexts.delete(oldReviewKey);
+                            
+                            // Add new review
+                            seenUserIds.set(userIdentifier, review);
+                            seenReviewTexts.add(reviewKey);
                         }
                     }
                 });
@@ -8603,38 +8619,85 @@
                 return;
             }
 
-            // Remove duplicates - track unique reviews by userId
+            // Remove duplicates - track unique reviews by userId and username
             // Each user's review should only appear once per cycle
             const seenUserIds = new Set();
+            const seenUsernames = new Set(); // Track by username as well
             const seenReviewTexts = new Set(); // Fallback: also track by review text to prevent exact duplicates
             const uniqueReviews = [];
+            
+            // First pass: load profiles and build username map for all reviews
+            const userIdToUsername = new Map();
+            if (firebaseInitialized && database) {
+                const profilePromises = availableReviews
+                    .filter(r => r.userId)
+                    .map(async (review) => {
+                        try {
+                            const profileSnapshot = await database.ref(`userProfiles/${review.userId}`).once('value');
+                            if (profileSnapshot.exists()) {
+                                const profile = profileSnapshot.val();
+                                const username = (profile.username || '').trim().toLowerCase();
+                                if (username) {
+                                    userIdToUsername.set(review.userId, username);
+                                }
+                            }
+                        } catch (error) {
+                            // Continue if profile load fails
+                        }
+                    });
+                await Promise.all(profilePromises);
+            }
 
-            availableReviews.forEach(review => {
-                // Use userId to ensure each user only appears once
-                // Normalize userId: convert to string, handle null/undefined
+            // Second pass: deduplicate reviews by userId, username, and review text
+            for (const review of availableReviews) {
+                // Get username from map if available
+                const username = (userIdToUsername.get(review.userId) || '').trim().toLowerCase();
+                
+                // Normalize userId
                 let userId = review.userId;
                 if (!userId || userId === null || userId === undefined || userId === '') {
-                    // For reviews without userId, try to use a combination of review text and rating
-                    // This helps distinguish different anonymous users, but same user's reviews will still be grouped
-                    const reviewText = (review.review || '').trim().toLowerCase().substring(0, 50);
-                    const rating = review.rating || 0;
-                    userId = `anonymous_${rating}_${reviewText}`;
+                    userId = null;
                 } else {
-                    // Normalize userId to string
                     userId = String(userId).trim();
                 }
                 
-                // Also check review text as a fallback to prevent exact duplicate reviews
+                // Create unique identifier - prioritize username if available
+                let userIdentifier = '';
+                if (username) {
+                    // If we have a username, use it as the primary identifier
+                    // This ensures same username = same user, even if userIds differ
+                    userIdentifier = `username_${username}`;
+                } else if (userId) {
+                    // Fall back to userId if no username
+                    userIdentifier = `userid_${userId}`;
+                } else {
+                    // Last resort: use review text (but this is less reliable)
+                    const reviewText = (review.review || '').trim().toLowerCase().substring(0, 50);
+                    const rating = review.rating || 0;
+                    userIdentifier = `anonymous_${rating}_${reviewText}`;
+                }
+                
+                // Also check review text to prevent exact duplicate reviews
                 const reviewText = (review.review || '').trim().toLowerCase();
                 const reviewKey = reviewText || `rating_${review.rating || 0}`;
                 
-                // Only add if we haven't seen this userId AND haven't seen this exact review text
-                if (!seenUserIds.has(userId) && !seenReviewTexts.has(reviewKey)) {
-                    seenUserIds.add(userId);
+                // Check if this is a duplicate by user identifier, username, or review text
+                // If ANY of these match, it's a duplicate
+                const isDuplicate = seenUserIds.has(userIdentifier) || 
+                                   (username && seenUsernames.has(username)) || 
+                                   seenReviewTexts.has(reviewKey);
+                
+                if (!isDuplicate) {
+                    seenUserIds.add(userIdentifier);
+                    if (username) seenUsernames.add(username);
                     seenReviewTexts.add(reviewKey);
                     uniqueReviews.push(review);
+                } else {
+                    console.log(`Skipping duplicate review: userId=${userId}, username=${username}, text="${reviewText.substring(0, 30)}..."`);
                 }
-            });
+            }
+            
+            console.log(`Deduplication: ${availableReviews.length} reviews -> ${uniqueReviews.length} unique reviews`);
 
             // Create review items from unique reviews only
             for (const review of uniqueReviews) {
