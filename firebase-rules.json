@@ -1,0 +1,88 @@
+{
+  "rules": {
+    "downloads": {
+      ".read": true,
+      "count": {
+        ".read": true,
+        ".write": "newData.isNumber() && (!data.exists() || (newData.val() == data.val() + 1 && newData.val() > data.val()))"
+      }
+    },
+    "ratings": {
+      ".read": true,
+      "$ratingId": {
+        ".read": true,
+        ".write": "!newData.exists() || (newData.hasChildren(['rating', 'timestamp']) && newData.child('rating').isNumber() && newData.child('rating').val() >= 1 && newData.child('rating').val() <= 5 && (!newData.hasChild('review') || (newData.child('review').isString() && newData.child('review').val().length <= 200)))"
+      }
+    },
+    "announcements": {
+      ".read": true,
+      ".write": true
+    },
+    "changelog": {
+      ".read": true,
+      ".write": true
+    },
+    "translations": {
+      ".read": true,
+      ".write": true
+    },
+    "maintenance": {
+      ".read": true,
+      ".write": true
+    },
+    "backups": {
+      ".read": true,
+      ".write": true
+    },
+    "visits": {
+      ".read": true,
+      ".write": true
+    },
+    "blacklist": {
+      ".read": true,
+      ".write": true
+    },
+    "surveys": {
+      ".read": true,
+      ".write": true
+    },
+    "webhooks": {
+      ".read": true,
+      ".write": true
+    },
+    "surveyResponses": {
+      ".read": true,
+      ".write": true
+    },
+    "tickets": {
+      ".read": true,
+      ".write": true
+    },
+    "ticketMessages": {
+      ".read": true,
+      ".write": true
+    },
+    "userProfiles": {
+      ".read": true,
+      ".write": true,
+      "$userId": {
+        ".read": true,
+        ".write": true,
+        ".validate": "newData.hasChildren(['username', 'userId']) && newData.child('username').isString() && newData.child('username').val().length >= 3 && newData.child('username').val().length <= 30 && (!newData.hasChild('bio') || (newData.child('bio').isString() && newData.child('bio').val().length <= 200)) && (!newData.hasChild('avatar') || newData.child('avatar').isString()) && (!newData.hasChild('passwordHash') || newData.child('passwordHash').isString()) && newData.child('userId').isString()"
+      }
+    },
+    "usernames": {
+      ".read": true,
+      ".write": true
+    },
+    "keyauthKeys": {
+      ".read": true,
+      ".write": true,
+      "$keyId": {
+        ".read": true,
+        ".write": true,
+        ".validate": "newData.hasChildren(['key', 'level', 'expiry', 'createdAt', 'used']) && newData.child('key').isString() && newData.child('level').isString() && newData.child('expiry').isNumber() && newData.child('createdAt').isNumber() && newData.child('used').isBoolean() && (!newData.hasChild('notes') || (newData.child('notes').isString() && newData.child('notes').val().length <= 500)) && (!newData.hasChild('levelNum') || newData.child('levelNum').isNumber())"
+      }
+    }
+  }
+}

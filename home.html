@@ -8947,23 +8947,37 @@
                 animateCounterFromTo(counterElement, oldCount, newCount);
             }
             
-            // Trigger actual download
-            // TODO: Replace 'your-installer.exe' with the actual file path/URL
-            // Example: const downloadUrl = 'https://yourdomain.com/downloads/Recon-Spoofer-Installer.exe';
-            const downloadUrl = 'https://github.com/venaticlol/loader/raw/refs/heads/main/Recon-Bootstrapper.exe'; // Update this with your actual file URL
+            // Trigger actual download from GitHub
+            const downloadUrl = 'https://github.com/venaticlol/loader/raw/refs/heads/main/Recon-Bootstrapper.exe';
+            const fileName = 'Recon-Spoofer-Installer.exe';
             
-            // Create download link
-            const link = document.createElement('a');
-            link.href = downloadUrl;
-            link.download = 'Recon-Spoofer-Installer.exe';
-            link.style.display = 'none';
-            document.body.appendChild(link);
-            link.click();
-            
-            // Clean up after a short delay
-            setTimeout(() => {
-                document.body.removeChild(link);
-            }, 100);
+            try {
+                // Fetch the file as a blob to force download instead of redirect
+                const response = await fetch(downloadUrl);
+                if (!response.ok) {
+                    throw new Error(`Failed to download: ${response.status} ${response.statusText}`);
+                }
+                
+                const blob = await response.blob();
+                const blobUrl = window.URL.createObjectURL(blob);
+                
+                // Create download link
+                const link = document.createElement('a');
+                link.href = blobUrl;
+                link.download = fileName;
+                link.style.display = 'none';
+                document.body.appendChild(link);
+                link.click();
+                
+                // Clean up
+                setTimeout(() => {
+                    document.body.removeChild(link);
+                    window.URL.revokeObjectURL(blobUrl);
+                }, 100);
+            } catch (error) {
+                console.error('Download error:', error);
+                alert('Failed to download installer. Please try again or contact support.');
+            }
             
             // Update button state after download
             const updatedLimitInfo = checkDownloadLimit();
