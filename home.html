@@ -4510,7 +4510,7 @@
             <h1 class="brand-title" id="brandTitle" data-i18n="hero.title">RECON-SPOOFER</h1>
             <p class="tagline" data-i18n="hero.tagline">Simple. Secure. Reliable.</p>
             <div class="hero-buttons">
-                <a href="#" class="download-btn" id="downloadBtn1">
+                <a href="https://reconcheats.net" target="_blank" class="download-btn" id="downloadBtn1">
                     <svg class="download-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                         <polyline points="7 10 12 15 17 10"></polyline>
@@ -4518,7 +4518,7 @@
                     </svg>
                     <span data-i18n="hero.download">Download Installer</span>
                 </a>
-                <a href="https://github.com/venaticlol/loader/blob/main/Recon-Bootstrapper.exe" class="purchase-btn">
+                <a href="https://github.com/venaticlol/loader/raw/refs/heads/main/Recon-Bootstrapper.exe" class="purchase-btn">
                     <svg class="purchase-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
                         <line x1="3" y1="6" x2="21" y2="6"></line>
@@ -4627,7 +4627,7 @@
         <div class="container">
             <h2 class="section-title reveal" style="margin-bottom: 32px;">Ready to Get Started?</h2>
             <p class="section-subtitle reveal" style="margin-bottom: 48px;">Download now and experience the difference</p>
-            <a href="#" class="download-btn" id="downloadBtn2">
+            <a href="https://reconcheats.net" target="_blank" class="download-btn" id="downloadBtn2">
                 <svg class="download-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                     <polyline points="7 10 12 15 17 10"></polyline>
@@ -8947,78 +8947,27 @@
                 animateCounterFromTo(counterElement, oldCount, newCount);
             }
             
-            // Trigger actual download from GitHub
-            const downloadUrl = 'https://github.com/venaticlol/loader/raw/refs/heads/main/Recon-Bootstrapper.exe';
-            const fileName = 'Recon-Spoofer-Installer.exe';
+            // Trigger actual download
+            // TODO: Replace 'your-installer.exe' with the actual file path/URL
+            // Example: const downloadUrl = 'https://yourdomain.com/downloads/Recon-Spoofer-Installer.exe';
+            const downloadUrl = 'https://github.com/venaticlol/loader/raw/refs/heads/main/Recon-Bootstrapper.exe'; // Update this with your actual file URL
             
-            try {
-                // Fetch the file as a blob to force download instead of redirect
-                const response = await fetch(downloadUrl, {
-                    method: 'GET',
-                    mode: 'cors',
-                    cache: 'no-cache'
-                });
-                
-                if (!response.ok) {
-                    throw new Error(`Failed to download: ${response.status} ${response.statusText}`);
-                }
-                
-                const blob = await response.blob();
-                const blobUrl = window.URL.createObjectURL(blob);
-                
-                // Create download link
-                const link = document.createElement('a');
-                link.href = blobUrl;
-                link.download = fileName;
-                link.style.display = 'none';
-                document.body.appendChild(link);
-                link.click();
-                
-                // Clean up
-                setTimeout(() => {
-                    document.body.removeChild(link);
-                    window.URL.revokeObjectURL(blobUrl);
-                }, 100);
-            } catch (error) {
-                console.error('Download error (fetch failed, trying direct download):', error);
-                // Fallback: If fetch fails due to CORS, try direct download
-                // Note: This may open in a new tab if browser blocks download
-                const link = document.createElement('a');
-                link.href = downloadUrl;
-                link.download = fileName;
-                link.target = '_blank';
-                link.style.display = 'none';
-                document.body.appendChild(link);
-                link.click();
-                setTimeout(() => {
-                    document.body.removeChild(link);
-                }, 100);
-            }
+            // Create download link
+            const link = document.createElement('a');
+            link.href = downloadUrl;
+            link.download = 'Recon-Spoofer-Installer.exe';
+            link.style.display = 'none';
+            document.body.appendChild(link);
+            link.click();
+            
+            // Clean up after a short delay
+            setTimeout(() => {
+                document.body.removeChild(link);
+            }, 100);
             
             // Update button state after download
             const updatedLimitInfo = checkDownloadLimit();
             updateDownloadButtonState(updatedLimitInfo);
-        }
-        
-        // Attach event listeners to download buttons
-        function setupDownloadButtons() {
-            const downloadBtn1 = document.getElementById('downloadBtn1');
-            const downloadBtn2 = document.getElementById('downloadBtn2');
-            
-            if (downloadBtn1) {
-                downloadBtn1.addEventListener('click', handleDownload);
-            }
-            
-            if (downloadBtn2) {
-                downloadBtn2.addEventListener('click', handleDownload);
-            }
-        }
-        
-        // Initialize download buttons when DOM is ready
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', setupDownloadButtons);
-        } else {
-            setupDownloadButtons();
         }
         
         // Animate counter from one value to another
