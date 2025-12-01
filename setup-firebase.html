@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Firebase Setup Helper - Recon-Cord</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            padding: 40px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+        }
+        .step {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f5f5f5;
+            border-radius: 6px;
+            border-left: 4px solid #667eea;
+        }
+        .step-number {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 30px;
+            margin-right: 10px;
+            font-weight: bold;
+        }
+        .step h3 {
+            display: inline-block;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .step p {
+            color: #666;
+            margin-bottom: 10px;
+            line-height: 1.6;
+        }
+        .code-block {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+            margin: 10px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+        }
+        .button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 10px;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .button:hover {
+            background: #5568d3;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        .check-item {
+            margin: 10px 0;
+            padding: 8px;
+            background: white;
+            border-radius: 4px;
+        }
+        .check-item::before {
+            content: "☐ ";
+            margin-right: 8px;
+        }
+        .check-item.checked::before {
+            content: "☑ ";
+        }
+        .link {
+            color: #667eea;
+            text-decoration: none;
+        }
+        .link:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔥 Firebase Setup Helper</h1>
+        <p class="subtitle">Follow these steps to set up Firebase for Recon-Cord</p>
+
+        <div class="step">
+            <h3><span class="step-number">1</span>Go to Firebase Console</h3>
+            <p>Open the Firebase Console in a new tab:</p>
+            <a href="https://console.firebase.google.com/project/recon-cord" target="_blank" class="button">Open Firebase Console</a>
+        </div>
+
+        <div class="step">
+            <h3><span class="step-number">2</span>Enable Anonymous Authentication</h3>
+            <p style="margin-bottom: 15px; color: #666;">Recon-Cord uses Anonymous Authentication for username-based login (no email required).</p>
+            <a href="https://console.firebase.google.com/project/recon-cord/authentication/providers" target="_blank" class="button" style="margin-bottom: 15px;">🔗 Open Authentication Settings</a>
+            <div class="check-item">Click on "Authentication" in the left sidebar (or use link above)</div>
+            <div class="check-item">Click "Get Started" if it's your first time</div>
+            <div class="check-item">Go to the "Sign-in method" tab</div>
+            <div class="check-item">Scroll down and click on "Anonymous" provider</div>
+            <div class="check-item">Toggle "Enable" to ON</div>
+            <div class="check-item">Click "Save" at the bottom</div>
+            <div style="margin-top: 15px; padding: 15px; background: #fff3cd; border-radius: 4px; border-left: 4px solid #ffc107;">
+                <strong>⚠️ Important:</strong> Make sure you click "Save" after enabling Anonymous authentication!
+            </div>
+        </div>
+
+        <div class="step">
+            <h3><span class="step-number">3</span>Enable Firestore API</h3>
+            <p style="margin-bottom: 15px; color: #666;"><strong>Important:</strong> You must enable the Firestore API in Google Cloud Console first!</p>
+            <a href="https://console.developers.google.com/apis/api/firestore.googleapis.com/overview?project=recon-cord" target="_blank" class="button" style="margin-bottom: 15px;">🔗 Enable Firestore API</a>
+            <div class="check-item">Click the link above to open Google Cloud Console</div>
+            <div class="check-item">Click "Enable" button</div>
+            <div class="check-item">Wait a few seconds for it to activate</div>
+            <div style="margin-top: 15px; padding: 15px; background: #d1ecf1; border-radius: 4px; border-left: 4px solid #0c5460;">
+                <strong>Note:</strong> After enabling, wait 1-2 minutes for the API to propagate, then continue to the next step.
+            </div>
+        </div>
+
+        <div class="step">
+            <h3><span class="step-number">4</span>Enable Firestore Database</h3>
+            <div class="check-item">Go back to Firebase Console</div>
+            <div class="check-item">Click on "Firestore Database" in the left sidebar</div>
+            <div class="check-item">Click "Create database"</div>
+            <div class="check-item">Select "Start in test mode" (we'll add rules later)</div>
+            <div class="check-item">Choose a location close to you</div>
+            <div class="check-item">Click "Enable"</div>
+            <p style="margin-top: 15px;"><strong>After creating, go to the "Rules" tab and paste this:</strong></p>
+            <div class="code-block" id="firestore-rules">
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /users/{userId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+    match /servers/{serverId} {
+      allow read: if request.auth != null && request.auth.uid in resource.data.members;
+      allow create: if request.auth != null;
+      allow update, delete: if request.auth != null && request.auth.uid == resource.data.ownerId;
+      match /channels/{channelId} {
+        allow read: if request.auth != null && request.auth.uid in get(/databases/$(database)/documents/servers/$(serverId)).data.members;
+        allow create, update, delete: if request.auth != null && request.auth.uid in get(/databases/$(database)/documents/servers/$(serverId)).data.members;
+        match /messages/{messageId} {
+          allow read: if request.auth != null && request.auth.uid in get(/databases/$(database)/documents/servers/$(serverId)).data.members;
+          allow create: if request.auth != null && request.auth.uid in get(/databases/$(database)/documents/servers/$(serverId)).data.members;
+        }
+      }
+    }
+    match /directMessages/{dmId} {
+      allow read: if request.auth != null && request.auth.uid in resource.data.participants;
+      allow create: if request.auth != null && request.auth.uid in request.resource.data.participants;
+      match /messages/{messageId} {
+        allow read: if request.auth != null && request.auth.uid in get(/databases/$(database)/documents/directMessages/$(dmId)).data.participants;
+        allow create: if request.auth != null && request.auth.uid in get(/databases/$(database)/documents/directMessages/$(dmId)).data.participants;
+      }
+    }
+  }
+}
+            </div>
+            <button class="button" onclick="copyRules('firestore-rules')">Copy Firestore Rules</button>
+        </div>
+
+        <div class="step">
+            <h3><span class="step-number">5</span>Enable Storage</h3>
+            <div class="check-item">Click on "Storage" in the left sidebar</div>
+            <div class="check-item">Click "Get Started"</div>
+            <div class="check-item">Select "Start in test mode"</div>
+            <div class="check-item">Click "Next" and then "Done"</div>
+            <p style="margin-top: 15px;"><strong>Go to the "Rules" tab and paste this:</strong></p>
+            <div class="code-block" id="storage-rules">
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /server-icons/{allPaths=**} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.resource.size < 5 * 1024 * 1024;
+    }
+    match /avatars/{allPaths=**} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.resource.size < 5 * 1024 * 1024;
+    }
+  }
+}
+            </div>
+            <button class="button" onclick="copyRules('storage-rules')">Copy Storage Rules</button>
+        </div>
+
+        <div class="step">
+            <h3><span class="step-number">6</span>Test Your Setup</h3>
+            <p>Click the button below to test if everything is configured correctly:</p>
+            <button class="button" onclick="testFirebase()">Test Firebase Connection</button>
+            <div id="test-results"></div>
+        </div>
+
+        <div class="step">
+            <h3><span class="step-number">7</span>You're Ready!</h3>
+            <p>Once all services are enabled and rules are set, you can go back to your Recon-Cord app and it should work!</p>
+            <a href="index.html" class="button">Go to Recon-Cord</a>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getAuth, connectAuthEmulator } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+        import { getFirestore, connectFirestoreEmulator } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+        import { getStorage, connectStorageEmulator } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js';
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBt5WYfJpf9b3OdfiDohtcjqiPTo62iNfo",
+            authDomain: "recon-cord.firebaseapp.com",
+            projectId: "recon-cord",
+            storageBucket: "recon-cord.firebasestorage.app",
+            messagingSenderId: "1038436863040",
+            appId: "1:1038436863040:web:628b7494ebdabf9bf563a5"
+        };
+
+        window.copyRules = function(elementId) {
+            const element = document.getElementById(elementId);
+            const text = element.textContent;
+            navigator.clipboard.writeText(text).then(() => {
+                alert('Rules copied to clipboard!');
+            });
+        };
+
+        window.testFirebase = async function() {
+            const resultsDiv = document.getElementById('test-results');
+            resultsDiv.innerHTML = '<div class="status info">Testing Firebase connection...</div>';
+
+            try {
+                // Test App Initialization
+                const app = initializeApp(firebaseConfig);
+                let results = '<div class="status success">✅ Firebase app initialized successfully</div>';
+
+                // Test Auth
+                try {
+                    const auth = getAuth(app);
+                    results += '<div class="status success">✅ Authentication service initialized</div>';
+                } catch (e) {
+                    results += '<div class="status error">❌ Authentication error: ' + e.message + '</div>';
+                }
+
+                // Test Firestore
+                try {
+                    const db = getFirestore(app);
+                    results += '<div class="status success">✅ Firestore service initialized</div>';
+                } catch (e) {
+                    results += '<div class="status error">❌ Firestore error: ' + e.message + '</div>';
+                }
+
+                // Test Storage
+                try {
+                    const storage = getStorage(app);
+                    results += '<div class="status success">✅ Storage service initialized</div>';
+                } catch (e) {
+                    results += '<div class="status error">❌ Storage error: ' + e.message + '</div>';
+                }
+
+                results += '<div class="status info" style="margin-top: 15px;"><strong>All services initialized! If you see errors above, make sure the services are enabled in Firebase Console.</strong></div>';
+                resultsDiv.innerHTML = results;
+
+            } catch (error) {
+                resultsDiv.innerHTML = '<div class="status error">❌ Error: ' + error.message + '</div>';
+            }
+        };
+    </script>
+</body>
+</html>
+
