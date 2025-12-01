@@ -641,6 +641,71 @@
             transform: translateY(2px);
         }
 
+        /* Hero Buttons Container */
+        .hero-buttons {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+            opacity: 0;
+            animation: fadeInUp 0.8s ease-out 0.6s forwards;
+        }
+
+        /* Purchase Button */
+        .purchase-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            padding: 18px 56px;
+            font-size: 16px;
+            font-weight: 600;
+            color: #e5e5e5;
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            border: 1px solid #3b82f6;
+            border-radius: 2px;
+            text-decoration: none;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .purchase-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.15), transparent);
+            transition: left 0.6s;
+        }
+
+        .purchase-btn:hover::before {
+            left: 100%;
+        }
+
+        .purchase-btn:hover {
+            transform: translateY(-4px) scale(1.02);
+            box-shadow: 0 12px 32px rgba(59, 130, 246, 0.4);
+            border-color: #60a5fa;
+            background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
+        }
+
+        .purchase-btn:active {
+            transform: translateY(-2px) scale(1);
+        }
+
+        .purchase-icon {
+            width: 18px;
+            height: 18px;
+            transition: transform 0.3s ease;
+        }
+
+        .purchase-btn:hover .purchase-icon {
+            transform: translateY(2px);
+        }
+
         /* Stats Bar */
         .stats-bar {
             display: flex;
@@ -4444,14 +4509,24 @@
         <div class="container">
             <h1 class="brand-title" id="brandTitle" data-i18n="hero.title">RECON-SPOOFER</h1>
             <p class="tagline" data-i18n="hero.tagline">Simple. Secure. Reliable.</p>
-            <a href="#" class="download-btn" id="downloadBtn1" onclick="handleDownload(event)">
-                <svg class="download-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                    <polyline points="7 10 12 15 17 10"></polyline>
-                    <line x1="12" y1="15" x2="12" y2="3"></line>
-                </svg>
-                <span data-i18n="hero.download">Download Installer</span>
-            </a>
+            <div class="hero-buttons">
+                <a href="#" class="download-btn" id="downloadBtn1" onclick="handleDownload(event)">
+                    <svg class="download-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="7 10 12 15 17 10"></polyline>
+                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                    </svg>
+                    <span data-i18n="hero.download">Download Installer</span>
+                </a>
+                <a href="purchase.html" class="purchase-btn">
+                    <svg class="purchase-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
+                        <line x1="3" y1="6" x2="21" y2="6"></line>
+                        <path d="M16 10a4 4 0 0 1-8 0"></path>
+                    </svg>
+                    <span>Purchase License</span>
+                </a>
+            </div>
             
             <div class="stats-bar">
                 <div class="stat-item">

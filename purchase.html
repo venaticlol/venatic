@@ -1,0 +1,939 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Purchase License - Recon Spoofer</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #0a0a0a;
+            color: #e5e5e5;
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+
+        .header h1 {
+            font-size: 42px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header p {
+            font-size: 18px;
+            color: #a0a0a0;
+        }
+
+        .pricing-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 24px;
+            margin-bottom: 60px;
+        }
+
+        .pricing-card {
+            background: #1a1a1a;
+            border: 1px solid #2a2a2a;
+            border-radius: 12px;
+            padding: 32px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .pricing-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+            transform: scaleX(0);
+            transition: transform 0.3s ease;
+        }
+
+        .pricing-card:hover {
+            transform: translateY(-8px);
+            border-color: #3b82f6;
+            box-shadow: 0 20px 40px rgba(59, 130, 246, 0.2);
+        }
+
+        .pricing-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .pricing-card.selected {
+            border-color: #3b82f6;
+            background: rgba(59, 130, 246, 0.1);
+        }
+
+        .pricing-card.selected::before {
+            transform: scaleX(1);
+        }
+
+        .pricing-card.popular {
+            border-color: #8b5cf6;
+        }
+
+        .pricing-card.popular::after {
+            content: 'POPULAR';
+            position: absolute;
+            top: 16px;
+            right: -32px;
+            background: linear-gradient(135deg, #8b5cf6, #3b82f6);
+            color: white;
+            padding: 4px 40px;
+            font-size: 11px;
+            font-weight: 700;
+            transform: rotate(45deg);
+            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
+        }
+
+        .plan-name {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .plan-duration {
+            font-size: 14px;
+            color: #888;
+            margin-bottom: 20px;
+        }
+
+        .plan-price {
+            font-size: 36px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .plan-price span {
+            font-size: 18px;
+            color: #888;
+            -webkit-text-fill-color: #888;
+        }
+
+        .plan-features {
+            list-style: none;
+            margin: 24px 0;
+        }
+
+        .plan-features li {
+            padding: 8px 0;
+            color: #b0b0b0;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .plan-features li::before {
+            content: '✓';
+            color: #10b981;
+            font-weight: 700;
+            font-size: 16px;
+        }
+
+        .select-btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: auto;
+        }
+
+        .select-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(59, 130, 246, 0.4);
+        }
+
+        .pricing-card.selected .select-btn {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        }
+
+        .checkout-section {
+            background: #1a1a1a;
+            border: 1px solid #2a2a2a;
+            border-radius: 12px;
+            padding: 40px;
+            max-width: 600px;
+            margin: 0 auto;
+            display: none;
+        }
+
+        .checkout-section.active {
+            display: block;
+            animation: fadeInUp 0.4s ease;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .checkout-header {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        .checkout-header h2 {
+            font-size: 28px;
+            margin-bottom: 8px;
+        }
+
+        .checkout-header p {
+            color: #888;
+        }
+
+        .selected-plan-info {
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 24px;
+        }
+
+        .selected-plan-info h3 {
+            font-size: 20px;
+            margin-bottom: 8px;
+        }
+
+        .selected-plan-info p {
+            color: #b0b0b0;
+            font-size: 14px;
+        }
+
+        .form-group {
+            margin-bottom: 24px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #e5e5e5;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 14px;
+            background: #0a0a0a;
+            border: 1px solid #2a2a2a;
+            border-radius: 8px;
+            color: #e5e5e5;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .payment-methods {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .payment-method {
+            background: #0a0a0a;
+            border: 2px solid #2a2a2a;
+            border-radius: 8px;
+            padding: 16px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .payment-method:hover {
+            border-color: #3b82f6;
+        }
+
+        .payment-method.selected {
+            border-color: #3b82f6;
+            background: rgba(59, 130, 246, 0.1);
+        }
+
+        .payment-method-icon {
+            font-size: 32px;
+            margin-bottom: 8px;
+        }
+
+        .payment-method-name {
+            font-size: 12px;
+            color: #b0b0b0;
+        }
+
+        .purchase-btn {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 8px;
+        }
+
+        .purchase-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(16, 185, 129, 0.4);
+        }
+
+        .purchase-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: #3b82f6;
+            text-decoration: none;
+            margin-bottom: 24px;
+            transition: color 0.3s ease;
+        }
+
+        .back-btn:hover {
+            color: #60a5fa;
+        }
+
+        .success-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 10000;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .success-modal.active {
+            display: flex;
+        }
+
+        .success-content {
+            background: #1a1a1a;
+            border: 1px solid #2a2a2a;
+            border-radius: 12px;
+            padding: 40px;
+            max-width: 500px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .success-icon {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 24px;
+            background: linear-gradient(135deg, #10b981, #059669);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+            color: white;
+        }
+
+        .success-content h2 {
+            font-size: 28px;
+            margin-bottom: 16px;
+        }
+
+        .success-content p {
+            color: #b0b0b0;
+            margin-bottom: 24px;
+        }
+
+        .license-key {
+            background: #0a0a0a;
+            border: 1px solid #2a2a2a;
+            border-radius: 8px;
+            padding: 16px;
+            font-family: 'Courier New', monospace;
+            font-size: 18px;
+            font-weight: 600;
+            color: #10b981;
+            margin: 24px 0;
+            word-break: break-all;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .license-key:hover {
+            border-color: #10b981;
+            background: rgba(16, 185, 129, 0.1);
+        }
+
+        .copy-btn {
+            background: #3b82f6;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 24px;
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 16px;
+        }
+
+        .copy-btn:hover {
+            background: #2563eb;
+            transform: translateY(-2px);
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 0.8s linear infinite;
+            margin-left: 10px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .error-message {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            border-radius: 8px;
+            padding: 12px;
+            color: #fca5a5;
+            margin-bottom: 24px;
+            display: none;
+        }
+
+        .error-message.active {
+            display: block;
+        }
+
+        @media (max-width: 768px) {
+            .pricing-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .checkout-section {
+                padding: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="index.html" class="back-btn">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M19 12H5M12 19l-7-7 7-7"/>
+            </svg>
+            Back to Home
+        </a>
+
+        <div class="header">
+            <h1>Purchase License Key</h1>
+            <p>Choose the perfect plan for your needs</p>
+        </div>
+
+        <div class="pricing-grid" id="pricingGrid">
+            <!-- Pricing cards will be generated by JavaScript -->
+        </div>
+
+        <div class="checkout-section" id="checkoutSection">
+            <div class="checkout-header">
+                <h2>Complete Your Purchase</h2>
+                <p>Fill in your details to receive your license key</p>
+            </div>
+
+            <div class="error-message" id="errorMessage"></div>
+
+            <div class="selected-plan-info" id="selectedPlanInfo">
+                <!-- Selected plan info will be displayed here -->
+            </div>
+
+            <form id="checkoutForm">
+                <div class="form-group">
+                    <label for="customerName">Full Name *</label>
+                    <input type="text" id="customerName" name="customerName" required placeholder="John Doe">
+                </div>
+
+                <div class="form-group">
+                    <label for="customerEmail">Email Address *</label>
+                    <input type="email" id="customerEmail" name="customerEmail" required placeholder="john@example.com">
+                </div>
+
+                <div class="form-group">
+                    <label>Payment Method *</label>
+                    <div class="payment-methods">
+                        <div class="payment-method" data-method="card">
+                            <div class="payment-method-icon">💳</div>
+                            <div class="payment-method-name">Credit Card</div>
+                        </div>
+                        <div class="payment-method" data-method="paypal">
+                            <div class="payment-method-icon">🅿️</div>
+                            <div class="payment-method-name">PayPal</div>
+                        </div>
+                        <div class="payment-method" data-method="crypto">
+                            <div class="payment-method-icon">₿</div>
+                            <div class="payment-method-name">Crypto</div>
+                        </div>
+                    </div>
+                    <input type="hidden" id="paymentMethod" name="paymentMethod" required>
+                </div>
+
+                <button type="submit" class="purchase-btn" id="purchaseBtn">
+                    Complete Purchase
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Success Modal -->
+    <div class="success-modal" id="successModal">
+        <div class="success-content">
+            <div class="success-icon">✓</div>
+            <h2>Purchase Successful!</h2>
+            <p>Your license key has been generated and sent to your email.</p>
+            <div class="license-key" id="licenseKeyDisplay">Loading...</div>
+            <button class="copy-btn" onclick="copyLicenseKey()">Copy License Key</button>
+            <p style="margin-top: 24px; font-size: 14px; color: #888;">
+                <a href="index.html" style="color: #3b82f6; text-decoration: none;">Return to Home</a>
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyC6CrMVEbsr-AADq-w-TOkzO0AAOZtUqmU",
+            authDomain: "recon-265bc.firebaseapp.com",
+            databaseURL: "https://recon-265bc-default-rtdb.firebaseio.com",
+            projectId: "recon-265bc",
+            storageBucket: "recon-265bc.firebasestorage.app",
+            messagingSenderId: "99005456592",
+            appId: "1:99005456592:web:9ca83e210d9e85ca8a3ed5"
+        };
+
+        // KeyAuth Configuration
+        const KEYAUTH_CONFIG = {
+            name: "Recon Spoofer",
+            ownerid: "3Fgwv9rfYE",
+            version: "1.7",
+            url: "https://keyauth.win/api/1.3/",
+            sellerKey: "35315ce3dde2445c55a2b0632f23bbfe",
+            sellerApiUrl: "https://keyauth.win/api/seller/"
+        };
+
+        // License Plans
+        const licensePlans = [
+            {
+                id: '24h',
+                name: '24 Hour',
+                duration: '24 hours',
+                price: 4.99,
+                expiry: 1, // days
+                level: 1,
+                features: [
+                    'Full access for 24 hours',
+                    'All features unlocked',
+                    'Priority support',
+                    'Instant activation'
+                ]
+            },
+            {
+                id: '7d',
+                name: '7 Day',
+                duration: '7 days',
+                price: 9.99,
+                expiry: 7,
+                level: 1,
+                features: [
+                    'Full access for 7 days',
+                    'All features unlocked',
+                    'Priority support',
+                    'Instant activation',
+                    'Best value for short-term use'
+                ],
+                popular: true
+            },
+            {
+                id: '30d',
+                name: '30 Day',
+                duration: '30 days',
+                price: 19.99,
+                expiry: 30,
+                level: 1,
+                features: [
+                    'Full access for 30 days',
+                    'All features unlocked',
+                    'Priority support',
+                    'Instant activation',
+                    'Regular updates included'
+                ]
+            },
+            {
+                id: '90d',
+                name: '90 Day',
+                duration: '90 days',
+                price: 49.99,
+                expiry: 90,
+                level: 1,
+                features: [
+                    'Full access for 90 days',
+                    'All features unlocked',
+                    'Priority support',
+                    'Instant activation',
+                    'Regular updates included',
+                    'Best value for long-term use'
+                ]
+            },
+            {
+                id: 'lifetime',
+                name: 'Lifetime',
+                duration: 'Forever',
+                price: 99.99,
+                expiry: 999999, // Lifetime
+                level: 1,
+                features: [
+                    'Lifetime access',
+                    'All features unlocked',
+                    'Priority support',
+                    'Instant activation',
+                    'All future updates included',
+                    'Best value overall'
+                ]
+            }
+        ];
+
+        let selectedPlan = null;
+        let firebaseInitialized = false;
+        let database = null;
+
+        // Initialize Firebase
+        function initializeFirebase() {
+            try {
+                firebase.initializeApp(firebaseConfig);
+                database = firebase.database();
+                firebaseInitialized = true;
+                console.log('✅ Firebase initialized');
+            } catch (error) {
+                console.error('❌ Firebase initialization error:', error);
+            }
+        }
+
+        // Initialize KeyAuth Client
+        class KeyAuthClient {
+            constructor(config) {
+                this.name = config.name;
+                this.ownerid = config.ownerid;
+                this.version = config.version;
+                this.url = config.url;
+                this.sellerKey = config.sellerKey;
+                this.sellerApiUrl = config.sellerApiUrl;
+            }
+
+            async generateKey(expiry, level = 1, amount = 1) {
+                try {
+                    const params = new URLSearchParams({
+                        sellerkey: this.sellerKey,
+                        type: "add",
+                        expiry: expiry.toString(),
+                        mask: "******-******-******-******-******-******",
+                        level: level.toString(),
+                        amount: amount.toString(),
+                        format: "text"
+                    });
+
+                    const url = `${this.sellerApiUrl}?${params.toString()}`;
+                    const response = await fetch(url, {
+                        method: "GET",
+                        headers: { "Accept": "text/plain, application/json" }
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+
+                    const responseText = await response.text();
+                    
+                    // Check for errors in response
+                    if (responseText.toLowerCase().includes('error') || 
+                        responseText.toLowerCase().includes('invalid') ||
+                        responseText.toLowerCase().includes('no object found')) {
+                        throw new Error(responseText || 'Failed to generate key');
+                    }
+
+                    // Extract key from response (format may vary)
+                    const key = responseText.trim();
+                    if (!key || key.length < 10) {
+                        throw new Error('Invalid key format received');
+                    }
+
+                    return { success: true, key: key };
+                } catch (error) {
+                    console.error('KeyAuth generateKey error:', error);
+                    return { success: false, error: error.message };
+                }
+            }
+
+            async storeKeyInFirebase(key, plan, customerInfo) {
+                if (!firebaseInitialized || !database) {
+                    console.warn('Firebase not initialized, skipping key storage');
+                    return;
+                }
+
+                try {
+                    const safeKey = key.trim().replace(/[.#$\[\]]/g, '_');
+                    const keyData = {
+                        key: key,
+                        level: plan.level.toString(),
+                        levelNum: plan.level,
+                        expiry: plan.expiry,
+                        createdAt: Date.now(),
+                        used: false,
+                        plan: plan.name,
+                        customerName: customerInfo.name,
+                        customerEmail: customerInfo.email,
+                        purchaseDate: Date.now()
+                    };
+
+                    await database.ref(`keyauthKeys/${safeKey}`).set(keyData);
+                    console.log('✅ Key stored in Firebase');
+
+                    // Store purchase record
+                    const purchaseId = `purchase_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+                    await database.ref(`purchases/${purchaseId}`).set({
+                        key: key,
+                        plan: plan.name,
+                        price: plan.price,
+                        customerName: customerInfo.name,
+                        customerEmail: customerInfo.email,
+                        paymentMethod: customerInfo.paymentMethod,
+                        purchaseDate: Date.now(),
+                        status: 'completed'
+                    });
+                    console.log('✅ Purchase record stored');
+                } catch (error) {
+                    console.error('❌ Error storing key in Firebase:', error);
+                }
+            }
+        }
+
+        const keyAuthClient = new KeyAuthClient(KEYAUTH_CONFIG);
+
+        // Render Pricing Cards
+        function renderPricingCards() {
+            const grid = document.getElementById('pricingGrid');
+            grid.innerHTML = '';
+
+            licensePlans.forEach(plan => {
+                const card = document.createElement('div');
+                card.className = `pricing-card ${plan.popular ? 'popular' : ''}`;
+                card.dataset.planId = plan.id;
+
+                card.innerHTML = `
+                    <div class="plan-name">${plan.name}</div>
+                    <div class="plan-duration">${plan.duration} access</div>
+                    <div class="plan-price">$${plan.price.toFixed(2)}<span>/key</span></div>
+                    <ul class="plan-features">
+                        ${plan.features.map(feature => `<li>${feature}</li>`).join('')}
+                    </ul>
+                    <button class="select-btn" onclick="selectPlan('${plan.id}')">Select Plan</button>
+                `;
+
+                grid.appendChild(card);
+            });
+        }
+
+        // Select Plan
+        function selectPlan(planId) {
+            selectedPlan = licensePlans.find(p => p.id === planId);
+            
+            // Update UI
+            document.querySelectorAll('.pricing-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+            document.querySelector(`[data-plan-id="${planId}"]`).classList.add('selected');
+
+            // Show checkout section
+            document.getElementById('checkoutSection').classList.add('active');
+            document.getElementById('selectedPlanInfo').innerHTML = `
+                <h3>${selectedPlan.name} License</h3>
+                <p>Duration: ${selectedPlan.duration} • Price: $${selectedPlan.price.toFixed(2)}</p>
+            `;
+
+            // Scroll to checkout
+            document.getElementById('checkoutSection').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        // Payment Method Selection
+        document.querySelectorAll('.payment-method').forEach(method => {
+            method.addEventListener('click', function() {
+                document.querySelectorAll('.payment-method').forEach(m => m.classList.remove('selected'));
+                this.classList.add('selected');
+                document.getElementById('paymentMethod').value = this.dataset.method;
+            });
+        });
+
+        // Handle Form Submission
+        document.getElementById('checkoutForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            if (!selectedPlan) {
+                showError('Please select a plan first');
+                return;
+            }
+
+            const paymentMethod = document.getElementById('paymentMethod').value;
+            if (!paymentMethod) {
+                showError('Please select a payment method');
+                return;
+            }
+
+            const customerName = document.getElementById('customerName').value.trim();
+            const customerEmail = document.getElementById('customerEmail').value.trim();
+
+            if (!customerName || !customerEmail) {
+                showError('Please fill in all required fields');
+                return;
+            }
+
+            // Disable button and show loading
+            const purchaseBtn = document.getElementById('purchaseBtn');
+            purchaseBtn.disabled = true;
+            purchaseBtn.innerHTML = 'Processing Purchase<span class="loading"></span>';
+
+            hideError();
+
+            try {
+                // Generate key via KeyAuth
+                console.log('Generating key for plan:', selectedPlan);
+                const keyResult = await keyAuthClient.generateKey(selectedPlan.expiry, selectedPlan.level, 1);
+
+                if (!keyResult.success) {
+                    throw new Error(keyResult.error || 'Failed to generate license key');
+                }
+
+                const licenseKey = keyResult.key;
+                console.log('✅ Key generated:', licenseKey);
+
+                // Store key in Firebase
+                await keyAuthClient.storeKeyInFirebase(licenseKey, selectedPlan, {
+                    name: customerName,
+                    email: customerEmail,
+                    paymentMethod: paymentMethod
+                });
+
+                // Show success modal
+                document.getElementById('licenseKeyDisplay').textContent = licenseKey;
+                document.getElementById('successModal').classList.add('active');
+
+                // Reset form
+                document.getElementById('checkoutForm').reset();
+                document.querySelectorAll('.payment-method').forEach(m => m.classList.remove('selected'));
+                document.getElementById('checkoutSection').classList.remove('active');
+                document.querySelectorAll('.pricing-card').forEach(card => card.classList.remove('selected'));
+                selectedPlan = null;
+
+            } catch (error) {
+                console.error('Purchase error:', error);
+                showError(error.message || 'An error occurred during purchase. Please try again.');
+                purchaseBtn.disabled = false;
+                purchaseBtn.textContent = 'Complete Purchase';
+            }
+        });
+
+        // Copy License Key
+        function copyLicenseKey() {
+            const key = document.getElementById('licenseKeyDisplay').textContent;
+            navigator.clipboard.writeText(key).then(() => {
+                const btn = event.target;
+                const originalText = btn.textContent;
+                btn.textContent = 'Copied!';
+                btn.style.background = '#10b981';
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                    btn.style.background = '';
+                }, 2000);
+            }).catch(err => {
+                console.error('Failed to copy:', err);
+            });
+        }
+
+        // Error Handling
+        function showError(message) {
+            const errorEl = document.getElementById('errorMessage');
+            errorEl.textContent = message;
+            errorEl.classList.add('active');
+        }
+
+        function hideError() {
+            document.getElementById('errorMessage').classList.remove('active');
+        }
+
+        // Initialize
+        initializeFirebase();
+        renderPricingCards();
+    </script>
+</body>
+</html>
+
