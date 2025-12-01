@@ -8953,7 +8953,12 @@
             
             try {
                 // Fetch the file as a blob to force download instead of redirect
-                const response = await fetch(downloadUrl);
+                const response = await fetch(downloadUrl, {
+                    method: 'GET',
+                    mode: 'cors',
+                    cache: 'no-cache'
+                });
+                
                 if (!response.ok) {
                     throw new Error(`Failed to download: ${response.status} ${response.statusText}`);
                 }
@@ -8975,8 +8980,19 @@
                     window.URL.revokeObjectURL(blobUrl);
                 }, 100);
             } catch (error) {
-                console.error('Download error:', error);
-                alert('Failed to download installer. Please try again or contact support.');
+                console.error('Download error (fetch failed, trying direct download):', error);
+                // Fallback: If fetch fails due to CORS, try direct download
+                // Note: This may open in a new tab if browser blocks download
+                const link = document.createElement('a');
+                link.href = downloadUrl;
+                link.download = fileName;
+                link.target = '_blank';
+                link.style.display = 'none';
+                document.body.appendChild(link);
+                link.click();
+                setTimeout(() => {
+                    document.body.removeChild(link);
+                }, 100);
             }
             
             // Update button state after download
