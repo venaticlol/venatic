@@ -1,0 +1,21 @@
+{
+  "name": "recon-cord",
+  "version": "1.0.0",
+  "description": "A Discord-like communication platform branded as Recon-Cord",
+  "main": "index.html",
+  "scripts": {
+    "start": "npx serve .",
+    "dev": "npx serve . -p 3000"
+  },
+  "keywords": [
+    "discord",
+    "chat",
+    "realtime",
+    "firebase"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {},
+  "devDependencies": {}
+}
+
