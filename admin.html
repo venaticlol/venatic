@@ -952,6 +952,9 @@
             <button class="admin-tab" data-tab="tickets">Tickets</button>
             <button class="admin-tab" data-tab="profiles">User Profiles</button>
             <button class="admin-tab" data-tab="keys">License Keys</button>
+            <button class="admin-tab" data-tab="finalReseller">Final Reseller</button>
+            <button class="admin-tab" data-tab="grant">Grant</button>
+            <button class="admin-tab" data-tab="ownerManagement">Owner Management</button>
         </div>
 
         <!-- Announcements Tab -->
@@ -1080,6 +1083,55 @@
             <div id="profilesContent">
                 <div class="loading">Loading profiles...</div>
             </div>
+        </div>
+
+        <!-- Final Reseller Tab -->
+        <div class="admin-content-card" id="tabFinalReseller" style="display: none;">
+            <h2>Final Reseller</h2>
+            <p style="color: #888; margin-bottom: 20px;">Final Reseller management interface</p>
+            <div id="finalResellerContent">
+                <div class="loading">Loading...</div>
+            </div>
+        </div>
+
+        <!-- Grant Tab -->
+        <div class="admin-content-card" id="tabGrant" style="display: none;">
+            <h2>Grant Admin Access</h2>
+            <p style="color: #888; margin-bottom: 20px;">Select a user to grant restricted admin access (License Keys tab only)</p>
+            
+            <div class="form-group" style="margin-bottom: 20px;">
+                <label>Search Users</label>
+                <input type="text" id="grantUserSearch" class="form-input" placeholder="Search by username..." style="margin-bottom: 10px;" oninput="loadUsersForGrant()">
+                <div id="grantUserList" style="max-height: 400px; overflow-y: auto; background: rgba(26, 26, 26, 0.5); border-radius: 4px; padding: 10px;"></div>
+            </div>
+
+            <div id="grantSelectedUser" style="display: none; margin-bottom: 20px; padding: 15px; background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 4px;">
+                <h3 style="color: #e5e5e5; margin-bottom: 10px; font-size: 16px;">Selected User</h3>
+                <div id="grantSelectedUserInfo" style="color: #888; margin-bottom: 15px;"></div>
+                <div style="margin-top: 15px;">
+                    <label style="display: flex; align-items: center; color: #e5e5e5; margin-bottom: 10px; cursor: pointer;">
+                        <input type="checkbox" id="grantAccessToGrantTab" style="margin-right: 8px; cursor: pointer;">
+                        Grant access to Grant tab (can grant access to others)
+                    </label>
+                    <div style="display: flex; gap: 10px;">
+                        <button class="admin-btn admin-btn-primary" id="grantAccessBtn" onclick="grantUserAccess()">Grant Access</button>
+                        <button class="admin-btn" id="revokeAccessBtn" onclick="revokeUserAccess()" style="background: #ef4444;">Revoke Access</button>
+                    </div>
+                </div>
+            </div>
+
+            <div style="margin-top: 30px;">
+                <h3 style="color: #e5e5e5; margin-bottom: 15px; font-size: 18px;">Granted Users</h3>
+                <div id="grantedUsersList"></div>
+            </div>
+        </div>
+
+        <!-- Owner Management Tab -->
+        <div class="admin-content-card" id="tabOwnerManagement" style="display: none;">
+            <h2>Owner Management</h2>
+            <p style="color: #888; margin-bottom: 20px;">Remove admin panel access for Aiden and Yyy</p>
+            
+            <div id="ownerManagementList" style="margin-top: 20px;"></div>
         </div>
     </div>
 
@@ -2661,7 +2713,29 @@
                 
                 // Update content
                 document.querySelectorAll('.admin-content-card').forEach(c => c.style.display = 'none');
-                document.getElementById(`tab${tabName.charAt(0).toUpperCase() + tabName.slice(1)}`).style.display = 'block';
+                // Map tab names to content IDs (handle camelCase)
+                const tabIdMap = {
+                    'announcements': 'tabAnnouncements',
+                    'changelog': 'tabChangelog',
+                    'reviews': 'tabReviews',
+                    'users': 'tabUsers',
+                    'blacklisted': 'tabBlacklisted',
+                    'maintenance': 'tabMaintenance',
+                    'backup': 'tabBackup',
+                    'surveys': 'tabSurveys',
+                    'webhooks': 'tabWebhooks',
+                    'tickets': 'tabTickets',
+                    'profiles': 'tabProfiles',
+                    'keys': 'tabKeys',
+                    'finalReseller': 'tabFinalReseller',
+                    'grant': 'tabGrant',
+                    'ownerManagement': 'tabOwnerManagement'
+                };
+                const tabContentId = tabIdMap[tabName] || (`tab${tabName.charAt(0).toUpperCase() + tabName.slice(1)}`);
+                const tabContent = document.getElementById(tabContentId);
+                if (tabContent) {
+                    tabContent.style.display = 'block';
+                }
                 
                 // Load data for active tab
                 if (tabName === 'announcements') {
@@ -2686,6 +2760,13 @@
                     loadUserProfiles();
                 } else if (tabName === 'keys') {
                     loadKeys(true); // Auto-sync with KeyAuth API when tab is opened
+                } else if (tabName === 'finalReseller') {
+                    loadFinalReseller();
+                } else if (tabName === 'grant') {
+                    loadUsersForGrant();
+                    loadGrantedUsers();
+                } else if (tabName === 'ownerManagement') {
+                    loadOwnerManagement();
                 }
             });
         });
@@ -5855,6 +5936,304 @@
                 alert('Error deleting profile: ' + (error.message || 'Unknown error'));
             }
         }
+
+        // ============================================
+        // GRANTED ACCESS SYSTEM
+        // ============================================
+        const GRANTED_ACCESS_PATH = 'admin/grantedAccess';
+        const LICENSE_KEYS_PATH = 'admin/licenseKeys';
+        let selectedGrantUserId = null;
+
+        // Check if user has granted access
+        async function checkGrantedAccess() {
+            if (!window.firebaseInitialized || !window.database) return false;
+            try {
+                const userProfileId = localStorage.getItem(USER_PROFILE_ID_KEY);
+                if (!userProfileId) return false;
+
+                const grantedSnapshot = await window.database.ref(`${GRANTED_ACCESS_PATH}/${userProfileId}`).once('value');
+                return grantedSnapshot.exists();
+            } catch (error) {
+                console.error('Error checking granted access:', error);
+                return false;
+            }
+        }
+
+        // Get user's access level
+        async function getUserAccessLevel() {
+            if (!window.firebaseInitialized || !window.database) return null;
+            try {
+                const userProfileId = localStorage.getItem(USER_PROFILE_ID_KEY);
+                if (!userProfileId) return null;
+
+                // Check if full admin (you may need to adjust this based on your admin check)
+                // For now, assume all users in admin.html are full admins
+                return { level: 'full', canGrant: true };
+            } catch (error) {
+                console.error('Error getting user access level:', error);
+                return null;
+            }
+        }
+
+        // Load Final Reseller
+        async function loadFinalReseller() {
+            const content = document.getElementById('finalResellerContent');
+            if (content) {
+                content.innerHTML = '<div style="color: #888; padding: 20px; text-align: center;">Final Reseller management interface coming soon.</div>';
+            }
+        }
+
+        // Load users for Grant tab
+        async function loadUsersForGrant() {
+            if (!window.firebaseInitialized || !window.database) return;
+            try {
+                const usersSnapshot = await window.database.ref('userProfiles').once('value');
+                const users = usersSnapshot.exists() ? usersSnapshot.val() : {};
+                const userList = document.getElementById('grantUserList');
+                if (!userList) return;
+
+                userList.innerHTML = '';
+                const searchInput = document.getElementById('grantUserSearch');
+                const searchTerm = searchInput ? searchInput.value.toLowerCase() : '';
+
+                Object.entries(users).forEach(([userId, userData]) => {
+                    const username = (userData.username || 'Unknown').toLowerCase();
+                    if (searchTerm && !username.includes(searchTerm) && !userId.includes(searchTerm)) {
+                        return;
+                    }
+
+                    const userItem = document.createElement('div');
+                    userItem.style.cssText = 'padding: 15px; margin-bottom: 10px; background: rgba(26, 26, 26, 0.5); border: 1px solid rgba(74, 74, 74, 0.3); border-radius: 4px; cursor: pointer; transition: all 0.2s;';
+                    userItem.innerHTML = `
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <div style="width: 40px; height: 40px; border-radius: 50%; background: #1a1a1a; display: flex; align-items: center; justify-content: center; overflow: hidden;">
+                                ${userData.avatar ? `<img src="${userData.avatar}" style="width: 100%; height: 100%; object-fit: cover;">` : `<span style="color: #fff; font-size: 18px;">${(userData.username || '?').charAt(0).toUpperCase()}</span>`}
+                            </div>
+                            <div>
+                                <div style="color: #e5e5e5; font-weight: 500;">${escapeHtml(userData.username || 'Unknown')}</div>
+                                <div style="color: #888; font-size: 12px;">${escapeHtml(userId)}</div>
+                            </div>
+                        </div>
+                    `;
+                    userItem.addEventListener('click', () => selectUserForGrant(userId, userData));
+                    userItem.addEventListener('mouseenter', () => {
+                        userItem.style.background = 'rgba(26, 26, 26, 0.8)';
+                        userItem.style.borderColor = 'rgba(59, 130, 246, 0.5)';
+                    });
+                    userItem.addEventListener('mouseleave', () => {
+                        userItem.style.background = 'rgba(26, 26, 26, 0.5)';
+                        userItem.style.borderColor = 'rgba(74, 74, 74, 0.3)';
+                    });
+                    userList.appendChild(userItem);
+                });
+            } catch (error) {
+                console.error('Error loading users for grant:', error);
+            }
+        }
+
+        // Select user for grant
+        function selectUserForGrant(userId, userData) {
+            selectedGrantUserId = userId;
+            const selectedDiv = document.getElementById('grantSelectedUser');
+            const selectedInfo = document.getElementById('grantSelectedUserInfo');
+            if (selectedDiv && selectedInfo) {
+                selectedDiv.style.display = 'block';
+                selectedInfo.innerHTML = `
+                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                        <div style="width: 50px; height: 50px; border-radius: 50%; background: #1a1a1a; display: flex; align-items: center; justify-content: center; overflow: hidden;">
+                            ${userData.avatar ? `<img src="${userData.avatar}" style="width: 100%; height: 100%; object-fit: cover;">` : `<span style="color: #fff; font-size: 24px;">${(userData.username || '?').charAt(0).toUpperCase()}</span>`}
+                        </div>
+                        <div>
+                            <div style="color: #e5e5e5; font-weight: 500; font-size: 16px;">${escapeHtml(userData.username || 'Unknown')}</div>
+                            <div style="color: #888; font-size: 12px;">${escapeHtml(userId)}</div>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        // Grant access to user
+        async function grantUserAccess() {
+            if (!window.firebaseInitialized || !window.database || !selectedGrantUserId) {
+                alert('Please select a user first.');
+                return;
+            }
+            try {
+                const canGrant = document.getElementById('grantAccessToGrantTab')?.checked || false;
+                const currentUserId = localStorage.getItem(USER_PROFILE_ID_KEY);
+
+                await window.database.ref(`${GRANTED_ACCESS_PATH}/${selectedGrantUserId}`).set({
+                    grantedBy: currentUserId,
+                    grantedAt: Date.now(),
+                    canGrant: canGrant,
+                    accessLevel: 'licenseKeys'
+                });
+
+                // Initialize empty license keys for this user
+                await window.database.ref(`${LICENSE_KEYS_PATH}/${selectedGrantUserId}`).set({});
+
+                alert('✅ Access granted successfully!');
+                selectedGrantUserId = null;
+                document.getElementById('grantSelectedUser').style.display = 'none';
+                await loadGrantedUsers();
+            } catch (error) {
+                console.error('Error granting access:', error);
+                alert('❌ Error granting access. Please try again.');
+            }
+        }
+
+        // Revoke access from user
+        async function revokeUserAccess() {
+            if (!window.firebaseInitialized || !window.database || !selectedGrantUserId) {
+                alert('Please select a user first.');
+                return;
+            }
+            try {
+                if (confirm('Are you sure you want to revoke access for this user?')) {
+                    await window.database.ref(`${GRANTED_ACCESS_PATH}/${selectedGrantUserId}`).remove();
+                    alert('✅ Access revoked successfully!');
+                    selectedGrantUserId = null;
+                    document.getElementById('grantSelectedUser').style.display = 'none';
+                    await loadGrantedUsers();
+                }
+            } catch (error) {
+                console.error('Error revoking access:', error);
+                alert('❌ Error revoking access. Please try again.');
+            }
+        }
+
+        // Load granted users list
+        async function loadGrantedUsers() {
+            if (!window.firebaseInitialized || !window.database) return;
+            try {
+                const grantedSnapshot = await window.database.ref(GRANTED_ACCESS_PATH).once('value');
+                const granted = grantedSnapshot.exists() ? grantedSnapshot.val() : {};
+                const list = document.getElementById('grantedUsersList');
+                if (!list) return;
+
+                list.innerHTML = '';
+                if (Object.keys(granted).length === 0) {
+                    list.innerHTML = '<div style="color: #888; padding: 20px; text-align: center;">No users have been granted access yet.</div>';
+                    return;
+                }
+
+                // Load user profiles
+                const usersSnapshot = await window.database.ref('userProfiles').once('value');
+                const users = usersSnapshot.exists() ? usersSnapshot.val() : {};
+
+                Object.entries(granted).forEach(([userId, accessData]) => {
+                    const userData = users[userId] || {};
+                    const item = document.createElement('div');
+                    item.style.cssText = 'padding: 15px; margin-bottom: 10px; background: rgba(26, 26, 26, 0.5); border: 1px solid rgba(74, 74, 74, 0.3); border-radius: 4px;';
+                    item.innerHTML = `
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <div style="width: 40px; height: 40px; border-radius: 50%; background: #1a1a1a; display: flex; align-items: center; justify-content: center; overflow: hidden;">
+                                    ${userData.avatar ? `<img src="${userData.avatar}" style="width: 100%; height: 100%; object-fit: cover;">` : `<span style="color: #fff;">${(userData.username || '?').charAt(0).toUpperCase()}</span>`}
+                                </div>
+                                <div>
+                                    <div style="color: #e5e5e5; font-weight: 500;">${escapeHtml(userData.username || 'Unknown')}</div>
+                                    <div style="color: #888; font-size: 12px;">${accessData.canGrant ? 'Can grant access' : 'License Keys only'} • Granted ${new Date(accessData.grantedAt).toLocaleDateString()}</div>
+                                </div>
+                            </div>
+                            <button class="admin-btn" style="background: #ef4444; padding: 8px 16px; font-size: 12px;" onclick="revokeAccessById('${userId}')">Revoke</button>
+                        </div>
+                    `;
+                    list.appendChild(item);
+                });
+            } catch (error) {
+                console.error('Error loading granted users:', error);
+            }
+        }
+
+        // Revoke access by ID
+        window.revokeAccessById = async function(userId) {
+            if (!window.firebaseInitialized || !window.database) return;
+            try {
+                if (confirm('Are you sure you want to revoke access for this user?')) {
+                    await window.database.ref(`${GRANTED_ACCESS_PATH}/${userId}`).remove();
+                    await loadGrantedUsers();
+                    alert('✅ Access revoked successfully!');
+                }
+            } catch (error) {
+                console.error('Error revoking access:', error);
+                alert('❌ Error revoking access. Please try again.');
+            }
+        };
+
+        // Load Owner Management
+        async function loadOwnerManagement() {
+            if (!window.firebaseInitialized || !window.database) return;
+            const list = document.getElementById('ownerManagementList');
+            if (!list) return;
+
+            try {
+                // Search for users by username
+                const usersSnapshot = await window.database.ref('userProfiles').once('value');
+                const users = usersSnapshot.exists() ? usersSnapshot.val() : {};
+                
+                const ownerNames = ['Aiden', 'Yyy'];
+                const foundOwners = [];
+
+                // Find users matching owner names
+                Object.entries(users).forEach(([userId, userData]) => {
+                    const username = (userData.username || '').toLowerCase();
+                    ownerNames.forEach(ownerName => {
+                        if (username === ownerName.toLowerCase()) {
+                            foundOwners.push({ userId, username: userData.username || ownerName, name: ownerName });
+                        }
+                    });
+                });
+
+                list.innerHTML = '';
+                if (foundOwners.length === 0) {
+                    list.innerHTML = '<div style="color: #888; padding: 20px; text-align: center;">No matching users found. Make sure Aiden and Yyy have created profiles.</div>';
+                    return;
+                }
+
+                foundOwners.forEach(owner => {
+                    const item = document.createElement('div');
+                    item.style.cssText = 'padding: 15px; margin-bottom: 10px; background: rgba(26, 26, 26, 0.5); border: 1px solid rgba(74, 74, 74, 0.3); border-radius: 4px;';
+                    item.innerHTML = `
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <div style="color: #e5e5e5; font-weight: 500; font-size: 16px;">${escapeHtml(owner.username)}</div>
+                                <div style="color: #888; font-size: 12px;">${escapeHtml(owner.userId)}</div>
+                            </div>
+                            <button class="admin-btn" style="background: #ef4444; padding: 8px 16px;" onclick="removeOwnerAccess('${owner.userId}', '${escapeHtml(owner.username)}')">Remove Admin Access</button>
+                        </div>
+                    `;
+                    list.appendChild(item);
+                });
+            } catch (error) {
+                console.error('Error loading owner management:', error);
+                list.innerHTML = '<div style="color: #ef4444; padding: 20px; text-align: center;">Error loading owner management.</div>';
+            }
+        }
+
+        // Remove owner access
+        window.removeOwnerAccess = async function(userId, username) {
+            if (!window.firebaseInitialized || !window.database) return;
+            try {
+                if (confirm(`Are you sure you want to remove admin access for ${username}?`)) {
+                    // Remove from granted access if exists
+                    await window.database.ref(`${GRANTED_ACCESS_PATH}/${userId}`).remove();
+                    
+                    // Also mark as removed owner
+                    await window.database.ref(`admin/removedOwners/${userId}`).set({
+                        removedAt: Date.now(),
+                        removedBy: localStorage.getItem(USER_PROFILE_ID_KEY),
+                        username: username
+                    });
+                    
+                    alert('✅ Admin access removed successfully!');
+                    await loadOwnerManagement();
+                }
+            } catch (error) {
+                console.error('Error removing owner access:', error);
+                alert('❌ Error removing access. Please try again.');
+            }
+        };
     </script>
 </body>
 </html>
