@@ -1778,8 +1778,21 @@
                     return false;
                 }
                 
-                // Verify user ID is authorized
-                if (!ALLOWED_ADMIN_USER_IDS.includes(userProfileId)) {
+                // Check if user is in allowed admin list OR has granted access
+                const isAllowedAdmin = ALLOWED_ADMIN_USER_IDS.includes(userProfileId);
+                let hasGrantedAccess = false;
+                
+                // Check for granted access if not a full admin
+                if (!isAllowedAdmin && window.firebaseInitialized && window.database) {
+                    try {
+                        const grantedSnapshot = await window.database.ref(`admin/grantedAccess/${userProfileId}`).once('value');
+                        hasGrantedAccess = grantedSnapshot.exists();
+                    } catch (error) {
+                        console.error('Error checking granted access:', error);
+                    }
+                }
+                
+                if (!isAllowedAdmin && !hasGrantedAccess) {
                     alert('Access denied. Your account is not authorized for admin access.');
                     window.location.href = '/';
                     return false;
@@ -1802,7 +1815,7 @@
                     }
                 }
                 
-                console.log('✅ Admin access verified - User ID:', userProfileId);
+                console.log('✅ Admin access verified - User ID:', userProfileId, isAllowedAdmin ? '(Full Admin)' : '(Granted Access)');
                 return true;
             } catch (error) {
                 console.error('Error verifying admin access:', error);
@@ -1812,15 +1825,60 @@
             }
         }
         
+        // Update admin tabs visibility based on access level
+        async function updateAdminTabsVisibility() {
+            const access = await getUserAccessLevel();
+            if (!access) return;
+
+            // Get all tabs
+            const allTabs = document.querySelectorAll('.admin-tab');
+            const allTabContents = document.querySelectorAll('.admin-content-card');
+
+            if (access.level === 'granted') {
+                // Granted user - only show License Keys tab
+                allTabs.forEach(tab => {
+                    const tabName = tab.getAttribute('data-tab');
+                    if (tabName === 'keys') {
+                        tab.style.display = 'block';
+                        tab.classList.add('active');
+                    } else {
+                        tab.style.display = 'none';
+                    }
+                });
+                allTabContents.forEach(content => {
+                    if (content.id === 'tabKeys') {
+                        content.style.display = 'block';
+                    } else {
+                        content.style.display = 'none';
+                    }
+                });
+                // Load license keys
+                if (typeof loadKeys === 'function') {
+                    loadKeys(true);
+                }
+            } else if (access.level === 'full') {
+                // Full admin - show all tabs
+                allTabs.forEach(tab => {
+                    tab.style.display = 'block';
+                });
+            }
+        }
+
         // Verify admin access immediately on page load
         // Run immediately and also after a short delay to ensure Firebase is ready
         (async function() {
             // First check immediately
-            await verifyAdminAccess();
+            const hasAccess = await verifyAdminAccess();
+            if (hasAccess) {
+                await updateAdminTabsVisibility();
+            }
             
             // Also check after a delay to ensure Firebase is fully initialized
             setTimeout(async () => {
-                await verifyAdminAccess();
+                const hasAccess = await verifyAdminAccess();
+                if (hasAccess) {
+                    await updateAdminTabsVisibility();
+                }
             }, 1500);
         })();
 
@@ -2734,8 +2792,15 @@
 
         // Tab switching
         document.querySelectorAll('.admin-tab').forEach(tab => {
-            tab.addEventListener('click', () => {
+            tab.addEventListener('click', async () => {
                 const tabName = tab.getAttribute('data-tab');
+                
+                // Check access level for granted users
+                const access = await getUserAccessLevel();
+                if (access && access.level === 'granted' && tabName !== 'keys') {
+                    alert('You only have access to the License Keys tab.');
+                    return;
+                }
                 
                 // Update tab buttons
                 document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
@@ -5996,9 +6061,22 @@
                 const userProfileId = localStorage.getItem(USER_PROFILE_ID_KEY);
                 if (!userProfileId) return null;
 
-                // Check if full admin (you may need to adjust this based on your admin check)
-                // For now, assume all users in admin.html are full admins
-                return { level: 'full', canGrant: true };
+                // Check if full admin
+                if (ALLOWED_ADMIN_USER_IDS.includes(userProfileId)) {
+                    return { level: 'full', canGrant: true };
+                }
+
+                // Check if granted access
+                const grantedSnapshot = await window.database.ref(`${GRANTED_ACCESS_PATH}/${userProfileId}`).once('value');
+                if (grantedSnapshot.exists()) {
+                    const access = grantedSnapshot.val();
+                    return {
+                        level: 'granted',
+                        canGrant: access.canGrant || false
+                    };
+                }
+
+                return null;
             } catch (error) {
                 console.error('Error getting user access level:', error);
                 return null;
