@@ -1876,19 +1876,96 @@
                 allTabContents.forEach(content => {
                     if (content.id === 'tabKeys') {
                         content.style.display = 'block';
+                        // Update UI for granted users
+                        updateLicenseKeysUIForGrantedUser();
                     } else {
                         content.style.display = 'none';
                     }
                 });
-                // Load license keys
-                if (typeof loadKeys === 'function') {
-                    loadKeys(true);
+                // Load personal license keys
+                if (typeof loadPersonalLicenseKeys === 'function') {
+                    loadPersonalLicenseKeys();
                 }
             } else if (access.level === 'full') {
                 // Full admin - show all tabs
                 allTabs.forEach(tab => {
                     tab.style.display = 'block';
                 });
+                // Restore full admin UI
+                restoreLicenseKeysUIForAdmin();
+            }
+        }
+
+        // Update License Keys UI for granted users
+        function updateLicenseKeysUIForGrantedUser() {
+            const tabKeys = document.getElementById('tabKeys');
+            if (!tabKeys) return;
+
+            // Update header
+            const header = tabKeys.querySelector('h2');
+            if (header) {
+                header.textContent = 'My License Keys';
+            }
+
+            // Hide KeyAuth-specific buttons and show simple add button
+            const buttonContainer = tabKeys.querySelector('div[style*="display: flex"][style*="gap: 12px"]');
+            if (buttonContainer) {
+                buttonContainer.innerHTML = `
+                    <button class="admin-btn admin-btn-primary" onclick="addPersonalLicenseKey()">+ Add License Key</button>
+                    <input type="text" id="keySearchInput" class="form-input" placeholder="Search keys..." style="flex: 1; min-width: 200px;" oninput="loadPersonalLicenseKeys()">
+                `;
+            }
+
+            // Hide KeyAuth info box
+            const infoBox = tabKeys.querySelector('div[style*="background: rgba(59, 130, 246"]');
+            if (infoBox) {
+                infoBox.style.display = 'none';
+            }
+
+            // Hide sync button
+            const syncButton = tabKeys.querySelector('button[onclick="syncKeyStatus()"]');
+            if (syncButton) {
+                syncButton.style.display = 'none';
+            }
+        }
+
+        // Restore License Keys UI for full admin
+        function restoreLicenseKeysUIForAdmin() {
+            const tabKeys = document.getElementById('tabKeys');
+            if (!tabKeys) return;
+
+            // Restore header
+            const header = tabKeys.querySelector('h2');
+            if (header) {
+                header.textContent = 'License Key Management';
+            }
+
+            // Restore button container (if it was modified)
+            const buttonContainer = tabKeys.querySelector('div[style*="display: flex"][style*="gap: 12px"]');
+            if (buttonContainer && !buttonContainer.querySelector('button[onclick="showGenerateKeyModal()"]')) {
+                buttonContainer.innerHTML = `
+                    <button class="admin-btn admin-btn-primary" onclick="showGenerateKeyModal()">+ Generate Key</button>
+                    <input type="text" id="keySearchInput" class="form-input" placeholder="Search keys..." style="flex: 1; min-width: 200px;" oninput="loadKeys()">
+                    <select id="keyFilterStatus" class="form-input" style="min-width: 150px;" onchange="loadKeys()">
+                        <option value="all">All Keys</option>
+                        <option value="used">Used</option>
+                        <option value="unused">Unused</option>
+                        <option value="expired">Expired</option>
+                    </select>
+                    <button class="admin-btn" onclick="exportKeys()" title="Export all keys to CSV">📥 Export</button>
+                `;
+            }
+
+            // Show KeyAuth info box
+            const infoBox = tabKeys.querySelector('div[style*="background: rgba(59, 130, 246"]');
+            if (infoBox) {
+                infoBox.style.display = 'block';
+            }
+
+            // Show sync button
+            const syncButton = tabKeys.querySelector('button[onclick="syncKeyStatus()"]');
+            if (syncButton) {
+                syncButton.style.display = 'block';
             }
         }
 
@@ -2899,7 +2976,13 @@
                 } else if (tabName === 'profiles') {
                     loadUserProfiles();
                 } else if (tabName === 'keys') {
-                    loadKeys(true); // Auto-sync with KeyAuth API when tab is opened
+                    // Check if granted user or full admin
+                    const access = await getUserAccessLevel();
+                    if (access && access.level === 'granted') {
+                        loadPersonalLicenseKeys();
+                    } else {
+                        loadKeys(true); // Auto-sync with KeyAuth API when tab is opened
+                    }
                 } else if (tabName === 'finalReseller') {
                     loadFinalReseller();
                 } else if (tabName === 'grant') {
@@ -4469,6 +4552,17 @@
             try {
                 content.innerHTML = '<div class="loading">Loading keys...</div>';
                 
+                // Check if user is a granted user (not full admin)
+                const access = await getUserAccessLevel();
+                const isGrantedUser = access && access.level === 'granted';
+                
+                if (isGrantedUser) {
+                    // Load personal license keys for granted users
+                    await loadPersonalLicenseKeys();
+                    return;
+                }
+                
+                // Full admin - load KeyAuth keys
                 // getKeys() doesn't require initialization since it uses Firebase
                 // Only initialize if needed for other operations
                 if (!keyAuthClient) {
@@ -6127,6 +6221,136 @@
                 return null;
             }
         }
+
+        // Load personal license keys for granted users
+        async function loadPersonalLicenseKeys() {
+            if (!window.firebaseInitialized || !window.database) return;
+            try {
+                const userProfileId = localStorage.getItem(USER_PROFILE_ID_KEY);
+                if (!userProfileId) {
+                    document.getElementById('keysContent').innerHTML = '<div class="empty-state"><div class="empty-state-text">Please log in to view your license keys.</div></div>';
+                    return;
+                }
+
+                const keysSnapshot = await window.database.ref(`${LICENSE_KEYS_PATH}/${userProfileId}`).once('value');
+                const keys = keysSnapshot.exists() ? keysSnapshot.val() : {};
+                const content = document.getElementById('keysContent');
+                if (!content) return;
+
+                const searchQuery = document.getElementById('keySearchInput')?.value.toLowerCase() || '';
+
+                // Convert to array and filter
+                let keysArray = Object.entries(keys).map(([keyId, keyData]) => ({
+                    id: keyId,
+                    key: keyData.key || keyId,
+                    createdAt: keyData.createdAt || Date.now()
+                }));
+
+                // Filter by search
+                if (searchQuery) {
+                    keysArray = keysArray.filter(k => k.key.toLowerCase().includes(searchQuery));
+                }
+
+                if (keysArray.length === 0) {
+                    content.innerHTML = '<div class="empty-state"><div class="empty-state-text">No license keys yet. Add your first key!</div></div>';
+                    return;
+                }
+
+                // Sort by creation date (newest first)
+                keysArray.sort((a, b) => b.createdAt - a.createdAt);
+
+                let html = `
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>License Key</th>
+                                <th>Created</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+
+                keysArray.forEach(keyData => {
+                    const createdDate = new Date(keyData.createdAt).toLocaleDateString();
+                    html += `
+                        <tr>
+                            <td style="font-family: monospace; font-size: 12px; word-break: break-all;">${escapeHtml(keyData.key)}</td>
+                            <td>${createdDate}</td>
+                            <td>
+                                <div class="action-buttons">
+                                    <button class="btn-action btn-view" onclick="copyKey('${escapeHtml(keyData.key)}')" title="Copy Key">📋</button>
+                                    <button class="btn-action btn-delete" onclick="deletePersonalLicenseKey('${userProfileId}', '${keyData.id}')" style="background: rgba(239, 68, 68, 0.2); border-color: rgba(239, 68, 68, 0.3); color: #ef4444;" title="Delete Key">🗑️</button>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                });
+
+                html += '</tbody></table>';
+                content.innerHTML = html;
+            } catch (error) {
+                console.error('Error loading personal license keys:', error);
+                document.getElementById('keysContent').innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-text">Error loading license keys: ${escapeHtml(error.message || 'Unknown error')}</div>
+                        <button class="admin-btn" onclick="loadKeys()" style="margin-top: 16px;">Retry</button>
+                    </div>
+                `;
+            }
+        }
+
+        // Add personal license key
+        async function addPersonalLicenseKey() {
+            const key = prompt('Enter license key:');
+            if (!key || !key.trim()) return;
+
+            if (!window.firebaseInitialized || !window.database) {
+                alert('Error: Database not available. Please try again.');
+                return;
+            }
+
+            try {
+                const userProfileId = localStorage.getItem(USER_PROFILE_ID_KEY);
+                if (!userProfileId) {
+                    alert('Please log in first.');
+                    return;
+                }
+
+                const keyId = `key_${Date.now()}`;
+                await window.database.ref(`${LICENSE_KEYS_PATH}/${userProfileId}/${keyId}`).set({
+                    key: key.trim(),
+                    createdAt: Date.now()
+                });
+
+                await loadPersonalLicenseKeys();
+                alert('✅ License key added successfully!');
+            } catch (error) {
+                console.error('Error adding license key:', error);
+                alert('❌ Error adding license key. Please try again.');
+            }
+        }
+
+        // Delete personal license key
+        window.deletePersonalLicenseKey = async function(userId, keyId) {
+            if (!window.firebaseInitialized || !window.database) return;
+            try {
+                const currentUserId = localStorage.getItem(USER_PROFILE_ID_KEY);
+                if (currentUserId !== userId) {
+                    alert('You can only delete your own license keys.');
+                    return;
+                }
+
+                if (confirm('Are you sure you want to delete this license key?')) {
+                    await window.database.ref(`${LICENSE_KEYS_PATH}/${userId}/${keyId}`).remove();
+                    await loadPersonalLicenseKeys();
+                    alert('✅ License key deleted successfully!');
+                }
+            } catch (error) {
+                console.error('Error deleting license key:', error);
+                alert('❌ Error deleting license key. Please try again.');
+            }
+        };
 
         // Load Final Reseller
         async function loadFinalReseller() {
