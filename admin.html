@@ -1762,9 +1762,9 @@
         
         async function verifyAdminAccess() {
             try {
-                // Wait for Firebase to initialize if not ready
+                // Wait for Firebase to initialize if not ready (increased retries and wait time)
                 let retries = 0;
-                while (!window.firebaseInitialized && retries < 10) {
+                while (!window.firebaseInitialized && retries < 20) {
                     await new Promise(resolve => setTimeout(resolve, 500));
                     retries++;
                 }
@@ -1778,21 +1778,48 @@
                     return false;
                 }
                 
-                // Check if user is in allowed admin list OR has granted access
+                // Check if user is in allowed admin list
                 const isAllowedAdmin = ALLOWED_ADMIN_USER_IDS.includes(userProfileId);
-                let hasGrantedAccess = false;
+                
+                if (isAllowedAdmin) {
+                    console.log('✅ Admin access verified - User ID:', userProfileId, '(Full Admin)');
+                    return true;
+                }
                 
                 // Check for granted access if not a full admin
-                if (!isAllowedAdmin && window.firebaseInitialized && window.database) {
+                let hasGrantedAccess = false;
+                if (window.firebaseInitialized && window.database) {
                     try {
+                        console.log('Checking granted access for user:', userProfileId);
                         const grantedSnapshot = await window.database.ref(`admin/grantedAccess/${userProfileId}`).once('value');
                         hasGrantedAccess = grantedSnapshot.exists();
+                        console.log('Granted access check result:', hasGrantedAccess);
+                        if (hasGrantedAccess) {
+                            const accessData = grantedSnapshot.val();
+                            console.log('Granted access data:', accessData);
+                        }
                     } catch (error) {
                         console.error('Error checking granted access:', error);
+                        console.error('Error details:', error.message, error.stack);
+                        // Don't fail immediately, try to continue
+                    }
+                } else {
+                    console.warn('Firebase not initialized or database not available. firebaseInitialized:', window.firebaseInitialized, 'database:', !!window.database);
+                    // Wait a bit more and try again
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                    if (window.firebaseInitialized && window.database) {
+                        try {
+                            const grantedSnapshot = await window.database.ref(`admin/grantedAccess/${userProfileId}`).once('value');
+                            hasGrantedAccess = grantedSnapshot.exists();
+                            console.log('Granted access check result (retry):', hasGrantedAccess);
+                        } catch (error) {
+                            console.error('Error checking granted access (retry):', error);
+                        }
                     }
                 }
                 
-                if (!isAllowedAdmin && !hasGrantedAccess) {
+                if (!hasGrantedAccess) {
+                    console.log('❌ Access denied - User ID:', userProfileId, 'isAllowedAdmin:', isAllowedAdmin, 'hasGrantedAccess:', hasGrantedAccess);
                     alert('Access denied. Your account is not authorized for admin access.');
                     window.location.href = '/';
                     return false;
@@ -1815,10 +1842,11 @@
                     }
                 }
                 
-                console.log('✅ Admin access verified - User ID:', userProfileId, isAllowedAdmin ? '(Full Admin)' : '(Granted Access)');
+                console.log('✅ Admin access verified - User ID:', userProfileId, '(Granted Access)');
                 return true;
             } catch (error) {
                 console.error('Error verifying admin access:', error);
+                console.error('Error details:', error.message, error.stack);
                 alert('Error verifying admin access. Please try again.');
                 window.location.href = '/';
                 return false;
@@ -1864,22 +1892,39 @@
             }
         }
 
+        // Helper function to wait for database to be ready
+        async function waitForDatabase(maxWait = 10000) {
+            const startTime = Date.now();
+            while (!window.database && (Date.now() - startTime) < maxWait) {
+                await new Promise(resolve => setTimeout(resolve, 100));
+            }
+            return !!window.database;
+        }
+
         // Verify admin access immediately on page load
         // Run immediately and also after a short delay to ensure Firebase is ready
         (async function() {
-            // First check immediately
+            // Wait a bit for Firebase to initialize
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            // Wait for database to be ready
+            const dbReady = await waitForDatabase(10000);
+            if (!dbReady) {
+                console.warn('Database not ready after 10 seconds, proceeding anyway...');
+            }
+            
+            // First check
             const hasAccess = await verifyAdminAccess();
             if (hasAccess) {
                 await updateAdminTabsVisibility();
-            }
-            
-            // Also check after a delay to ensure Firebase is fully initialized
-            setTimeout(async () => {
-                const hasAccess = await verifyAdminAccess();
-                if (hasAccess) {
+            } else {
+                // If access denied, wait a bit more and try once more (in case Firebase was slow)
+                await new Promise(resolve => setTimeout(resolve, 2000));
+                const hasAccessRetry = await verifyAdminAccess();
+                if (hasAccessRetry) {
                     await updateAdminTabsVisibility();
                 }
-            }, 1500);
+            }
         })();
 
         // Track admin panel visit (optional)
