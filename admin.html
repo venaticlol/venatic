@@ -1858,33 +1858,76 @@
             const access = await getUserAccessLevel();
             if (!access) return;
 
+            console.log('Updating admin tabs visibility. Access level:', access);
+
             // Get all tabs
             const allTabs = document.querySelectorAll('.admin-tab');
             const allTabContents = document.querySelectorAll('.admin-content-card');
 
             if (access.level === 'granted') {
-                // Granted user - only show License Keys tab
+                // Granted user - show License Keys tab, and Grant tab if canGrant is true
+                const allowedTabs = ['keys'];
+                if (access.canGrant) {
+                    allowedTabs.push('grant');
+                    console.log('User has canGrant permission - showing Grant tab');
+                } else {
+                    console.log('User does not have canGrant permission - only showing License Keys tab');
+                }
+                
+                // Show/hide tabs
                 allTabs.forEach(tab => {
                     const tabName = tab.getAttribute('data-tab');
-                    if (tabName === 'keys') {
+                    if (allowedTabs.includes(tabName)) {
                         tab.style.display = 'block';
-                        tab.classList.add('active');
+                        console.log(`Showing tab: ${tabName}`);
                     } else {
                         tab.style.display = 'none';
+                        tab.classList.remove('active');
                     }
                 });
+                
+                // Set first allowed tab as active if no tab is currently active
+                const activeTab = document.querySelector('.admin-tab.active');
+                if (!activeTab || !allowedTabs.includes(activeTab.getAttribute('data-tab'))) {
+                    const firstAllowedTab = document.querySelector(`.admin-tab[data-tab="${allowedTabs[0]}"]`);
+                    if (firstAllowedTab) {
+                        document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
+                        firstAllowedTab.classList.add('active');
+                        console.log(`Set active tab: ${allowedTabs[0]}`);
+                    }
+                }
+                
+                // Show/hide tab contents based on active tab
                 allTabContents.forEach(content => {
-                    if (content.id === 'tabKeys') {
-                        content.style.display = 'block';
-                        // Update UI for granted users
-                        updateLicenseKeysUIForGrantedUser();
-                    } else {
-                        content.style.display = 'none';
-                    }
+                    content.style.display = 'none';
                 });
-                // Load license keys (will automatically use user-specific path)
-                if (typeof loadKeys === 'function') {
-                    loadKeys();
+                
+                const activeTabName = document.querySelector('.admin-tab.active')?.getAttribute('data-tab');
+                console.log('Active tab:', activeTabName);
+                
+                if (activeTabName === 'keys') {
+                    const keysContent = document.getElementById('tabKeys');
+                    if (keysContent) {
+                        keysContent.style.display = 'block';
+                        updateLicenseKeysUIForGrantedUser();
+                    }
+                    // Load license keys
+                    if (typeof loadKeys === 'function') {
+                        loadKeys();
+                    }
+                } else if (activeTabName === 'grant' && access.canGrant) {
+                    const grantContent = document.getElementById('tabGrant');
+                    if (grantContent) {
+                        grantContent.style.display = 'block';
+                        console.log('Showing Grant tab content');
+                    }
+                    // Load grant data
+                    if (typeof loadUsersForGrant === 'function') {
+                        loadUsersForGrant();
+                    }
+                    if (typeof loadGrantedUsers === 'function') {
+                        loadGrantedUsers();
+                    }
                 }
             } else if (access.level === 'full') {
                 // Full admin - show all tabs
@@ -2874,12 +2917,18 @@
             tab.addEventListener('click', async () => {
                 const tabName = tab.getAttribute('data-tab');
                 
-                // Check access level for granted users
-                const access = await getUserAccessLevel();
-                if (access && access.level === 'granted' && tabName !== 'keys') {
-                    alert('You only have access to the License Keys tab.');
-                    return;
-                }
+                    // Check access level for granted users
+                    const access = await getUserAccessLevel();
+                    if (access && access.level === 'granted') {
+                        const allowedTabs = ['keys'];
+                        if (access.canGrant) {
+                            allowedTabs.push('grant');
+                        }
+                        if (!allowedTabs.includes(tabName)) {
+                            alert(`You only have access to the ${allowedTabs.map(t => t === 'keys' ? 'License Keys' : 'Grant').join(' and ')} tab${allowedTabs.length > 1 ? 's' : ''}.`);
+                            return;
+                        }
+                    }
                 
                 // Update tab buttons
                 document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));

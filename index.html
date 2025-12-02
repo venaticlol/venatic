@@ -9040,9 +9040,9 @@
             const access = await getUserAccessLevel();
             if (access && access.level === 'full') {
                 // Full admin - load all data
-                await loadAnnouncementsList();
-                await loadChangelogList();
-                await loadAnalytics();
+            await loadAnnouncementsList();
+            await loadChangelogList();
+            await loadAnalytics();
             } else if (access && access.level === 'granted') {
                 // Granted user - only load license keys
                 await loadLicenseKeys();
