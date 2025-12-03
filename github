@@ -9102,7 +9102,7 @@
             // Trigger actual download
             // TODO: Replace 'your-installer.exe' with the actual file path/URL
             // Example: const downloadUrl = 'https://yourdomain.com/downloads/Recon-Spoofer-Installer.exe';
-            const downloadUrl = 'https://github.com/venaticlol/loader/raw/refs/heads/main/Recon-Bootstrapper.exe'; // Update this with your actual file URL
+            const downloadUrl = 'https://github.com/venaticlol/loader/raw/refs/heads/main/Recon-Spoofer-Main.rar'; // Update this with your actual file URL
             
             // Create download link
             const link = document.createElement('a');
@@ -10197,7 +10197,7 @@
                     e.stopPropagation();
                     if (isAdminLoggedIn) {
                         // Redirect to admin.html
-                        window.location.href = 'admin.html';
+                        window.location.href = 'admin';
                     } else {
                         showAdminModal();
                     }
