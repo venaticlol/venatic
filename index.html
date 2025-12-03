@@ -4167,7 +4167,7 @@
         <div style="position: relative;">
             <button class="user-profile-btn" id="userProfileBtn" onclick="showEditProfileModal()">
                 <img class="user-profile-avatar" id="userProfileAvatar" src="" alt="Profile" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2232%22 height=%2232%22%3E%3Ccircle cx=%2216%22 cy=%2216%22 r=%2216%22 fill=%22%233a3a3a%22/%3E%3Ctext x=%2216%22 y=%2220%22 font-size=%2214%22 fill=%22%23fff%22 text-anchor=%22middle%22%3E?%3C/text%3E%3C/svg%3E'">
-                <span class="user-profile-name" id="userProfileName">Profile</span>
+                <span class="user-profile-name" id="userProfileName" data-i18n="profile.profile">Profile</span>
             </button>
             <button onclick="logoutProfile()" style="position: absolute; top: -8px; right: -8px; width: 20px; height: 20px; background: rgba(239, 68, 68, 0.9); border: none; border-radius: 50%; color: white; font-size: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: bold; z-index: 1001;" title="Logout">×</button>
         </div>
@@ -4199,70 +4199,70 @@
     <div class="profile-modal-overlay" id="profileModalOverlay">
         <div class="profile-modal">
             <div class="profile-modal-header">
-                <h2 id="profileModalTitle">Sign Up / Login</h2>
-                <button class="profile-modal-close" id="profileModalCloseBtn" onclick="hideProfileModal()">×</button>
+                <h2 id="profileModalTitle" data-i18n="profile.title">Sign Up / Login</h2>
+                <button class="profile-modal-close" id="profileModalCloseBtn" onclick="hideProfileModal()" data-i18n="common.close">×</button>
             </div>
             <div class="profile-modal-body">
                 <div class="profile-error-message" id="profileErrorMessage"></div>
                 
                 <!-- Tab Switcher (only shown for signup/login) -->
                 <div id="profileTabSwitcher" style="display: flex; gap: 8px; margin-bottom: 24px; border-bottom: 1px solid #2a2a2a;">
-                    <button class="profile-tab-btn active" id="profileSignupTab" onclick="switchProfileTab('signup')">Sign Up</button>
-                    <button class="profile-tab-btn" id="profileLoginTab" onclick="switchProfileTab('login')">Login</button>
+                    <button class="profile-tab-btn active" id="profileSignupTab" onclick="switchProfileTab('signup')" data-i18n="profile.signup">Sign Up</button>
+                    <button class="profile-tab-btn" id="profileLoginTab" onclick="switchProfileTab('login')" data-i18n="profile.login">Login</button>
                 </div>
 
                 <!-- Signup Form -->
                 <div id="profileSignupForm">
                     <div class="profile-avatar-preview">
                         <img class="profile-avatar-large" id="profileAvatarPreview" src="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22120%22 height=%22120%22%3E%3Ccircle cx=%2260%22 cy=%2260%22 r=%2260%22 fill=%22%233a3a3a%22/%3E%3Ctext x=%2260%22 y=%2275%22 font-size=%2240%22 fill=%22%23fff%22 text-anchor=%22middle%22%3E?%3C/text%3E%3C/svg%3E" alt="Profile Picture">
-                        <label for="profileAvatarInput" class="profile-avatar-upload-btn">Upload Profile Picture</label>
+                        <label for="profileAvatarInput" class="profile-avatar-upload-btn" data-i18n="profile.uploadPicture">Upload Profile Picture</label>
                         <input type="file" id="profileAvatarInput" accept="image/*" style="display: none;" onchange="handleProfileAvatarUpload(event)">
                     </div>
                     <div class="profile-form-group">
-                        <label class="profile-form-label" for="profileUsernameInput">Username *</label>
+                        <label class="profile-form-label" for="profileUsernameInput" data-i18n="profile.username">Username *</label>
                         <input type="text" id="profileUsernameInput" class="profile-form-input" placeholder="Enter your username" maxlength="30" required>
                     </div>
                     <div class="profile-form-group">
-                        <label class="profile-form-label" for="profilePasswordInput">Password *</label>
+                        <label class="profile-form-label" for="profilePasswordInput" data-i18n="profile.password">Password *</label>
                         <input type="password" id="profilePasswordInput" class="profile-form-input" placeholder="Enter your password" minlength="6" required>
                     </div>
                     <div class="profile-form-group">
-                        <label class="profile-form-label" for="profileBioInput">Bio (Optional)</label>
-                        <textarea id="profileBioInput" class="profile-form-input profile-form-textarea" placeholder="Tell us about yourself..." maxlength="200"></textarea>
+                        <label class="profile-form-label" for="profileBioInput" data-i18n="profile.bio">Bio (Optional)</label>
+                        <textarea id="profileBioInput" class="profile-form-input profile-form-textarea" data-i18n-placeholder="profile.bioPlaceholder" placeholder="Tell us about yourself..." maxlength="200"></textarea>
                     </div>
-                    <button class="profile-submit-btn" id="profileSubmitBtn" onclick="signupProfile()">Sign Up</button>
+                    <button class="profile-submit-btn" id="profileSubmitBtn" onclick="signupProfile()" data-i18n="profile.signup">Sign Up</button>
                 </div>
 
                 <!-- Login Form -->
                 <div id="profileLoginForm" style="display: none;">
                     <div class="profile-form-group">
-                        <label class="profile-form-label" for="loginUsernameInput">Username *</label>
+                        <label class="profile-form-label" for="loginUsernameInput" data-i18n="profile.username">Username *</label>
                         <input type="text" id="loginUsernameInput" class="profile-form-input" placeholder="Enter your username" maxlength="30" required onkeypress="if(event.key === 'Enter') loginProfile()">
                     </div>
                     <div class="profile-form-group">
-                        <label class="profile-form-label" for="loginPasswordInput">Password *</label>
+                        <label class="profile-form-label" for="loginPasswordInput" data-i18n="profile.password">Password *</label>
                         <input type="password" id="loginPasswordInput" class="profile-form-input" placeholder="Enter your password" required onkeypress="if(event.key === 'Enter') loginProfile()">
                     </div>
-                    <button class="profile-submit-btn" id="profileLoginBtn" onclick="loginProfile()">Login</button>
+                    <button class="profile-submit-btn" id="profileLoginBtn" onclick="loginProfile()" data-i18n="profile.login">Login</button>
                 </div>
 
                 <!-- Edit Profile Form (for logged-in users) -->
                 <div id="profileEditForm" style="display: none;">
                     <div class="profile-avatar-preview">
                         <img class="profile-avatar-large" id="editAvatarPreview" src="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22120%22 height=%22120%22%3E%3Ccircle cx=%2260%22 cy=%2260%22 r=%2260%22 fill=%22%233a3a3a%22/%3E%3Ctext x=%2260%22 y=%2275%22 font-size=%2240%22 fill=%22%23fff%22 text-anchor=%22middle%22%3E?%3C/text%3E%3C/svg%3E" alt="Profile Picture">
-                        <label for="editAvatarInput" class="profile-avatar-upload-btn">Upload Profile Picture</label>
+                        <label for="editAvatarInput" class="profile-avatar-upload-btn" data-i18n="profile.uploadPicture">Upload Profile Picture</label>
                         <input type="file" id="editAvatarInput" accept="image/*" style="display: none;" onchange="handleEditAvatarUpload(event)">
                     </div>
                     <div class="profile-form-group">
-                        <label class="profile-form-label" for="editUsernameInput">Username *</label>
+                        <label class="profile-form-label" for="editUsernameInput" data-i18n="profile.username">Username *</label>
                         <input type="text" id="editUsernameInput" class="profile-form-input" placeholder="Enter your username" maxlength="30" required>
                     </div>
                     <div class="profile-form-group">
-                        <label class="profile-form-label" for="editBioInput">Bio (Optional)</label>
-                        <textarea id="editBioInput" class="profile-form-input profile-form-textarea" placeholder="Tell us about yourself..." maxlength="200"></textarea>
+                        <label class="profile-form-label" for="editBioInput" data-i18n="profile.bio">Bio (Optional)</label>
+                        <textarea id="editBioInput" class="profile-form-input profile-form-textarea" data-i18n-placeholder="profile.bioPlaceholder" placeholder="Tell us about yourself..." maxlength="200"></textarea>
                     </div>
-                    <button class="profile-submit-btn" id="profileEditBtn" onclick="updateProfile()">Save Changes</button>
-                    <button class="profile-logout-btn" id="profileLogoutBtn" onclick="logoutProfile()" style="margin-top: 12px; width: 100%; padding: 12px; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 8px; color: #ef4444; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; font-family: inherit;">Logout</button>
+                    <button class="profile-submit-btn" id="profileEditBtn" onclick="updateProfile()" data-i18n="profile.save">Save Changes</button>
+                    <button class="profile-logout-btn" id="profileLogoutBtn" onclick="logoutProfile()" style="margin-top: 12px; width: 100%; padding: 12px; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 8px; color: #ef4444; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; font-family: inherit;" data-i18n="profile.logout">Logout</button>
                 </div>
             </div>
         </div>
@@ -4312,7 +4312,7 @@
                         <line x1="3" y1="6" x2="21" y2="6"></line>
                         <path d="M16 10a4 4 0 0 1-8 0"></path>
                     </svg>
-                    <span>Purchase License</span>
+                    <span data-i18n="hero.purchaseLicense">Purchase License</span>
                 </a>
             </div>
             
@@ -4323,7 +4323,7 @@
                 </div>
                 <div class="stat-item">
                     <span class="stat-number" data-count="99">0</span>
-                    <span class="stat-label">% Uptime</span>
+                    <span class="stat-label" data-i18n="hero.uptime">% Uptime</span>
                 </div>
                 <div class="stat-item">
                     <span class="stat-number" id="ratingDisplay" data-count="0">0</span>
@@ -4350,18 +4350,18 @@
             <div class="features-grid">
                 <div class="feature-card reveal">
                     <div class="feature-icon">⚡</div>
-                    <h3 class="feature-title">Lightweight Installer</h3>
-                    <p class="feature-text">Minimal footprint with fast installation process. Optimized for performance without compromising functionality.</p>
+                    <h3 class="feature-title" data-i18n="features.lightweight">Lightweight Installer</h3>
+                    <p class="feature-text" data-i18n="features.lightweightDesc">Minimal footprint with fast installation process. Optimized for performance without compromising functionality.</p>
                 </div>
                 <div class="feature-card reveal">
                     <div class="feature-icon">🚀</div>
-                    <h3 class="feature-title">Quick Setup</h3>
-                    <p class="feature-text">Get up and running in minutes with intuitive configuration. No technical expertise required.</p>
+                    <h3 class="feature-title" data-i18n="features.quickSetup">Quick Setup</h3>
+                    <p class="feature-text" data-i18n="features.quickSetupDesc">Get up and running in minutes with intuitive configuration. No technical expertise required.</p>
                 </div>
                 <div class="feature-card reveal">
                     <div class="feature-icon">🔄</div>
-                    <h3 class="feature-title">Automatic Updates</h3>
-                    <p class="feature-text">Stay current with seamless background updates. Always have the latest features and security patches.</p>
+                    <h3 class="feature-title" data-i18n="features.autoUpdates">Automatic Updates</h3>
+                    <p class="feature-text" data-i18n="features.autoUpdatesDesc">Stay current with seamless background updates. Always have the latest features and security patches.</p>
                 </div>
             </div>
         </div>
@@ -4381,10 +4381,10 @@
     <!-- Surveys Section -->
     <section class="surveys" id="surveys" style="display: none;">
         <div class="container">
-            <h2 class="section-title reveal">Surveys & Polls</h2>
-            <p class="section-subtitle reveal">Share your feedback with us</p>
+            <h2 class="section-title reveal" data-i18n="surveys.title">Surveys & Polls</h2>
+            <p class="section-subtitle reveal" data-i18n="surveys.subtitle">Share your feedback with us</p>
             <div class="surveys-content reveal" id="surveysContent">
-                <div class="changelog-loading">Loading surveys...</div>
+                <div class="changelog-loading" data-i18n="surveys.loading">Loading surveys...</div>
             </div>
         </div>
     </section>
@@ -4392,19 +4392,19 @@
     <!-- Support Tickets Section -->
     <section class="support-section" id="support">
         <div class="container">
-            <h2 class="section-title reveal">Support Tickets</h2>
-            <p class="section-subtitle reveal">Need help? Create a support ticket and we'll get back to you</p>
+            <h2 class="section-title reveal" data-i18n="support.title">Support Tickets</h2>
+            <p class="section-subtitle reveal" data-i18n="support.subtitle">Need help? Create a support ticket and we'll get back to you</p>
             <div class="support-content reveal">
                 <div style="text-align: center; margin-bottom: 40px;">
                     <button class="ticket-create-btn" onclick="openTicketModal()">
                         <svg class="download-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M12 4v16m8-8H4"></path>
                         </svg>
-                        Create Support Ticket
+                        <span data-i18n="support.create">Create Support Ticket</span>
                     </button>
                 </div>
                 <div id="userTicketsContent">
-                    <div class="changelog-loading">Loading your tickets...</div>
+                    <div class="changelog-loading" data-i18n="support.loading">Loading your tickets...</div>
                 </div>
             </div>
         </div>
@@ -4413,15 +4413,15 @@
     <!-- Second Download Section -->
     <section class="download-section" id="download">
         <div class="container">
-            <h2 class="section-title reveal" style="margin-bottom: 32px;">Ready to Get Started?</h2>
-            <p class="section-subtitle reveal" style="margin-bottom: 48px;">Download now and experience the difference</p>
+            <h2 class="section-title reveal" style="margin-bottom: 32px;" data-i18n="download.ready">Ready to Get Started?</h2>
+            <p class="section-subtitle reveal" style="margin-bottom: 48px;" data-i18n="download.subtitle">Download now and experience the difference</p>
             <a href="#" class="download-btn" id="downloadBtn2">
                 <svg class="download-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                     <polyline points="7 10 12 15 17 10"></polyline>
                     <line x1="12" y1="15" x2="12" y2="3"></line>
                 </svg>
-                Download Installer
+                <span data-i18n="download.installer">Download Installer</span>
             </a>
         </div>
     </section>
@@ -4430,20 +4430,20 @@
     <div class="ticket-modal" id="ticketCreationModal">
         <div class="ticket-modal-content">
             <div class="ticket-modal-header">
-                <h3>Create Support Ticket</h3>
-                <button onclick="closeTicketModal()">×</button>
+                <h3 data-i18n="support.createTitle">Create Support Ticket</h3>
+                <button onclick="closeTicketModal()" data-i18n="common.close">×</button>
             </div>
             <div class="ticket-modal-body">
                 <div class="ticket-form-group">
-                    <label class="ticket-form-label">Subject *</label>
-                    <input type="text" id="ticketSubjectInput" class="ticket-input" placeholder="What do you need help with?" maxlength="200">
+                    <label class="ticket-form-label" data-i18n="support.subject">Subject *</label>
+                    <input type="text" id="ticketSubjectInput" class="ticket-input" data-i18n-placeholder="support.subjectPlaceholder" placeholder="What do you need help with?" maxlength="200">
                 </div>
                 <div class="ticket-form-group">
-                    <label class="ticket-form-label">Message *</label>
-                    <textarea id="ticketMessageInput" class="ticket-textarea" rows="6" placeholder="Describe your issue in detail..." maxlength="2000"></textarea>
+                    <label class="ticket-form-label" data-i18n="support.message">Message *</label>
+                    <textarea id="ticketMessageInput" class="ticket-textarea" rows="6" data-i18n-placeholder="support.messagePlaceholder" placeholder="Describe your issue in detail..." maxlength="2000"></textarea>
                 </div>
                 <div class="ticket-form-group">
-                    <label class="ticket-form-label">Attachments</label>
+                    <label class="ticket-form-label" data-i18n="support.attachments">Attachments</label>
                     <div class="ticket-image-preview" id="ticketImagePreview"></div>
                     <div style="display: flex; gap: 8px;">
                         <input type="file" id="ticketImageInput" accept="image/*" multiple>
@@ -4451,20 +4451,20 @@
                             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                             </svg>
-                            Images
+                            <span data-i18n="support.uploadImage">Images</span>
                         </button>
                         <button class="ticket-voice-btn" id="ticketVoiceRecordBtn" onmousedown="TicketSystem.startRecording('creation')" onmouseup="TicketSystem.stopRecording('creation')" ontouchstart="event.preventDefault(); TicketSystem.startRecording('creation')" ontouchend="event.preventDefault(); TicketSystem.stopRecording('creation')">
                             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path>
                             </svg>
-                            <span id="ticketVoiceRecordText">Hold to Record</span>
+                            <span id="ticketVoiceRecordText" data-i18n="voice.holdToRecord">Hold to Record</span>
                         </button>
                     </div>
                 </div>
                 <div id="ticketError" class="ticket-error"></div>
                 <div style="display: flex; gap: 12px; margin-top: 24px;">
-                    <button class="ticket-send-btn" onclick="createTicket()" style="flex: 1;">Create Ticket</button>
-                    <button class="ticket-send-btn ticket-btn-secondary" onclick="closeTicketModal()" style="flex: 1;">Cancel</button>
+                    <button class="ticket-send-btn" onclick="createTicket()" style="flex: 1;" data-i18n="support.submit">Create Ticket</button>
+                    <button class="ticket-send-btn ticket-btn-secondary" onclick="closeTicketModal()" style="flex: 1;" data-i18n="support.cancel">Cancel</button>
                 </div>
             </div>
         </div>
@@ -4494,7 +4494,7 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
                             </svg>
                         </button>
-                        <button class="ticket-voice-btn" id="ticketReplyVoiceBtn" onmousedown="TicketSystem.startRecording('reply')" onmouseup="TicketSystem.stopRecording('reply')" ontouchstart="event.preventDefault(); TicketSystem.startRecording('reply')" ontouchend="event.preventDefault(); TicketSystem.stopRecording('reply')" title="Hold to Record">
+                        <button class="ticket-voice-btn" id="ticketReplyVoiceBtn" onmousedown="TicketSystem.startRecording('reply')" onmouseup="TicketSystem.stopRecording('reply')" ontouchstart="event.preventDefault(); TicketSystem.startRecording('reply')" ontouchend="event.preventDefault(); TicketSystem.stopRecording('reply')" data-i18n-title="voice.holdToRecord" title="Hold to Record">
                             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path>
                             </svg>
@@ -4546,7 +4546,7 @@
                             <span id="reviewCharCount">0</span>/200
                         </div>
                     </div>
-                    <button class="rating-submit-btn" id="ratingSubmitBtn" disabled>Submit Rating</button>
+                    <button class="rating-submit-btn" id="ratingSubmitBtn" disabled data-i18n="rating.submit">Submit Rating</button>
                     <div class="rating-message" id="ratingMessage"></div>
                 </div>
             </div>
@@ -4563,7 +4563,7 @@
                 <a href="/privacy" class="footer-link">Privacy</a>
                 <a href="#" class="footer-link">GitHub</a>
             </div>
-            <p class="footer-text">© 2024 Recon-Spoofer. All rights reserved.</p>
+            <p class="footer-text" data-i18n="footer.copyright">© 2024 Recon-Spoofer. All rights reserved.</p>
         </div>
     </footer>
     </div> <!-- End main-content -->
@@ -5488,7 +5488,11 @@
                 
                 if (recordBtn) {
                     recordBtn.classList.add('recording');
-                    if (recordText) recordText.textContent = 'Recording...';
+                    if (recordText) {
+                        const lang = currentLanguage;
+                        const langTranslations = translations[lang] || defaultTranslations[lang] || defaultTranslations.en;
+                        recordText.textContent = langTranslations['voice.recording'] || 'Recording...';
+                    }
                 }
                 
                 this.voiceRecording.mediaRecorder.ondataavailable = (event) => {
@@ -5516,7 +5520,11 @@
                         
                         if (recordBtn) {
                             recordBtn.classList.remove('recording');
-                            if (recordText) recordText.textContent = 'Hold to Record';
+                            if (recordText) {
+                                const lang = currentLanguage;
+                                const langTranslations = translations[lang] || defaultTranslations[lang] || defaultTranslations.en;
+                                recordText.textContent = langTranslations['voice.holdToRecord'] || 'Hold to Record';
+                            }
                         }
                         
                         // Stop all tracks
@@ -7718,8 +7726,69 @@
                 'hero.download': 'Download Installer',
                 'hero.downloads': 'Downloads',
                 'hero.rating': 'Rating',
+                'hero.uptime': '% Uptime',
+                'hero.purchaseLicense': 'Purchase License',
                 'features.title': 'Key Features',
-                'features.subtitle': 'Everything you need in one powerful package'
+                'features.subtitle': 'Everything you need in one powerful package',
+                'features.lightweight': 'Lightweight Installer',
+                'features.lightweightDesc': 'Minimal footprint with fast installation process. Optimized for performance without compromising functionality.',
+                'features.quickSetup': 'Quick Setup',
+                'features.quickSetupDesc': 'Get up and running in minutes with intuitive configuration. No technical expertise required.',
+                'features.autoUpdates': 'Automatic Updates',
+                'features.autoUpdatesDesc': 'Stay current with seamless background updates. Always have the latest features and security patches.',
+                'download.ready': 'Ready to Get Started?',
+                'download.subtitle': 'Download now and experience the difference',
+                'download.installer': 'Download Installer',
+                'surveys.title': 'Surveys & Polls',
+                'surveys.subtitle': 'Share your feedback with us',
+                'surveys.loading': 'Loading surveys...',
+                'support.title': 'Support Tickets',
+                'support.subtitle': 'Need help? Create a support ticket and we\'ll get back to you',
+                'support.create': 'Create Support Ticket',
+                'support.loading': 'Loading your tickets...',
+                'support.createTitle': 'Create Support Ticket',
+                'support.subject': 'Subject *',
+                'support.subjectPlaceholder': 'What do you need help with?',
+                'support.message': 'Message *',
+                'support.messagePlaceholder': 'Describe your issue in detail...',
+                'support.attachments': 'Attachments',
+                'support.uploadImage': 'Upload Image',
+                'support.submit': 'Submit Ticket',
+                'support.cancel': 'Cancel',
+                'profile.title': 'Sign Up / Login',
+                'profile.signup': 'Sign Up',
+                'profile.login': 'Login',
+                'profile.uploadPicture': 'Upload Profile Picture',
+                'profile.username': 'Username *',
+                'profile.password': 'Password *',
+                'profile.bio': 'Bio (Optional)',
+                'profile.bioPlaceholder': 'Tell us about yourself...',
+                'profile.edit': 'Edit Profile',
+                'profile.save': 'Save Changes',
+                'profile.logout': 'Logout',
+                'profile.profile': 'Profile',
+                'footer.copyright': '© 2024 Recon-Spoofer. All rights reserved.',
+                'common.close': 'Close',
+                'common.loading': 'Loading...',
+                'common.error': 'Error',
+                'common.success': 'Success',
+                'common.cancel': 'Cancel',
+                'common.save': 'Save',
+                'common.delete': 'Delete',
+                'common.edit': 'Edit',
+                'common.submit': 'Submit',
+                'common.search': 'Search',
+                'common.filter': 'Filter',
+                'common.all': 'All',
+                'common.yes': 'Yes',
+                'common.no': 'No',
+                'common.ok': 'OK',
+                'rating.submit': 'Submit Rating',
+                'rating.alreadyRated': 'Already Rated',
+                'rating.rating': 'rating',
+                'rating.ratings': 'ratings',
+                'voice.recording': 'Recording...',
+                'voice.holdToRecord': 'Hold to Record'
             },
             es: {
                 'changelog.title': 'Novedades',
@@ -7732,8 +7801,69 @@
                 'hero.download': 'Descargar Instalador',
                 'hero.downloads': 'Descargas',
                 'hero.rating': 'Calificación',
+                'hero.uptime': '% Tiempo Activo',
+                'hero.purchaseLicense': 'Comprar Licencia',
                 'features.title': 'Características Principales',
-                'features.subtitle': 'Todo lo que necesitas en un paquete poderoso'
+                'features.subtitle': 'Todo lo que necesitas en un paquete poderoso',
+                'features.lightweight': 'Instalador Ligero',
+                'features.lightweightDesc': 'Huella mínima con proceso de instalación rápido. Optimizado para rendimiento sin comprometer la funcionalidad.',
+                'features.quickSetup': 'Configuración Rápida',
+                'features.quickSetupDesc': 'Ponlo en marcha en minutos con configuración intuitiva. No se requiere experiencia técnica.',
+                'features.autoUpdates': 'Actualizaciones Automáticas',
+                'features.autoUpdatesDesc': 'Mantente actualizado con actualizaciones en segundo plano sin interrupciones. Siempre ten las últimas funciones y parches de seguridad.',
+                'download.ready': '¿Listo para Empezar?',
+                'download.subtitle': 'Descarga ahora y experimenta la diferencia',
+                'download.installer': 'Descargar Instalador',
+                'surveys.title': 'Encuestas y Votaciones',
+                'surveys.subtitle': 'Comparte tus comentarios con nosotros',
+                'surveys.loading': 'Cargando encuestas...',
+                'support.title': 'Tickets de Soporte',
+                'support.subtitle': '¿Necesitas ayuda? Crea un ticket de soporte y te responderemos',
+                'support.create': 'Crear Ticket de Soporte',
+                'support.loading': 'Cargando tus tickets...',
+                'support.createTitle': 'Crear Ticket de Soporte',
+                'support.subject': 'Asunto *',
+                'support.subjectPlaceholder': '¿Con qué necesitas ayuda?',
+                'support.message': 'Mensaje *',
+                'support.messagePlaceholder': 'Describe tu problema en detalle...',
+                'support.attachments': 'Adjuntos',
+                'support.uploadImage': 'Subir Imagen',
+                'support.submit': 'Enviar Ticket',
+                'support.cancel': 'Cancelar',
+                'profile.title': 'Registrarse / Iniciar Sesión',
+                'profile.signup': 'Registrarse',
+                'profile.login': 'Iniciar Sesión',
+                'profile.uploadPicture': 'Subir Foto de Perfil',
+                'profile.username': 'Nombre de Usuario *',
+                'profile.password': 'Contraseña *',
+                'profile.bio': 'Biografía (Opcional)',
+                'profile.bioPlaceholder': 'Cuéntanos sobre ti...',
+                'profile.edit': 'Editar Perfil',
+                'profile.save': 'Guardar Cambios',
+                'profile.logout': 'Cerrar Sesión',
+                'profile.profile': 'Perfil',
+                'footer.copyright': '© 2024 Recon-Spoofer. Todos los derechos reservados.',
+                'common.close': 'Cerrar',
+                'common.loading': 'Cargando...',
+                'common.error': 'Error',
+                'common.success': 'Éxito',
+                'common.cancel': 'Cancelar',
+                'common.save': 'Guardar',
+                'common.delete': 'Eliminar',
+                'common.edit': 'Editar',
+                'common.submit': 'Enviar',
+                'common.search': 'Buscar',
+                'common.filter': 'Filtrar',
+                'common.all': 'Todos',
+                'common.yes': 'Sí',
+                'common.no': 'No',
+                'common.ok': 'OK',
+                'rating.submit': 'Enviar Calificación',
+                'rating.alreadyRated': 'Ya Calificado',
+                'rating.rating': 'calificación',
+                'rating.ratings': 'calificaciones',
+                'voice.recording': 'Grabando...',
+                'voice.holdToRecord': 'Mantén para Grabar'
             },
             fr: {
                 'changelog.title': 'Nouveautés',
@@ -7746,8 +7876,69 @@
                 'hero.download': 'Télécharger l\'Installateur',
                 'hero.downloads': 'Téléchargements',
                 'hero.rating': 'Note',
+                'hero.uptime': '% Temps de Fonctionnement',
+                'hero.purchaseLicense': 'Acheter une Licence',
                 'features.title': 'Fonctionnalités Clés',
-                'features.subtitle': 'Tout ce dont vous avez besoin dans un package puissant'
+                'features.subtitle': 'Tout ce dont vous avez besoin dans un package puissant',
+                'features.lightweight': 'Installateur Léger',
+                'features.lightweightDesc': 'Empreinte minimale avec processus d\'installation rapide. Optimisé pour les performances sans compromettre la fonctionnalité.',
+                'features.quickSetup': 'Configuration Rapide',
+                'features.quickSetupDesc': 'Opérationnel en quelques minutes avec une configuration intuitive. Aucune expertise technique requise.',
+                'features.autoUpdates': 'Mises à Jour Automatiques',
+                'features.autoUpdatesDesc': 'Restez à jour avec des mises à jour en arrière-plan transparentes. Ayez toujours les dernières fonctionnalités et correctifs de sécurité.',
+                'download.ready': 'Prêt à Commencer?',
+                'download.subtitle': 'Téléchargez maintenant et découvrez la différence',
+                'download.installer': 'Télécharger l\'Installateur',
+                'surveys.title': 'Sondages et Votes',
+                'surveys.subtitle': 'Partagez vos commentaires avec nous',
+                'surveys.loading': 'Chargement des sondages...',
+                'support.title': 'Tickets de Support',
+                'support.subtitle': 'Besoin d\'aide? Créez un ticket de support et nous vous répondrons',
+                'support.create': 'Créer un Ticket de Support',
+                'support.loading': 'Chargement de vos tickets...',
+                'support.createTitle': 'Créer un Ticket de Support',
+                'support.subject': 'Sujet *',
+                'support.subjectPlaceholder': 'De quoi avez-vous besoin d\'aide?',
+                'support.message': 'Message *',
+                'support.messagePlaceholder': 'Décrivez votre problème en détail...',
+                'support.attachments': 'Pièces Jointes',
+                'support.uploadImage': 'Télécharger une Image',
+                'support.submit': 'Envoyer le Ticket',
+                'support.cancel': 'Annuler',
+                'profile.title': 'S\'inscrire / Se Connecter',
+                'profile.signup': 'S\'inscrire',
+                'profile.login': 'Se Connecter',
+                'profile.uploadPicture': 'Télécharger une Photo de Profil',
+                'profile.username': 'Nom d\'Utilisateur *',
+                'profile.password': 'Mot de Passe *',
+                'profile.bio': 'Biographie (Optionnel)',
+                'profile.bioPlaceholder': 'Parlez-nous de vous...',
+                'profile.edit': 'Modifier le Profil',
+                'profile.save': 'Enregistrer les Modifications',
+                'profile.logout': 'Déconnexion',
+                'profile.profile': 'Profil',
+                'footer.copyright': '© 2024 Recon-Spoofer. Tous droits réservés.',
+                'common.close': 'Fermer',
+                'common.loading': 'Chargement...',
+                'common.error': 'Erreur',
+                'common.success': 'Succès',
+                'common.cancel': 'Annuler',
+                'common.save': 'Enregistrer',
+                'common.delete': 'Supprimer',
+                'common.edit': 'Modifier',
+                'common.submit': 'Envoyer',
+                'common.search': 'Rechercher',
+                'common.filter': 'Filtrer',
+                'common.all': 'Tous',
+                'common.yes': 'Oui',
+                'common.no': 'Non',
+                'common.ok': 'OK',
+                'rating.submit': 'Soumettre une Note',
+                'rating.alreadyRated': 'Déjà Noté',
+                'rating.rating': 'note',
+                'rating.ratings': 'notes',
+                'voice.recording': 'Enregistrement...',
+                'voice.holdToRecord': 'Maintenir pour Enregistrer'
             },
             de: {
                 'changelog.title': 'Was ist neu',
@@ -7760,8 +7951,69 @@
                 'hero.download': 'Installer herunterladen',
                 'hero.downloads': 'Downloads',
                 'hero.rating': 'Bewertung',
+                'hero.uptime': '% Betriebszeit',
+                'hero.purchaseLicense': 'Lizenz Kaufen',
                 'features.title': 'Hauptfunktionen',
-                'features.subtitle': 'Alles was Sie brauchen in einem leistungsstarken Paket'
+                'features.subtitle': 'Alles was Sie brauchen in einem leistungsstarken Paket',
+                'features.lightweight': 'Leichtgewichtiger Installer',
+                'features.lightweightDesc': 'Minimaler Fußabdruck mit schnellem Installationsprozess. Optimiert für Leistung ohne Kompromisse bei der Funktionalität.',
+                'features.quickSetup': 'Schnelle Einrichtung',
+                'features.quickSetupDesc': 'In Minuten einsatzbereit mit intuitiver Konfiguration. Keine technische Expertise erforderlich.',
+                'features.autoUpdates': 'Automatische Updates',
+                'features.autoUpdatesDesc': 'Bleiben Sie auf dem neuesten Stand mit nahtlosen Hintergrund-Updates. Haben Sie immer die neuesten Funktionen und Sicherheitspatches.',
+                'download.ready': 'Bereit zum Starten?',
+                'download.subtitle': 'Jetzt herunterladen und den Unterschied erleben',
+                'download.installer': 'Installer herunterladen',
+                'surveys.title': 'Umfragen und Abstimmungen',
+                'surveys.subtitle': 'Teilen Sie uns Ihr Feedback mit',
+                'surveys.loading': 'Lade Umfragen...',
+                'support.title': 'Support-Tickets',
+                'support.subtitle': 'Brauchen Sie Hilfe? Erstellen Sie ein Support-Ticket und wir melden uns bei Ihnen',
+                'support.create': 'Support-Ticket Erstellen',
+                'support.loading': 'Lade Ihre Tickets...',
+                'support.createTitle': 'Support-Ticket Erstellen',
+                'support.subject': 'Betreff *',
+                'support.subjectPlaceholder': 'Wobei brauchen Sie Hilfe?',
+                'support.message': 'Nachricht *',
+                'support.messagePlaceholder': 'Beschreiben Sie Ihr Problem im Detail...',
+                'support.attachments': 'Anhänge',
+                'support.uploadImage': 'Bild Hochladen',
+                'support.submit': 'Ticket Senden',
+                'support.cancel': 'Abbrechen',
+                'profile.title': 'Registrieren / Anmelden',
+                'profile.signup': 'Registrieren',
+                'profile.login': 'Anmelden',
+                'profile.uploadPicture': 'Profilbild Hochladen',
+                'profile.username': 'Benutzername *',
+                'profile.password': 'Passwort *',
+                'profile.bio': 'Biografie (Optional)',
+                'profile.bioPlaceholder': 'Erzählen Sie uns von sich...',
+                'profile.edit': 'Profil Bearbeiten',
+                'profile.save': 'Änderungen Speichern',
+                'profile.logout': 'Abmelden',
+                'profile.profile': 'Profil',
+                'footer.copyright': '© 2024 Recon-Spoofer. Alle Rechte vorbehalten.',
+                'common.close': 'Schließen',
+                'common.loading': 'Laden...',
+                'common.error': 'Fehler',
+                'common.success': 'Erfolg',
+                'common.cancel': 'Abbrechen',
+                'common.save': 'Speichern',
+                'common.delete': 'Löschen',
+                'common.edit': 'Bearbeiten',
+                'common.submit': 'Senden',
+                'common.search': 'Suchen',
+                'common.filter': 'Filtern',
+                'common.all': 'Alle',
+                'common.yes': 'Ja',
+                'common.no': 'Nein',
+                'common.ok': 'OK',
+                'rating.submit': 'Bewertung Abgeben',
+                'rating.alreadyRated': 'Bereits Bewertet',
+                'rating.rating': 'Bewertung',
+                'rating.ratings': 'Bewertungen',
+                'voice.recording': 'Aufnahme...',
+                'voice.holdToRecord': 'Gedrückt Halten zum Aufnehmen'
             },
             pt: {
                 'changelog.title': 'Novidades',
@@ -7774,8 +8026,69 @@
                 'hero.download': 'Baixar Instalador',
                 'hero.downloads': 'Downloads',
                 'hero.rating': 'Avaliação',
+                'hero.uptime': '% Tempo de Atividade',
+                'hero.purchaseLicense': 'Comprar Licença',
                 'features.title': 'Recursos Principais',
-                'features.subtitle': 'Tudo que você precisa em um pacote poderoso'
+                'features.subtitle': 'Tudo que você precisa em um pacote poderoso',
+                'features.lightweight': 'Instalador Leve',
+                'features.lightweightDesc': 'Pegada mínima com processo de instalação rápido. Otimizado para desempenho sem comprometer a funcionalidade.',
+                'features.quickSetup': 'Configuração Rápida',
+                'features.quickSetupDesc': 'Funcionando em minutos com configuração intuitiva. Nenhuma expertise técnica necessária.',
+                'features.autoUpdates': 'Atualizações Automáticas',
+                'features.autoUpdatesDesc': 'Mantenha-se atualizado com atualizações em segundo plano sem interrupções. Sempre tenha os recursos mais recentes e patches de segurança.',
+                'download.ready': 'Pronto para Começar?',
+                'download.subtitle': 'Baixe agora e experimente a diferença',
+                'download.installer': 'Baixar Instalador',
+                'surveys.title': 'Pesquisas e Enquetes',
+                'surveys.subtitle': 'Compartilhe seu feedback conosco',
+                'surveys.loading': 'Carregando pesquisas...',
+                'support.title': 'Tickets de Suporte',
+                'support.subtitle': 'Precisa de ajuda? Crie um ticket de suporte e entraremos em contato',
+                'support.create': 'Criar Ticket de Suporte',
+                'support.loading': 'Carregando seus tickets...',
+                'support.createTitle': 'Criar Ticket de Suporte',
+                'support.subject': 'Assunto *',
+                'support.subjectPlaceholder': 'Com o que você precisa de ajuda?',
+                'support.message': 'Mensagem *',
+                'support.messagePlaceholder': 'Descreva seu problema em detalhes...',
+                'support.attachments': 'Anexos',
+                'support.uploadImage': 'Enviar Imagem',
+                'support.submit': 'Enviar Ticket',
+                'support.cancel': 'Cancelar',
+                'profile.title': 'Cadastrar / Entrar',
+                'profile.signup': 'Cadastrar',
+                'profile.login': 'Entrar',
+                'profile.uploadPicture': 'Enviar Foto de Perfil',
+                'profile.username': 'Nome de Usuário *',
+                'profile.password': 'Senha *',
+                'profile.bio': 'Biografia (Opcional)',
+                'profile.bioPlaceholder': 'Conte-nos sobre você...',
+                'profile.edit': 'Editar Perfil',
+                'profile.save': 'Salvar Alterações',
+                'profile.logout': 'Sair',
+                'profile.profile': 'Perfil',
+                'footer.copyright': '© 2024 Recon-Spoofer. Todos os direitos reservados.',
+                'common.close': 'Fechar',
+                'common.loading': 'Carregando...',
+                'common.error': 'Erro',
+                'common.success': 'Sucesso',
+                'common.cancel': 'Cancelar',
+                'common.save': 'Salvar',
+                'common.delete': 'Excluir',
+                'common.edit': 'Editar',
+                'common.submit': 'Enviar',
+                'common.search': 'Buscar',
+                'common.filter': 'Filtrar',
+                'common.all': 'Todos',
+                'common.yes': 'Sim',
+                'common.no': 'Não',
+                'common.ok': 'OK',
+                'rating.submit': 'Enviar Avaliação',
+                'rating.alreadyRated': 'Já Avaliado',
+                'rating.rating': 'avaliação',
+                'rating.ratings': 'avaliações',
+                'voice.recording': 'Gravando...',
+                'voice.holdToRecord': 'Segure para Gravar'
             }
         };
 
@@ -7817,13 +8130,42 @@
                 const translation = langTranslations[key];
                 if (translation) {
                     if (element.tagName === 'INPUT' || element.tagName === 'TEXTAREA') {
-                        element.placeholder = translation;
+                        // Only update placeholder if it's not already set via data-i18n-placeholder
+                        if (!element.hasAttribute('data-i18n-placeholder')) {
+                            element.placeholder = translation;
+                        }
                     } else {
                         element.textContent = translation;
                     }
                     console.log('✅ Updated:', key, '=', translation);
                 } else {
                     console.warn('⚠️ No translation found for key:', key);
+                }
+            });
+
+            // Update all elements with data-i18n-placeholder attribute
+            const placeholderElements = document.querySelectorAll('[data-i18n-placeholder]');
+            placeholderElements.forEach(element => {
+                const key = element.getAttribute('data-i18n-placeholder');
+                const translation = langTranslations[key];
+                if (translation) {
+                    element.placeholder = translation;
+                    console.log('✅ Updated placeholder:', key, '=', translation);
+                } else {
+                    console.warn('⚠️ No translation found for placeholder key:', key);
+                }
+            });
+
+            // Update all elements with data-i18n-title attribute
+            const titleElements = document.querySelectorAll('[data-i18n-title]');
+            titleElements.forEach(element => {
+                const key = element.getAttribute('data-i18n-title');
+                const translation = langTranslations[key];
+                if (translation) {
+                    element.title = translation;
+                    console.log('✅ Updated title:', key, '=', translation);
+                } else {
+                    console.warn('⚠️ No translation found for title key:', key);
                 }
             });
 
@@ -8006,7 +8348,12 @@
                     star.style.opacity = '0.5';
                 });
                 document.getElementById('ratingSubmitBtn').disabled = true;
-                document.getElementById('ratingSubmitBtn').textContent = 'Already Rated';
+                const ratingBtn = document.getElementById('ratingSubmitBtn');
+                if (ratingBtn) {
+                    const lang = currentLanguage;
+                    const langTranslations = translations[lang] || defaultTranslations[lang] || defaultTranslations.en;
+                    ratingBtn.textContent = langTranslations['rating.alreadyRated'] || 'Already Rated';
+                }
             }
         }
 
@@ -8060,7 +8407,12 @@
             const ratingStarsDisplay = document.getElementById('ratingStarsDisplay');
 
             if (ratingValue) ratingValue.textContent = average.toFixed(1);
-            if (ratingCount) ratingCount.textContent = `(${count} ${count === 1 ? 'rating' : 'ratings'})`;
+            if (ratingCount) {
+                const lang = currentLanguage;
+                const langTranslations = translations[lang] || defaultTranslations[lang] || defaultTranslations.en;
+                const ratingText = count === 1 ? langTranslations['rating.rating'] : langTranslations['rating.ratings'];
+                ratingCount.textContent = `(${count} ${ratingText})`;
+            }
 
             if (ratingStarsDisplay) {
                 const stars = ratingStarsDisplay.querySelectorAll('.star');
