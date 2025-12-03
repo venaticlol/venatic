@@ -2982,7 +2982,7 @@
                 } else if (tabName === 'profiles') {
                     loadUserProfiles();
                 } else if (tabName === 'keys') {
-                    loadKeys(true); // Auto-sync with KeyAuth API when tab is opened (works for both admin and granted users)
+                    loadKeys(false); // Don't auto-sync on tab open to prevent false positives
                 } else if (tabName === 'finalReseller') {
                     loadFinalReseller();
                 } else if (tabName === 'grant') {
@@ -4381,9 +4381,21 @@
                         const response = await this.doRequest(postData);
                         
                         // If license check succeeds and has user info, key is used
+                        // But we need to verify it actually has user data (username, hwid, etc.)
                         if (response.success === true && response.info) {
-                            // Key has been activated and has user info
-                            return { used: true, data: response.info };
+                            // Only mark as used if it has actual user activation data
+                            // Check for username, hwid, or other user-specific fields
+                            const hasUserData = response.info.username || 
+                                               response.info.hwid || 
+                                               response.info.user ||
+                                               (response.info.subscriptions && response.info.subscriptions.length > 0);
+                            if (hasUserData) {
+                                // Key has been activated and has user info
+                                return { used: true, data: response.info };
+                            } else {
+                                // Key is valid but not yet activated
+                                return { used: false };
+                            }
                         }
                         
                         // If license check fails with "invalid" or "expired", key might be unused or invalid
@@ -4580,6 +4592,7 @@
                 }
                 
                 // Auto-sync key status if enabled (check first 10 keys to avoid long delays)
+                // IMPORTANT: Only update if status changes from unused to used, never the reverse
                 if (autoSync && keys.length > 0 && keys.length <= 50) {
                     try {
                         console.log('Auto-syncing key status with KeyAuth API...');
@@ -4589,19 +4602,42 @@
                         for (const key of keysToCheck) {
                             try {
                                 console.log(`Checking key status: ${key.substring(0, 10)}...`);
+                                
+                                // First, check current status in Firebase
+                                const safeKey = key.replace(/[.#$\[\]]/g, '_');
+                                const currentSnapshot = await window.database.ref(`${storagePath}/${safeKey}`).once('value');
+                                const currentData = currentSnapshot.exists() ? currentSnapshot.val() : null;
+                                
+                                // Skip checking if key was just created (within last 5 seconds) to avoid false positives
+                                if (currentData && currentData.createdAt) {
+                                    const timeSinceCreation = Date.now() - currentData.createdAt;
+                                    if (timeSinceCreation < 5000) {
+                                        console.log(`Skipping check for recently created key: ${key.substring(0, 10)}...`);
+                                        continue;
+                                    }
+                                }
+                                
+                                // Only check status if key is currently marked as unused
+                                // If it's already marked as used, don't re-check (prevents false negatives)
+                                if (currentData && currentData.used === true) {
+                                    console.log(`Key already marked as used, skipping: ${key.substring(0, 10)}...`);
+                                    continue;
+                                }
+                                
                                 const status = await keyAuthClient.checkKeyStatus(key);
                                 console.log(`Key status result:`, status);
                                 
                                 if (status.used !== undefined && !status.error) {
-                                    const safeKey = key.replace(/[.#$\[\]]/g, '_');
-                                    const currentSnapshot = await window.database.ref(`${storagePath}/${safeKey}`).once('value');
-                                    const currentData = currentSnapshot.exists() ? currentSnapshot.val() : null;
-                                    
-                                    if (!currentData || currentData.used !== status.used) {
-                                        await window.database.ref(`${storagePath}/${safeKey}/used`).set(status.used);
-                                        if (status.used) {
-                                            updated++;
-                                            console.log(`✅ Updated key as used: ${key.substring(0, 10)}...`);
+                                    // Only update if changing from unused to used
+                                    // Never change from used to unused (that would be a false negative)
+                                    if (status.used === true && (!currentData || currentData.used !== true)) {
+                                        await window.database.ref(`${storagePath}/${safeKey}/used`).set(true);
+                                        updated++;
+                                        console.log(`✅ Updated key as used: ${key.substring(0, 10)}...`);
+                                    } else if (status.used === false) {
+                                        // Key is confirmed unused, but only update if it wasn't already set
+                                        if (!currentData || currentData.used === undefined) {
+                                            await window.database.ref(`${storagePath}/${safeKey}/used`).set(false);
                                         }
                                     }
                                 } else if (status.error) {
