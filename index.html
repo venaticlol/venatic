@@ -1308,7 +1308,7 @@
         dd.appendChild(item);
       });
       btnEl.appendChild(dd);
-      activeDropdown = dd;
+      setTimeout(() => { activeDropdown = dd; }, 0);
     }
 
     function closeDropdown() { if (activeDropdown) { activeDropdown.remove(); activeDropdown = null; } }
