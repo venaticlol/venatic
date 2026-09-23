@@ -218,6 +218,16 @@ input[type=color]{opacity:0;width:0;height:0;position:absolute}
               <div class="row"><span class="row-label">Keybind</span><div class="keybind-btn" id="kb-trig" onclick="captureKey('Triggerbot.keybindVk',this)">M4</div></div>
               <div class="row"><span class="row-label">Delay</span><div class="slider-wrap"><input class="slider" type="range" min="0" max="300" step="1" id="sl-trigdel" data-cfg="Triggerbot.delay" oninput="sliderInput(this)"><div class="slider-val" id="sv-trigdel">50</div></div></div>
             </div>
+            <div class="card" style="position:relative;margin-top:14px">
+              <div class="card-title">AIM LIMITS</div>
+              <div class="row"><span class="row-label">Keybind Mode</span>
+                <div class="select-btn" id="sel-keybindmode" onclick="openSelect('Aimbot.keybindToggle',['Hold','Toggle'],this,true)">
+                  <span id="sel-keybindmode-label">Hold</span><div class="select-arrow"></div>
+                </div>
+              </div>
+              <div class="row"><span class="row-label">Snap Limit</span><div class="toggle" id="t-snaplimit" onclick="toggleCfgBool('Aimbot.snapLimitEnabled',this)"></div></div>
+              <div class="row" id="row-snapdist"><span class="row-label">Snap Distance</span><div class="slider-wrap"><input class="slider" type="range" min="10" max="500" step="1" id="sl-snapdist" data-cfg="Aimbot.snapDistance" oninput="sliderInput(this)"><div class="slider-val" id="sv-snapdist">100</div></div></div>
+            </div>
           </div>
         </div>
       </div>
@@ -402,6 +412,10 @@ function updateUI(){
   const s=state;
   setToggle('t-aimbot-enabled',s.Aimbot.enabled);
   setToggle('t-extrap',s.Aimbot.extrapolationEnabled);
+  setToggle('t-snaplimit',s.Aimbot.snapLimitEnabled);
+  const snapRow=document.getElementById('row-snapdist');
+  if(snapRow)snapRow.style.display=s.Aimbot.snapLimitEnabled?'':'none';
+  setText('sel-keybindmode-label',s.Aimbot.keybindToggle?'Toggle':'Hold');
   setToggle('t-trig-enabled',s.Triggerbot.enabled);
   setToggle('t-hum-enabled',s.Humanization.enabled);
   setToggle('t-drawfov',s.Visuals.drawFov);
@@ -428,6 +442,7 @@ function updateUI(){
   setSlider('sl-aimd','sv-aimd',s.Aimbot.aimDelay,v=>v.toFixed(0));
   setSlider('sl-extrapf','sv-extrapf',s.Aimbot.extrapolationFactor,v=>v.toFixed(2));
   setSlider('sl-extrapm','sv-extrapm',s.Aimbot.extrapolationMs,v=>v.toFixed(0));
+  setSlider('sl-snapdist','sv-snapdist',s.Aimbot.snapDistance,v=>v.toFixed(0));
   setSlider('sl-trigdel','sv-trigdel',s.Triggerbot.delay,v=>v.toFixed(0));
   setSlider('sl-humamt','sv-humamt',s.Humanization.amount,v=>v.toFixed(0));
   setSlider('sl-react','sv-react',s.Humanization.reaction,v=>v.toFixed(0));
