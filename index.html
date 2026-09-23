@@ -1307,7 +1307,12 @@
         };
         dd.appendChild(item);
       });
-      btnEl.appendChild(dd);
+      const rect = btnEl.getBoundingClientRect();
+      dd.style.top = (rect.bottom + 4 + window.scrollY) + 'px';
+      dd.style.left = (rect.left + window.scrollX) + 'px';
+      dd.style.right = 'auto';
+      dd.style.minWidth = rect.width + 'px';
+      document.body.appendChild(dd);
       setTimeout(() => { activeDropdown = dd; }, 0);
     }
 
