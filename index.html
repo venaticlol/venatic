@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Biolabs.hook</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+:root{
+  --bg:#0b0d14;--shell:#0d0f16;--card:#11131b;--card-border:#1f2230;
+  --sidebar:#12151e;--toolbar:#0b0d14;
+  --accent:#4b7eff;--accent2:#00a3c3;
+  --text:#e4e6ec;--text-dim:#939ba3;--text-muted:#5b5f6b;
+  --row-sep:#1c1f28;--toggle-off:#1d2130;--slider-track:#22263030;
+  --red:#c83c4a;--red-bg:#2d1216;--red-border:#8c2828;
+}
+html,body{width:100%;height:100%;background:var(--bg);font-family:'Inter',sans-serif;color:var(--text);overflow:hidden;user-select:none}
+canvas#particles{position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.35}
+
+#shell{
+  position:relative;z-index:1;
+  width:700px;height:530px;
+  margin:40px auto 0;
+  display:flex;
+  border-radius:14px;
+  overflow:hidden;
+  background:rgba(13,15,22,.92);
+  box-shadow:0 24px 80px rgba(0,0,0,.7),0 0 0 1px rgba(255,255,255,.04);
+  backdrop-filter:blur(16px);
+}
+
+#sidebar{
+  width:140px;flex-shrink:0;
+  background:rgba(18,21,30,.95);
+  border-right:1px solid #1e2137;
+  display:flex;flex-direction:column;
+  padding-bottom:0;
+}
+.sidebar-logo{display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid #1c1f29;height:56px}
+.sidebar-logo img{width:32px;height:32px;border-radius:6px;object-fit:contain}
+.sidebar-logo .brand{font-size:14px;font-weight:700;color:var(--text)}
+.nav-section{font-size:9px;font-weight:600;letter-spacing:.08em;color:var(--text-muted);padding:10px 14px 4px}
+.nav-item{display:flex;align-items:center;gap:8px;padding:0 8px;height:30px;border-radius:6px;margin:0 6px 1px;cursor:pointer;transition:background .12s,color .12s;font-size:13px;color:var(--text-dim)}
+.nav-item svg{width:13px;height:13px;flex-shrink:0;opacity:.7;transition:opacity .12s}
+.nav-item:hover{background:#272b36;color:var(--text)}
+.nav-item.active{background:#272b36;color:#82a0ff}
+.nav-item.active svg{opacity:1;color:#82a0ff}
+.sidebar-spacer{flex:1}
+.sidebar-user{display:flex;align-items:center;gap:8px;padding:10px 12px;border-top:1px solid #1c1f29;font-size:11px}
+.sidebar-user .avatar{width:28px;height:28px;border-radius:50%;background:#282d3b;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--text-dim)}
+.sidebar-user .uname{font-size:12px;color:var(--text);font-weight:500}
+.sidebar-user .ustatus{font-size:10px;color:var(--text-muted)}
+
+#main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+#toolbar{height:46px;background:rgba(11,13,20,.9);border-bottom:1px solid #1b1e27;display:flex;align-items:center;padding:0 16px;font-size:15px;font-weight:700;color:var(--text);flex-shrink:0}
+
+#content{flex:1;padding:16px;overflow-y:auto;overflow-x:hidden;scrollbar-width:thin;scrollbar-color:#2a2d3a transparent}
+#content::-webkit-scrollbar{width:4px}
+#content::-webkit-scrollbar-track{background:transparent}
+#content::-webkit-scrollbar-thumb{background:#2a2d3a;border-radius:2px}
+
+.cols{display:grid;grid-template-columns:265px 1fr;gap:14px}
+.col{display:flex;flex-direction:column;gap:14px}
+
+.card{background:var(--card);border:1px solid var(--card-border);border-radius:14px;overflow:hidden;position:relative}
+.card-title{font-size:9px;font-weight:600;letter-spacing:.08em;color:var(--text-muted);position:absolute;top:-14px;left:10px}
+
+.row{display:flex;align-items:center;justify-content:space-between;padding:0 13px;height:37px;border-top:1px solid var(--row-sep)}
+.row:first-child{border-top:none}
+.row-label{font-size:13px;color:#cfcfda}
+.row-label.dim{color:#5c6073}
+
+.toggle{width:29px;height:18px;border-radius:9px;background:var(--toggle-off);position:relative;cursor:pointer;transition:background .18s;flex-shrink:0}
+.toggle.on{background:var(--accent)}
+.toggle::after{content:'';position:absolute;top:3px;left:3px;width:12px;height:12px;border-radius:50%;background:#858fa0;transition:transform .18s,background .18s}
+.toggle.on::after{transform:translateX(11px);background:#f8f9fc}
+
+.slider-wrap{display:flex;align-items:center;gap:8px}
+.slider{-webkit-appearance:none;appearance:none;width:80px;height:3px;border-radius:2px;background:linear-gradient(to right, var(--accent) var(--pct,0%), #22263a var(--pct,0%));cursor:pointer;flex-shrink:0}
+.slider::-webkit-slider-thumb{-webkit-appearance:none;width:11px;height:11px;border-radius:50%;background:#f7f8fc;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.5)}
+.slider-val{background:#191c26;border-radius:5px;width:42px;height:20px;display:flex;align-items:center;justify-content:center;font-size:11px;color:#a6a9b3;flex-shrink:0}
+
+.select-btn{background:#191c26;border:1px solid #20232e;border-radius:5px;height:23px;min-width:90px;display:flex;align-items:center;justify-content:space-between;padding:0 8px;cursor:pointer;font-size:12px;color:#aaabb8;gap:6px;transition:background .12s,border-color .12s;position:relative}
+.select-btn:hover{background:#1f2336;border-color:var(--accent)}
+.select-arrow{width:6px;height:6px;border-right:1.5px solid #8b8f9a;border-bottom:1.5px solid #8b8f9a;transform:rotate(45deg);margin-top:-3px;flex-shrink:0}
+.dropdown{position:absolute;top:calc(100% + 4px);right:0;background:#14161d;border:1px solid #393d4c;border-radius:10px;z-index:50;min-width:100%;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,.6)}
+.dropdown-item{padding:8px 14px;font-size:12px;color:#b6b9c4;cursor:pointer;transition:background .1s}
+.dropdown-item:hover{background:rgba(75,126,255,.12)}
+.dropdown-item.sel{color:#e0e5f3}
+.dropdown-item.sel::before{content:'✓ ';font-size:10px}
+
+.keybind-btn{background:#191c26;border:1px solid #20232e;border-radius:5px;height:23px;width:60px;display:flex;align-items:center;padding:0 7px;cursor:pointer;font-size:12px;color:#aaabb8;transition:background .12s,border-color .12s}
+.keybind-btn:hover{background:#1f2336;border-color:var(--accent)}
+.keybind-btn.listening{border-color:var(--accent);color:var(--accent)}
+
+.color-swatch{width:22px;height:16px;border-radius:4px;cursor:pointer;border:1px solid #2d3040;margin-right:4px;flex-shrink:0}
+
+.chip-row{display:flex;gap:5px;padding:0 2px;flex-wrap:wrap}
+.chip{padding:3px 10px;border-radius:5px;font-size:10px;font-weight:600;letter-spacing:.04em;cursor:pointer;border:1px solid #20232e;background:#191c26;color:#aaabb8;transition:all .12s}
+.chip.active{background:#1a2440;border-color:#3858a0;color:#96aeff}
+
+.curve-graph{background:#0c0e14;border-radius:6px;border:1px solid #22263a;position:relative;overflow:hidden}
+.curve-graph canvas{display:block}
+
+.jitter-scope{background:#0b0d13;border-radius:5px;border:1px solid #1e2330;overflow:hidden}
+.jitter-scope canvas{display:block}
+
+.status-pill{display:inline-flex;align-items:center;gap:5px;padding:2px 10px;border-radius:5px;font-size:10px;font-weight:600;background:#181f3a;border:1px solid #304884;color:#8ca8ff}
+.status-pill .dot{width:5px;height:5px;border-radius:50%;background:var(--accent);animation:pulse 1.2s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.8)}}
+
+.eject-btn{background:#2d1216;border:1px solid #8c2828;border-radius:8px;height:32px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:13px;color:#dc6478;transition:all .12s;font-weight:600}
+.eject-btn:hover{background:#461a20;border-color:#c83c4a;color:#ff8c9a}
+
+.section-sep{height:1px;background:var(--row-sep);margin:0 13px}
+
+input[type=color]{opacity:0;width:0;height:0;position:absolute}
+
+.page{display:none}.page.active{display:block}
+
+.toolbar-right{margin-left:auto;display:flex;align-items:center;gap:10px}
+.conn-badge{font-size:10px;color:#5a8fff;background:#0d1a3a;border:1px solid #1e3580;border-radius:4px;padding:2px 8px;font-weight:600}
+
+.tabs-anim{animation:tabIn .18s ease both}
+@keyframes tabIn{from{opacity:0;transform:translateX(9px)}to{opacity:1;transform:translateX(0)}}
+
+.nav-item.locked{opacity:.45;cursor:not-allowed;pointer-events:none}
+.nav-item.locked .lock-icon{width:10px;height:10px;margin-left:auto;flex-shrink:0;opacity:.6}
+
+.row-locked{pointer-events:none;opacity:.38}
+.lock-badge{display:inline-flex;align-items:center;gap:4px;font-size:10px;color:#5b4a2e;background:#1e1912;border:1px solid #3d3320;border-radius:4px;padding:1px 7px;font-weight:600;flex-shrink:0}
+.lock-badge svg{width:9px;height:9px;opacity:.7}
+
+.locked-tab-overlay{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;background:rgba(11,13,20,.82);backdrop-filter:blur(3px);z-index:10;border-radius:14px}
+.locked-tab-overlay svg{width:28px;height:28px;color:#3d3825;stroke:#6b5e3a}
+.locked-tab-overlay span{font-size:12px;color:#5b5340;font-weight:500;letter-spacing:.02em}
+</style>
+</head>
+<body>
+<canvas id="particles"></canvas>
+
+<div id="shell">
+  <div id="sidebar">
+    <div class="sidebar-logo">
+      <div class="avatar" style="width:32px;height:32px;border-radius:7px;background:#08182e;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#5eb9ff">BL</div>
+      <span class="brand">Biolabs</span>
+    </div>
+
+    <div class="nav-section">AIMBOT</div>
+    <div class="nav-item active" data-page="main" onclick="setPage('main',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/><line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/></svg>
+      Main
+    </div>
+    <div class="nav-item" data-page="humanization" onclick="setPage('humanization',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      Humanization
+    </div>
+
+    <div class="nav-section">COMMON</div>
+    <div class="nav-item locked" data-page="visuals" onclick="setPage('visuals',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+      Visuals
+      <svg class="lock-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+    </div>
+    <div class="nav-item" data-page="misc" onclick="setPage('misc',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></svg>
+      Misc
+    </div>
+
+    <div class="sidebar-spacer"></div>
+    <div class="sidebar-user">
+      <div class="avatar">⚡</div>
+      <div>
+        <div class="uname">biolabs</div>
+        <div class="ustatus">browser mode</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="main">
+    <div id="toolbar">
+      biolabs.hook
+      <div class="toolbar-right">
+        <span class="conn-badge" id="conn-badge">● LIVE</span>
+      </div>
+    </div>
+
+    <div id="content">
+
+      <!-- MAIN TAB -->
+      <div id="page-main" class="page active tabs-anim">
+        <div class="cols">
+          <div class="col">
+            <div class="card" style="position:relative;margin-top:18px">
+              <div class="card-title">COLOR BOT</div>
+              <div class="row"><span class="row-label">Enabled</span><div class="toggle" id="t-aimbot-enabled" onclick="toggleCfg('Aimbot.enabled',this)"></div></div>
+              <div class="row"><span class="row-label">Keybind</span><div class="keybind-btn" id="kb-aimbot" onclick="captureKey('Aimbot.keybindVk',this)">RMB</div></div>
+              <div class="row"><span class="row-label">Color Preset</span>
+                <div class="select-btn" id="sel-colorpreset" onclick="openSelect('Aimbot.colorIndex',['Red (Default)','Yellow','Purple'],this)">
+                  <span id="sel-colorpreset-label">Red (Default)</span><div class="select-arrow"></div>
+                </div>
+              </div>
+              <div class="row"><span class="row-label">FOV Size</span><div class="slider-wrap"><input class="slider" type="range" min="10" max="500" step="1" id="sl-fov" data-cfg="Aimbot.fov" oninput="sliderInput(this)"><div class="slider-val" id="sv-fov">100</div></div></div>
+              <div class="row"><span class="row-label">Smoothness</span><div class="slider-wrap"><input class="slider" type="range" min="1" max="50" step="0.1" id="sl-smooth" data-cfg="Aimbot.smooth" oninput="sliderInput(this)"><div class="slider-val" id="sv-smooth">5.0</div></div></div>
+              <div class="row"><span class="row-label">Tolerance</span><div class="slider-wrap"><input class="slider" type="range" min="1" max="100" step="1" id="sl-tol" data-cfg="Aimbot.tolerance" oninput="sliderInput(this)"><div class="slider-val" id="sv-tol">30</div></div></div>
+              <div class="row"><span class="row-label">Aim Height</span><div class="slider-wrap"><input class="slider" type="range" min="-50" max="50" step="1" id="sl-aimh" data-cfg="Aimbot.aimHeight" oninput="sliderInput(this)"><div class="slider-val" id="sv-aimh">0</div></div></div>
+              <div class="row"><span class="row-label">Aim Delay</span><div class="slider-wrap"><input class="slider" type="range" min="0" max="200" step="1" id="sl-aimd" data-cfg="Aimbot.aimDelay" oninput="sliderInput(this)"><div class="slider-val" id="sv-aimd">0</div></div></div>
+              <div class="row"><span class="row-label">Extrapolation</span><div class="toggle" id="t-extrap" onclick="toggleCfgBool('Aimbot.extrapolationEnabled',this)"></div></div>
+              <div class="row"><span class="row-label">Extrap Factor</span><div class="slider-wrap"><input class="slider" type="range" min="0" max="3" step="0.01" id="sl-extrapf" data-cfg="Aimbot.extrapolationFactor" oninput="sliderInput(this)"><div class="slider-val" id="sv-extrapf">1.00</div></div></div>
+              <div class="row"><span class="row-label">Extrap Ms</span><div class="slider-wrap"><input class="slider" type="range" min="0" max="100" step="1" id="sl-extrapm" data-cfg="Aimbot.extrapolationMs" oninput="sliderInput(this)"><div class="slider-val" id="sv-extrapm">16</div></div></div>
+            </div>
+          </div>
+          <div class="col">
+            <div class="card" style="position:relative;margin-top:18px">
+              <div class="card-title">TRIGGERBOT</div>
+              <div class="row"><span class="row-label">Enabled</span><div class="toggle" id="t-trig-enabled" onclick="toggleCfg('Triggerbot.enabled',this)"></div></div>
+              <div class="row"><span class="row-label">Keybind</span><div class="keybind-btn" id="kb-trig" onclick="captureKey('Triggerbot.keybindVk',this)">M4</div></div>
+              <div class="row"><span class="row-label">Delay</span><div class="slider-wrap"><input class="slider" type="range" min="0" max="300" step="1" id="sl-trigdel" data-cfg="Triggerbot.delay" oninput="sliderInput(this)"><div class="slider-val" id="sv-trigdel">50</div></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- HUMANIZATION TAB -->
+      <div id="page-humanization" class="page tabs-anim">
+        <div class="cols">
+          <div class="col">
+            <div class="card" style="position:relative;margin-top:18px">
+              <div class="card-title">HUMANIZATION</div>
+              <div class="row"><span class="row-label">Enabled</span><div class="toggle" id="t-hum-enabled" onclick="toggleCfg('Humanization.enabled',this)"></div></div>
+              <div class="row"><span class="row-label">Amount</span><div class="slider-wrap"><input class="slider" type="range" min="0" max="100" step="1" id="sl-humamt" data-cfg="Humanization.amount" oninput="sliderInput(this)"><div class="slider-val" id="sv-humamt">50</div></div></div>
+              <div class="row"><span class="row-label">Reaction Delay</span><div class="slider-wrap"><input class="slider" type="range" min="0" max="150" step="1" id="sl-react" data-cfg="Humanization.reaction" oninput="sliderInput(this)"><div class="slider-val" id="sv-react">45</div></div></div>
+              <div class="row"><span class="row-label">Overshoot</span><div class="slider-wrap"><input class="slider" type="range" min="0" max="50" step="1" id="sl-over" data-cfg="Humanization.overshoot" oninput="sliderInput(this)"><div class="slider-val" id="sv-over">12</div></div></div>
+              <div class="row"><span class="row-label">Overshoot Chance</span><div class="slider-wrap"><input class="slider" type="range" min="0" max="100" step="1" id="sl-overc" data-cfg="Humanization.overshootChance" oninput="sliderInput(this)"><div class="slider-val" id="sv-overc">40</div></div></div>
+              <div class="row"><span class="row-label">Micro Jitter</span><div class="slider-wrap"><input class="slider" type="range" min="0" max="3" step="0.1" id="sl-jit" data-cfg="Humanization.jitter" oninput="sliderInput(this)"><div class="slider-val" id="sv-jit">1.0</div></div></div>
+              <div class="row"><span class="row-label">Speed Variation</span><div class="slider-wrap"><input class="slider" type="range" min="0" max="50" step="1" id="sl-speedv" data-cfg="Humanization.speedVar" oninput="sliderInput(this)"><div class="slider-val" id="sv-speedv">12</div></div></div>
+            </div>
+          </div>
+          <div class="col">
+            <div class="card" style="position:relative;margin-top:18px">
+              <div class="card-title">MOVEMENT CURVE</div>
+              <div style="padding:12px 12px 0">
+                <canvas id="curve-canvas" class="curve-graph" width="212" height="160" style="width:212px;height:160px;cursor:crosshair"></canvas>
+                <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--text-muted);margin:4px 2px 6px;letter-spacing:.06em">
+                  <span>AT TARGET</span><span>FLICK START</span>
+                </div>
+                <div class="chip-row" id="curve-presets" style="margin-bottom:8px">
+                  <div class="chip" onclick="setCurvePreset(0)">LINEAR</div>
+                  <div class="chip" onclick="setCurvePreset(1)">EASE</div>
+                  <div class="chip active" onclick="setCurvePreset(2)">SMOOTH</div>
+                  <div class="chip" onclick="setCurvePreset(3)">SNAP</div>
+                </div>
+                <div style="display:flex;justify-content:space-between;font-size:10px;color:#787d8c;margin-bottom:8px">
+                  <span id="curve-p1">P1 (0.42, 0.00)</span>
+                  <span id="curve-p2">P2 (0.58, 1.00)</span>
+                </div>
+              </div>
+            </div>
+            <div class="card" style="position:relative;margin-top:4px">
+              <div class="card-title">JITTER SCOPE</div>
+              <div style="padding:8px 12px">
+                <canvas id="jitter-canvas" width="212" height="31" style="width:212px;height:31px;display:block;border-radius:5px;background:#0b0d13;border:1px solid #1e2330"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- VISUALS TAB -->
+      <div id="page-visuals" class="page tabs-anim" style="position:relative;min-height:200px">
+        <div class="locked-tab-overlay">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          <span>Unavailable in Browser Mode</span>
+        </div>
+        <div class="cols" style="opacity:.18;pointer-events:none">
+          <div class="col">
+            <div class="card" style="position:relative;margin-top:18px">
+              <div class="card-title">FOV CIRCLE</div>
+
+              <div class="row"><span class="row-label">Draw FOV</span><div style="display:flex;align-items:center;gap:6px"><div class="color-swatch" id="sw-fovcolor" style="background:rgba(255,0,255,1)" onclick="openColorPicker('Visuals.fovColor',this)"></div><div class="toggle" id="t-drawfov" onclick="toggleCfgBool('Visuals.drawFov',this)"></div></div></div>
+              <div class="row"><span class="row-label">Rainbow</span><div class="toggle" id="t-rainbowfov" onclick="toggleCfgBool('Visuals.rainbowFov',this)"></div></div>
+              <div class="row"><span class="row-label">Thickness</span><div class="slider-wrap"><input class="slider" type="range" min="0.5" max="5" step="0.1" id="sl-fovthick" data-cfg="Visuals.fovThickness" oninput="sliderInput(this)"><div class="slider-val" id="sv-fovthick">1.5</div></div></div>
+              <div class="row"><span class="row-label">Filled</span><div class="toggle" id="t-fovfilled" onclick="toggleCfgBool('Visuals.fovFilled',this)"></div></div>
+              <div class="row"><span class="row-label">Fill Opacity</span><div class="slider-wrap"><input class="slider" type="range" min="0.01" max="0.5" step="0.01" id="sl-fovopa" data-cfg="Visuals.fovFilledAlpha" oninput="sliderInput(this)"><div class="slider-val" id="sv-fovopa">0.10</div></div></div>
+            </div>
+            <div class="card" style="position:relative;margin-top:4px">
+              <div class="card-title">OTHER</div>
+              <div class="row"><span class="row-label">Watermark</span><div class="toggle" id="t-watermark" onclick="toggleCfgBool('Visuals.showWatermark',this)"></div></div>
+              <div class="row"><span class="row-label">FOV Label</span><div style="display:flex;align-items:center;gap:6px"><div class="color-swatch" id="sw-fovlabelcolor" style="background:rgba(255,255,255,1)" onclick="openColorPicker('Visuals.fovLabelColor',this)"></div><div class="toggle" id="t-fovlabel" onclick="toggleCfgBool('Visuals.fovWatermark',this)"></div></div></div>
+              <div class="row"><span class="row-label">Rainbow Label</span><div class="toggle" id="t-rainbowlabel" onclick="toggleCfgBool('Visuals.rainbowFovLabel',this)"></div></div>
+              <div class="row"><span class="row-label">Show FPS</span><div class="toggle" id="t-showfps" onclick="toggleCfgBool('Visuals.showFps',this)"></div></div>
+              <div class="row"><span class="row-label">Rainbow Speed</span><div class="slider-wrap"><input class="slider" type="range" min="0.1" max="5" step="0.1" id="sl-rbspeed" data-cfg="Visuals.rainbowSpeed" oninput="sliderInput(this)"><div class="slider-val" id="sv-rbspeed">1.0</div></div></div>
+            </div>
+          </div>
+          <div class="col">
+            <div class="card" style="position:relative;margin-top:18px">
+              <div class="card-title">CROSSHAIR</div>
+              <div class="row"><span class="row-label">Enabled</span><div style="display:flex;align-items:center;gap:6px"><div class="color-swatch" id="sw-xhaircolor" style="background:rgba(255,255,255,1)" onclick="openColorPicker('Visuals.crosshairColor',this)"></div><div class="toggle" id="t-xhair" onclick="toggleCfgBool('Visuals.drawCrosshair',this)"></div></div></div>
+              <div class="row"><span class="row-label">Rainbow</span><div class="toggle" id="t-rainbowxhair" onclick="toggleCfgBool('Visuals.rainbowCrosshair',this)"></div></div>
+              <div class="row"><span class="row-label">Style</span>
+                <div class="select-btn" id="sel-xhairstyle" onclick="openSelect('Visuals.crosshairPreset',['Cross','Dot','Circle','Plus'],this)">
+                  <span id="sel-xhairstyle-label">Cross</span><div class="select-arrow"></div>
+                </div>
+              </div>
+              <div class="row"><span class="row-label">Size</span><div class="slider-wrap"><input class="slider" type="range" min="2" max="30" step="1" id="sl-xhsz" data-cfg="Visuals.crosshairSize" oninput="sliderInput(this)"><div class="slider-val" id="sv-xhsz">8</div></div></div>
+              <div class="row"><span class="row-label">Gap</span><div class="slider-wrap"><input class="slider" type="range" min="0" max="20" step="1" id="sl-xhgap" data-cfg="Visuals.crosshairGap" oninput="sliderInput(this)"><div class="slider-val" id="sv-xhgap">3</div></div></div>
+              <div class="row"><span class="row-label">Thickness</span><div class="slider-wrap"><input class="slider" type="range" min="0.5" max="5" step="0.1" id="sl-xhthick" data-cfg="Visuals.crosshairThickness" oninput="sliderInput(this)"><div class="slider-val" id="sv-xhthick">1.5</div></div></div>
+              <div class="row"><span class="row-label">Outline</span><div class="toggle" id="t-xhoutline" onclick="toggleCfgBool('Visuals.crosshairOutline',this)"></div></div>
+              <div class="row"><span class="row-label">Spin</span><div class="toggle" id="t-xhspin" onclick="toggleCfgBool('Visuals.crosshairSpin',this)"></div></div>
+              <div class="row"><span class="row-label">Spin Speed</span><div class="slider-wrap"><input class="slider" type="range" min="0.5" max="20" step="0.1" id="sl-spinspd" data-cfg="Visuals.spinSpeed" oninput="sliderInput(this)"><div class="slider-val" id="sv-spinspd">2.0</div></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- MISC TAB -->
+      <div id="page-misc" class="page tabs-anim">
+        <div class="cols">
+          <div class="col">
+            <div class="card" style="position:relative;margin-top:18px">
+              <div class="card-title">MOVEMENT</div>
+              <div class="row"><span class="row-label">Bunny Hop</span><div class="toggle" id="t-bhop" onclick="toggleCfg('Misc.bhopEnabled',this)"></div></div>
+              <div class="row"><span class="row-label dim">Space held</span></div>
+            </div>
+            <div class="card" style="position:relative;margin-top:4px">
+              <div class="card-title">DODGE FLASH</div>
+              <div class="row"><span class="row-label">Enabled</span><div class="toggle" id="t-dodge" onclick="toggleCfg('Misc.dodgeEnabled',this)"></div></div>
+              <div class="row"><span class="row-label">Keybind</span><div class="keybind-btn" id="kb-dodge" onclick="captureKey('Misc.dodgeKeybindVk',this)">F</div></div>
+              <div class="row"><span class="row-label">Speed</span><div class="slider-wrap"><input class="slider" type="range" min="1" max="100" step="1" id="sl-dodgespd" data-cfg="Misc.dodgeSpeed" oninput="sliderInput(this)"><div class="slider-val" id="sv-dodgespd">50</div></div></div>
+              <div class="row"><span class="row-label dim">Turns 180deg</span></div>
+            </div>
+          </div>
+          <div class="col">
+            <div class="card" style="position:relative;margin-top:18px">
+              <div class="card-title">RECOIL CONTROL</div>
+              <div class="row"><span class="row-label">Enabled</span><div class="toggle" id="t-recoil" onclick="toggleCfg('Misc.recoilEnabled',this)"></div></div>
+              <div class="row"><span class="row-label">Keybind</span><div class="keybind-btn" id="kb-recoil" onclick="captureKey('Misc.recoilKeybindVk',this)">LMB</div></div>
+              <div class="row"><span class="row-label">Strength</span><div class="slider-wrap"><input class="slider" type="range" min="0.5" max="15" step="0.1" id="sl-recoilstr" data-cfg="Misc.recoilStrength" oninput="sliderInput(this)"><div class="slider-val" id="sv-recoilstr">2.0</div></div></div>
+              <div class="row"><span class="row-label dim">Pulls down</span></div>
+            </div>
+            <div class="card" style="position:relative;margin-top:4px">
+              <div class="card-title">STREAMING</div>
+              <div class="row row-locked"><span class="row-label">Stream Proof</span><span class="lock-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Overlay only</span></div>
+              <div class="row row-locked"><span class="row-label">Nvidia Proof</span><span class="lock-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Overlay only</span></div>
+            </div>
+            <div class="eject-btn" onclick="sendSet('Menu.eject',true)" style="margin-top:10px">Eject</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+const _apiBase = new URL(location.href).searchParams.get('api') || '';
+function apiUrl(path){ return _apiBase ? _apiBase.replace(/\/+$/,'') + path : path; }
+
+const VK_NAMES = {1:'LMB',2:'RMB',4:'MMB',5:'M4',6:'M5',16:'Shift',17:'Ctrl',18:'Alt',32:'Space',112:'F1',113:'F2',114:'F3',115:'F4',116:'F5',117:'F6',118:'F7',119:'F8',120:'F9',121:'F10',122:'F11',123:'F12'};
+function vkName(v){
+  if(!v||v===0)return'None';
+  if(VK_NAMES[v])return VK_NAMES[v];
+  if(v>=48&&v<=57)return String.fromCharCode(v);
+  if(v>=65&&v<=90)return String.fromCharCode(v);
+  return'0x'+v.toString(16).toUpperCase();
+}
+
+const CURVE_PRESETS=[
+  {x1:0,y1:0,x2:1,y2:1},
+  {x1:.25,y1:.1,x2:.25,y2:1},
+  {x1:.42,y1:0,x2:.58,y2:1},
+  {x1:0,y1:0,x2:.58,y2:1}
+];
+
+let state={
+  Aimbot:{enabled:false,fov:100,smooth:5,tolerance:30,keybindVk:2,aimHeight:0,colorIndex:0,aimDelay:0,extrapolationEnabled:false,extrapolationFactor:1,extrapolationMs:16},
+  Humanization:{enabled:false,amount:50,reaction:45,overshoot:12,overshootChance:40,jitter:1,speedVar:12,curveX1:.42,curveY1:0,curveX2:.58,curveY2:1,liveActive:false,liveCurveU:0,jitterBuf:new Array(128).fill(0),jitterHead:0},
+  Triggerbot:{enabled:false,keybindVk:5,delay:50},
+  Visuals:{drawFov:false,fovColor:[1,0,1,1],fovThickness:1.5,fovFilled:false,fovFilledAlpha:.1,rainbowFov:false,drawCrosshair:false,crosshairColor:[1,1,1,1],crosshairPreset:0,crosshairSize:8,crosshairGap:3,crosshairThickness:1.5,crosshairOutline:false,crosshairSpin:false,spinSpeed:2,fovWatermark:false,fovLabelColor:[1,1,1,1],rainbowFovLabel:false,showFps:false,showWatermark:true,rainbowCrosshair:false,rainbowSpeed:1},
+  Misc:{bhopEnabled:false,dodgeEnabled:false,dodgeSpeed:50,dodgeKeybindVk:0x46,recoilEnabled:false,recoilStrength:2,recoilKeybindVk:1,streamProof:false,nvidiaProof:false},
+  Menu:{eject:false},
+  Perf:{scanFps:0}
+};
+
+let activeDropdown=null;
+let capturingKey=null;
+let capturingEl=null;
+
+function setPage(id,el){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  const pg=document.getElementById('page-'+id);
+  pg.classList.add('active');
+  pg.style.animation='none';pg.offsetHeight;pg.style.animation='';
+  pg.classList.add('tabs-anim');
+  el.classList.add('active');
+  closeDropdown();
+}
+
+function updateUI(){
+  const s=state;
+  setToggle('t-aimbot-enabled',s.Aimbot.enabled);
+  setToggle('t-extrap',s.Aimbot.extrapolationEnabled);
+  setToggle('t-trig-enabled',s.Triggerbot.enabled);
+  setToggle('t-hum-enabled',s.Humanization.enabled);
+  setToggle('t-drawfov',s.Visuals.drawFov);
+  setToggle('t-rainbowfov',s.Visuals.rainbowFov);
+  setToggle('t-fovfilled',s.Visuals.fovFilled);
+  setToggle('t-watermark',s.Visuals.showWatermark);
+  setToggle('t-fovlabel',s.Visuals.fovWatermark);
+  setToggle('t-rainbowlabel',s.Visuals.rainbowFovLabel);
+  setToggle('t-showfps',s.Visuals.showFps);
+  setToggle('t-xhair',s.Visuals.drawCrosshair);
+  setToggle('t-rainbowxhair',s.Visuals.rainbowCrosshair);
+  setToggle('t-xhoutline',s.Visuals.crosshairOutline);
+  setToggle('t-xhspin',s.Visuals.crosshairSpin);
+  setToggle('t-bhop',s.Misc.bhopEnabled);
+  setToggle('t-dodge',s.Misc.dodgeEnabled);
+  setToggle('t-recoil',s.Misc.recoilEnabled);
+  setToggle('t-streamproof',s.Misc.streamProof);
+  setToggle('t-nvidiaproof',s.Misc.nvidiaProof);
+
+  setSlider('sl-fov','sv-fov',s.Aimbot.fov,v=>v.toFixed(0));
+  setSlider('sl-smooth','sv-smooth',s.Aimbot.smooth,v=>v.toFixed(1));
+  setSlider('sl-tol','sv-tol',s.Aimbot.tolerance,v=>v.toFixed(0));
+  setSlider('sl-aimh','sv-aimh',s.Aimbot.aimHeight,v=>v.toFixed(0));
+  setSlider('sl-aimd','sv-aimd',s.Aimbot.aimDelay,v=>v.toFixed(0));
+  setSlider('sl-extrapf','sv-extrapf',s.Aimbot.extrapolationFactor,v=>v.toFixed(2));
+  setSlider('sl-extrapm','sv-extrapm',s.Aimbot.extrapolationMs,v=>v.toFixed(0));
+  setSlider('sl-trigdel','sv-trigdel',s.Triggerbot.delay,v=>v.toFixed(0));
+  setSlider('sl-humamt','sv-humamt',s.Humanization.amount,v=>v.toFixed(0));
+  setSlider('sl-react','sv-react',s.Humanization.reaction,v=>v.toFixed(0));
+  setSlider('sl-over','sv-over',s.Humanization.overshoot,v=>v.toFixed(0));
+  setSlider('sl-overc','sv-overc',s.Humanization.overshootChance,v=>v.toFixed(0));
+  setSlider('sl-jit','sv-jit',s.Humanization.jitter,v=>v.toFixed(1));
+  setSlider('sl-speedv','sv-speedv',s.Humanization.speedVar,v=>v.toFixed(0));
+  setSlider('sl-fovthick','sv-fovthick',s.Visuals.fovThickness,v=>v.toFixed(1));
+  setSlider('sl-fovopa','sv-fovopa',s.Visuals.fovFilledAlpha,v=>v.toFixed(2));
+  setSlider('sl-rbspeed','sv-rbspeed',s.Visuals.rainbowSpeed,v=>v.toFixed(1));
+  setSlider('sl-xhsz','sv-xhsz',s.Visuals.crosshairSize,v=>v.toFixed(0));
+  setSlider('sl-xhgap','sv-xhgap',s.Visuals.crosshairGap,v=>v.toFixed(0));
+  setSlider('sl-xhthick','sv-xhthick',s.Visuals.crosshairThickness,v=>v.toFixed(1));
+  setSlider('sl-spinspd','sv-spinspd',s.Visuals.spinSpeed,v=>v.toFixed(1));
+  setSlider('sl-dodgespd','sv-dodgespd',s.Misc.dodgeSpeed,v=>v.toFixed(0));
+  setSlider('sl-recoilstr','sv-recoilstr',s.Misc.recoilStrength,v=>v.toFixed(1));
+
+  setText('kb-aimbot',vkName(s.Aimbot.keybindVk));
+  setText('kb-trig',vkName(s.Triggerbot.keybindVk));
+  setText('kb-dodge',vkName(s.Misc.dodgeKeybindVk));
+  setText('kb-recoil',vkName(s.Misc.recoilKeybindVk));
+
+  const presetNames=['Red (Default)','Yellow','Purple'];
+  setText('sel-colorpreset-label',presetNames[s.Aimbot.colorIndex]||presetNames[0]);
+  const xhNames=['Cross','Dot','Circle','Plus'];
+  setText('sel-xhairstyle-label',xhNames[s.Visuals.crosshairPreset]||xhNames[0]);
+
+  setSwatch('sw-fovcolor',s.Visuals.fovColor);
+  setSwatch('sw-xhaircolor',s.Visuals.crosshairColor);
+  setSwatch('sw-fovlabelcolor',s.Visuals.fovLabelColor);
+
+  document.getElementById('curve-p1').textContent=`P1 (${s.Humanization.curveX1.toFixed(2)}, ${s.Humanization.curveY1.toFixed(2)})`;
+  document.getElementById('curve-p2').textContent=`P2 (${s.Humanization.curveX2.toFixed(2)}, ${s.Humanization.curveY2.toFixed(2)})`;
+  updateCurvePresetChips();
+  drawCurve();
+}
+
+function setToggle(id,on){const el=document.getElementById(id);if(el){el.classList.toggle('on',!!on);}}
+function setText(id,txt){const el=document.getElementById(id);if(el)el.textContent=txt;}
+function setSlider(slId,valId,v,fmt){
+  const sl=document.getElementById(slId);
+  const vl=document.getElementById(valId);
+  if(sl){sl.value=v;updateSliderGradient(sl);}
+  if(vl)vl.textContent=fmt(v);
+}
+function setSwatch(id,col){
+  const el=document.getElementById(id);
+  if(el&&col)el.style.background=`rgba(${Math.round(col[0]*255)},${Math.round(col[1]*255)},${Math.round(col[2]*255)},${col[3]??1})`;
+}
+function updateSliderGradient(sl){
+  const min=parseFloat(sl.min),max=parseFloat(sl.max),v=parseFloat(sl.value);
+  const pct=((v-min)/(max-min)*100).toFixed(1)+'%';
+  sl.style.setProperty('--pct',pct);
+}
+
+function toggleCfg(key,el){
+  const parts=key.split('.');
+  const cur=state[parts[0]][parts[1]];
+  const nv=!cur;
+  state[parts[0]][parts[1]]=nv;
+  el.classList.toggle('on',nv);
+  sendSet(key,nv);
+}
+function toggleCfgBool(key,el){toggleCfg(key,el);}
+
+function sliderInput(sl){
+  updateSliderGradient(sl);
+  const cfg=sl.dataset.cfg;
+  const v=parseFloat(sl.value);
+  const parts=cfg.split('.');
+  state[parts[0]][parts[1]]=v;
+  const vid=sl.id.replace('sl-','sv-');
+  const vfmt=sl.step<0.1?v.toFixed(2):sl.step<=0.1?v.toFixed(1):v.toFixed(0);
+  const vel=document.getElementById(vid);
+  if(vel)vel.textContent=vfmt;
+  sendSet(cfg,v);
+}
+
+function sendSet(key,value){
+  fetch(apiUrl('/set'),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key,value})}).catch(()=>{});
+}
+
+function openSelect(cfg,options,btnEl){
+  closeDropdown();
+  const dd=document.createElement('div');
+  dd.className='dropdown';
+  const parts=cfg.split('.');
+  const cur=state[parts[0]]?.[parts[1]]??0;
+  options.forEach((o,i)=>{
+    const item=document.createElement('div');
+    item.className='dropdown-item'+(i===cur?' sel':'');
+    item.textContent=o;
+    item.onclick=(e)=>{
+      e.stopPropagation();
+      state[parts[0]][parts[1]]=i;
+      sendSet(cfg,i);
+      updateUI();
+      closeDropdown();
+    };
+    dd.appendChild(item);
+  });
+  btnEl.appendChild(dd);
+  activeDropdown=dd;
+}
+
+function closeDropdown(){if(activeDropdown){activeDropdown.remove();activeDropdown=null;}}
+document.addEventListener('click',()=>closeDropdown());
+
+let activePicker=null;
+function openColorPicker(cfg,swEl){
+  if(activePicker){activePicker.remove();activePicker=null;return;}
+  const inp=document.createElement('input');
+  inp.type='color';
+  const parts=cfg.split('.');
+  const col=state[parts[0]][parts[1]];
+  const hex='#'+[col[0],col[1],col[2]].map(c=>Math.round(c*255).toString(16).padStart(2,'0')).join('');
+  inp.value=hex;
+  inp.style.cssText='position:absolute;opacity:0;width:0;height:0;pointer-events:none';
+  document.body.appendChild(inp);
+  activePicker=inp;
+  inp.oninput=()=>{
+    const r=parseInt(inp.value.slice(1,3),16)/255;
+    const g=parseInt(inp.value.slice(3,5),16)/255;
+    const b=parseInt(inp.value.slice(5,7),16)/255;
+    state[parts[0]][parts[1]]=[r,g,b,1];
+    swEl.style.background=`rgba(${Math.round(r*255)},${Math.round(g*255)},${Math.round(b*255)},1)`;
+    sendSet(cfg,[r,g,b,1]);
+  };
+  inp.onchange=()=>{inp.remove();activePicker=null;};
+  inp.click();
+}
+
+let capturingKeyEl=null;
+let capturingKeyCfg=null;
+function captureKey(cfg,el){
+  if(capturingKeyEl){capturingKeyEl.classList.remove('listening');capturingKeyEl.textContent=vkName(getStateCfg(capturingKeyCfg));}
+  capturingKeyEl=el;capturingKeyCfg=cfg;
+  el.classList.add('listening');el.textContent='[...]';
+}
+function getStateCfg(cfg){const p=cfg.split('.');return state[p[0]]?.[p[1]]??0;}
+document.addEventListener('keydown',e=>{
+  if(!capturingKeyEl)return;
+  e.preventDefault();
+  let vk=e.keyCode;
+  if(e.key==='Escape')vk=0;
+  const parts=capturingKeyCfg.split('.');
+  state[parts[0]][parts[1]]=vk;
+  sendSet(capturingKeyCfg,vk);
+  capturingKeyEl.classList.remove('listening');
+  capturingKeyEl.textContent=vkName(vk);
+  capturingKeyEl=null;capturingKeyCfg=null;
+},true);
+
+const CURVE_PRESET_DEFS=[
+  [0,0,1,1],[.25,.1,.25,1],[.42,0,.58,1],[0,0,.58,1]
+];
+function setCurvePreset(i){
+  const p=CURVE_PRESET_DEFS[i];
+  state.Humanization.curveX1=p[0];state.Humanization.curveY1=p[1];
+  state.Humanization.curveX2=p[2];state.Humanization.curveY2=p[3];
+  sendSet('Humanization.curveX1',p[0]);sendSet('Humanization.curveY1',p[1]);
+  sendSet('Humanization.curveX2',p[2]);sendSet('Humanization.curveY2',p[3]);
+  updateCurvePresetChips();drawCurve();
+  document.getElementById('curve-p1').textContent=`P1 (${p[0].toFixed(2)}, ${p[1].toFixed(2)})`;
+  document.getElementById('curve-p2').textContent=`P2 (${p[2].toFixed(2)}, ${p[3].toFixed(2)})`;
+}
+function updateCurvePresetChips(){
+  const h=state.Humanization;
+  const chips=document.querySelectorAll('#curve-presets .chip');
+  chips.forEach((c,i)=>{
+    const p=CURVE_PRESET_DEFS[i];
+    const match=Math.abs(h.curveX1-p[0])<.003&&Math.abs(h.curveY1-p[1])<.003&&Math.abs(h.curveX2-p[2])<.003&&Math.abs(h.curveY2-p[3])<.003;
+    c.classList.toggle('active',match);
+  });
+}
+
+function drawCurve(){
+  const cv=document.getElementById('curve-canvas');
+  if(!cv)return;
+  const ctx=cv.getContext('2d');
+  const W=cv.width,H=cv.height;
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle='#0c0e14';ctx.beginPath();ctx.roundRect(0,0,W,H,6);ctx.fill();
+  const h=state.Humanization;
+  const toS=(ux,uy)=>({x:ux*W,y:(1-uy)*H});
+  ctx.strokeStyle='#181e2c';ctx.lineWidth=1;
+  for(let i=1;i<4;i++){
+    const t=i/4;
+    ctx.beginPath();ctx.moveTo(t*W,0);ctx.lineTo(t*W,H);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(0,t*H);ctx.lineTo(W,t*H);ctx.stroke();
+  }
+  ctx.setLineDash([4,4]);ctx.strokeStyle='#262a36';ctx.beginPath();ctx.moveTo(0,H);ctx.lineTo(W,0);ctx.stroke();ctx.setLineDash([]);
+  const pts=[];
+  for(let i=0;i<=48;i++){
+    const t=i/48,mt=1-t;
+    const w1=3*mt*mt*t,w2=3*mt*t*t,w3=t*t*t;
+    const ux=w1*h.curveX1+w2*h.curveX2+w3;
+    const uy=w1*h.curveY1+w2*h.curveY2+w3;
+    pts.push(toS(ux,uy));
+  }
+  const grad=ctx.createLinearGradient(0,H,W,0);
+  grad.addColorStop(0,'rgba(75,126,255,0.04)');
+  grad.addColorStop(1,'rgba(75,126,255,0.28)');
+  ctx.beginPath();ctx.moveTo(pts[0].x,pts[0].y);
+  for(let i=1;i<pts.length;i++)ctx.lineTo(pts[i].x,pts[i].y);
+  ctx.lineTo(W,H);ctx.lineTo(0,H);ctx.closePath();
+  ctx.fillStyle=grad;ctx.fill();
+  ctx.beginPath();ctx.moveTo(pts[0].x,pts[0].y);
+  for(let i=1;i<pts.length;i++)ctx.lineTo(pts[i].x,pts[i].y);
+  ctx.strokeStyle='#5c92ff';ctx.lineWidth=2;ctx.stroke();
+  const h1=toS(h.curveX1,h.curveY1);
+  const h2=toS(h.curveX2,h.curveY2);
+  ctx.strokeStyle='#343e52';ctx.setLineDash([3,3]);ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(0,H);ctx.lineTo(h1.x,h1.y);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(W,0);ctx.lineTo(h2.x,h2.y);ctx.stroke();
+  ctx.setLineDash([]);
+  [h1,h2].forEach(p=>{
+    ctx.fillStyle='#5c92ff';ctx.beginPath();ctx.arc(p.x,p.y,5,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#ebf3ff';ctx.beginPath();ctx.arc(p.x,p.y,2.2,0,Math.PI*2);ctx.fill();
+  });
+}
+
+let curveGrab=0;
+const cv=document.getElementById('curve-canvas');
+cv.addEventListener('mousedown',e=>{
+  const r=cv.getBoundingClientRect();
+  const mx=(e.clientX-r.left)/r.width;
+  const my=1-(e.clientY-r.top)/r.height;
+  const h=state.Humanization;
+  const d1=(mx-h.curveX1)**2+(my-h.curveY1)**2;
+  const d2=(mx-h.curveX2)**2+(my-h.curveY2)**2;
+  const near1=d1<0.015,near2=d2<0.015;
+  curveGrab=near1&&(!near2||d1<=d2)?1:near2?2:0;
+});
+cv.addEventListener('mousemove',e=>{
+  if(!curveGrab)return;
+  const r=cv.getBoundingClientRect();
+  const mx=Math.max(0,Math.min(1,(e.clientX-r.left)/r.width));
+  const my=Math.max(0,Math.min(1,1-(e.clientY-r.top)/r.height));
+  if(curveGrab===1){state.Humanization.curveX1=mx;state.Humanization.curveY1=my;}
+  else{state.Humanization.curveX2=mx;state.Humanization.curveY2=my;}
+  drawCurve();
+  document.getElementById('curve-p1').textContent=`P1 (${state.Humanization.curveX1.toFixed(2)}, ${state.Humanization.curveY1.toFixed(2)})`;
+  document.getElementById('curve-p2').textContent=`P2 (${state.Humanization.curveX2.toFixed(2)}, ${state.Humanization.curveY2.toFixed(2)})`;
+  updateCurvePresetChips();
+});
+cv.addEventListener('mouseup',e=>{
+  if(!curveGrab)return;
+  sendSet('Humanization.curveX1',state.Humanization.curveX1);
+  sendSet('Humanization.curveY1',state.Humanization.curveY1);
+  sendSet('Humanization.curveX2',state.Humanization.curveX2);
+  sendSet('Humanization.curveY2',state.Humanization.curveY2);
+  curveGrab=0;
+});
+document.addEventListener('mouseup',()=>{if(curveGrab){curveGrab=0;}});
+
+function drawJitter(){
+  const cv=document.getElementById('jitter-canvas');
+  if(!cv)return;
+  const ctx=cv.getContext('2d');
+  const W=cv.width,H=cv.height;
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle='#0b0d13';ctx.fillRect(0,0,W,H);
+  const cy=H/2;
+  ctx.strokeStyle='#1a1e2a';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(1,cy);ctx.lineTo(W-1,cy);ctx.stroke();
+  const buf=state.Humanization.jitterBuf;
+  const head=state.Humanization.jitterHead;
+  const active=state.Humanization.enabled&&state.Humanization.liveActive;
+  const N=128,step=W/(N-1),scale=H*0.42;
+  for(let i=0;i<N-1;i++){
+    const ia=(head+1+i)&127,ib=(head+2+i)&127;
+    const va=buf[ia]||0,vb=buf[ib]||0;
+    const age=i/(N-1);
+    const alpha=active?(60+140*age):(25+55*age);
+    ctx.strokeStyle=active?`rgba(75,126,255,${alpha/255})`:`rgba(55,62,80,${alpha/255})`;
+    ctx.lineWidth=1.5;
+    ctx.beginPath();ctx.moveTo(step*i,cy-va*scale);ctx.lineTo(step*(i+1),cy-vb*scale);ctx.stroke();
+  }
+  ctx.strokeStyle='#1e2330';ctx.lineWidth=1;ctx.strokeRect(0,0,W,H);
+}
+
+function applyState(s){
+  Object.assign(state.Aimbot,s.Aimbot??{});
+  Object.assign(state.Humanization,s.Humanization??{});
+  Object.assign(state.Triggerbot,s.Triggerbot??{});
+  Object.assign(state.Visuals,s.Visuals??{});
+  Object.assign(state.Misc,s.Misc??{});
+  if(s.Menu)Object.assign(state.Menu,s.Menu);
+  if(s.Perf)Object.assign(state.Perf,s.Perf);
+  updateUI();
+}
+
+let sseConnected=false;
+function connectSSE(){
+  const badge=document.getElementById('conn-badge');
+  if(!_apiBase){ badge.textContent='○ NO API PARAM'; badge.style.color='#c83c4a'; return; }
+  const es=new EventSource(apiUrl('/events'));
+  es.onopen=()=>{sseConnected=true;badge.textContent='● LIVE';badge.style.color='#5a8fff';};
+  es.onmessage=e=>{
+    try{const s=JSON.parse(e.data);applyState(s);}catch(ex){}
+  };
+  es.onerror=()=>{
+    sseConnected=false;badge.textContent='○ OFFLINE';badge.style.color='#c83c4a';
+    es.close();
+    setTimeout(connectSSE,2000);
+  };
+}
+
+(function initSliders(){
+  document.querySelectorAll('.slider').forEach(sl=>updateSliderGradient(sl));
+})();
+
+(function initParticles(){
+  const cv=document.getElementById('particles');
+  const ctx=cv.getContext('2d');
+  let W,H;
+  function resize(){W=cv.width=window.innerWidth;H=cv.height=window.innerHeight;}
+  window.addEventListener('resize',resize);resize();
+  const particles=Array.from({length:40},()=>({x:Math.random()*1920,y:Math.random()*1080,vy:-(Math.random()*.12+.1),sz:Math.random()*1+.5}));
+  function tick(){
+    ctx.clearRect(0,0,W,H);
+    particles.forEach(p=>{
+      p.y+=p.vy*0.8;
+      if(p.y<0){p.y=H;p.x=Math.random()*W;}
+      ctx.beginPath();ctx.arc(p.x,p.y,p.sz,0,Math.PI*2);
+      ctx.fillStyle='rgba(255,255,255,0.18)';ctx.fill();
+    });
+    requestAnimationFrame(tick);
+  }
+  tick();
+})();
+
+(function jitterLoop(){
+  function tick(){drawJitter();requestAnimationFrame(tick);}
+  tick();
+})();
+
+drawCurve();
+updateUI();
+connectSSE();
+</script>
+</body>
+</html>
